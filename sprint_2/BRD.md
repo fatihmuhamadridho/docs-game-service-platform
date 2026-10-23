@@ -2,7 +2,7 @@
 
 > **Status:** Proposed middle sequence; not a delivery commitment. Prototype and operational candidates remain unapproved.  
 > **Sprint:** 2  
-> **Source:** IDs preserve portfolio traceability. Sprint 1 covers user/access and game slices; Sprint 3 covers payments and dashboard/read consumers.
+> **Source:** IDs preserve portfolio traceability. Sprint 1 covers admin access and game slices; Sprint 3 covers member identity, payments, and dashboard/read consumers.
 
 ## 1. Project Overview
 

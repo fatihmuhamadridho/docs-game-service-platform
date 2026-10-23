@@ -280,8 +280,8 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - `src/features/AdminUsers/views/templates/AdminUsers.template.tsx` — create-user form in the admin UI.
 - `src/features/AdminManagement/views/interfaces/admin-account.interface.ts` — separate admin account role and status model.
 - `src/features/AdminManagement/views/templates/AdminManagement.template.tsx` — admin-account creation and note that invitation/permissions are not yet connected.
-- `docs-game-service-platform/sprint_1/solutioning/erd/user-management-erd.md` — proposed user/admin account separation and account fields.
-- `docs-game-service-platform/sprint_1/solutioning/erd/role-erd.md` — admin role/permission assignment model.
+- `../../erd/user-management-erd.md` — proposed customer account fields and lifecycle.
+- `../../../../sprint_1/erd/role-erd.md` — administrator role/permission assignment model.
 - `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — API contract template.
 
 ## Current Go Implementation Alignment

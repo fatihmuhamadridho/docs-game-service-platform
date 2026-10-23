@@ -1,5 +1,6 @@
 # Customer Registration - Interface Agreement
 
+> **Sprint scope:** Registration is assigned to Sprint 3 and remains gated until email/identity provider and verification policy are approved.
 > Auth route matrix and source contract details: [Go auth route source audit](source-audit-2026-10-23.md).
 > Open decisions: [auth questions](QUESTION.md).
 
@@ -273,6 +274,6 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 - `./login.md` — customer login identifier dan syarat account eligible sebelum session dibuat.
 - `./logout.md` — session lifecycle setelah autentikasi.
-- `../../../../sprint_1/solutioning/erd/user-management-erd.md` — profil customer, identifier constraints, account status, dan credential ownership.
+- `../../erd/user-management-erd.md` — profil customer, identifier constraints, account status, dan credential ownership.
 - `src/features/Auth/views/organisms/RegisterForm.organism.tsx` — field register, minimum password, confirmation validation, country code options, dan consent checkbox.
 - `src/features/Auth/views/pages/Register.page.tsx` — register page composition.

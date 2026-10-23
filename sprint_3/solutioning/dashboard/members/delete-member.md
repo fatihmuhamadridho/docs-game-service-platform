@@ -246,8 +246,8 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## References
 
-- `./create-user.md` — user/member creation scope and account boundary.
-- `./get-list-users.md` — list filtering excludes soft-deleted users.
+- `./create-member.md` — account creation scope and lifecycle boundary.
+- `./get-list-members.md` — list filtering excludes soft-deleted accounts.
 - `./get-detail-user.md` — user detail access boundary.
 - `./update-user.md` — status lifecycle and identity update policy.
 - `../../erd/user-management-erd.md` — proposed `USER_ACCOUNT.deleted_at` and status history.

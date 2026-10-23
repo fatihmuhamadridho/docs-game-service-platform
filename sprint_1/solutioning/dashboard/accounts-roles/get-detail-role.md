@@ -49,9 +49,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                                     | VUser                                       | CPU / Memory                        | Response Time                                                                             |
-| ------------------------------------------------ | ------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------- |
-| TBD; confirm criticality and availability target | TBD; confirm peak concurrent administrators | TBD; set from capacity estimate/NFT | TBD; proposed less-critical web baseline: ideal 200 ms, acceptable 1 s, max tolerable 2 s |
+| Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time                |
+| ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------- |
+| 99.9% monthly availability; valid-request server error ≤ 0.1% | 50 VUser / 20 request/s NFT target | Initial 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75% at target load | Read p95 ≤ 500 ms; p99 ≤ 2 s |
 
 ## General Information
 
@@ -218,10 +218,10 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Testing & Documentation Scope
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                   |
-| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | API admin baru. Uji role ditemukan, ID invalid/tidak ditemukan, visibility permission, role dengan daftar permission besar, dan kegagalan database. VUser, CPU/memory, dan target TPS TBD mengikuti forecast traffic. |
-| VA/Pentest | Yes      | Endpoint mengekspos metadata otorisasi. Uji authentication/authorization, IDOR pada `roleId`, enumerasi role, kebocoran permission sensitif, dan parameter tampering.                                                 |
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                         |
+| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFT        | Yes      | API admin baru. Uji role ditemukan, ID invalid/tidak ditemukan, visibility permission, role dengan daftar permission besar, dan kegagalan database pada 50 VUser / 20 request per detik; ukur CPU/memory terhadap baseline. |
+| VA/Pentest | Yes      | Endpoint mengekspos metadata otorisasi. Uji authentication/authorization, IDOR pada `roleId`, enumerasi role, kebocoran permission sensitif, dan parameter tampering.                                                       |
 
 ## Assumptions
 

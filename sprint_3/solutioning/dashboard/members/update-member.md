@@ -281,10 +281,10 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## References
 
-- `./create-user.md` — create-user scope and member/admin account boundary.
-- `./get-list-users.md` — list fields, status mapping, and PII policy.
+- `./create-member.md` — account creation scope and administrator-account boundary.
+- `./get-list-members.md` — list fields, status mapping, and PII policy.
 - `./get-detail-user.md` — detail fields returned to User Management UI.
-- `../../erd/user-management-erd.md` — user account and status history model.
+- `../../erd/user-management-erd.md` — customer account and status history model.
 - `src/features/AdminUsers/views/interfaces/admin-user.interface.ts` — UI profile, role, and status fields.
 - `src/features/AdminUsers/views/templates/AdminUsers.template.tsx` — edit-user form currently includes role/status selectors.
 - `docs-game-service-platform/sprint_1/solutioning/dashboard/games/update-game.md` — partial update API pattern.

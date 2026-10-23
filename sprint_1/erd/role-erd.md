@@ -1,5 +1,9 @@
 # Role ERD
 
+## SLA Baseline
+
+Operasi role dan permission mengikuti SLA dashboard: availability bulanan 99,9%; NFT 50 VUser / 20 request per detik; latency baca p95 ≤ 500 ms dan tulis p95 ≤ 1 detik, dengan p99 ≤ 2 detik. Target kapasitas awal per instance 2 vCPU / 4 GiB, CPU ≤ 70%, dan memori ≤ 75% pada beban target. Angka kapasitas/beban adalah asumsi dan wajib divalidasi melalui NFT.
+
 > **Document Type:** ERD  
 > **Status:** Draft  
 > **Scope:** Role definitions, permission catalog, role-permission grants, and account-role assignments required by Admin Dashboard Account & Role Management APIs.
@@ -52,7 +56,7 @@ erDiagram
     }
 ```
 
-This is a proposed authorization model. `ADMIN_ACCOUNT` is a reference entity owned by the admin identity model; only its identifier is shown here. Confirm whether admin and customer accounts share one account table before implementation. Audit event history remains outside this ERD; relationship timestamps and actor fields are not a substitute for a complete audit log.
+This is a proposed authorization model. `ADMIN_ACCOUNT` is a reference entity owned by the administrator identity model; only its identifier is shown here. Audit event history remains outside this ERD; relationship timestamps and actor fields are not a substitute for a complete audit log.
 
 ## Table: `admin_role`
 
@@ -96,13 +100,13 @@ The composite primary key prevents duplicate grants for the same role and permis
 
 ## Table: `account_role`
 
-| Column             | Data Type                | Null | Key / Constraint                             | Description                                                                                   |
-| ------------------ | ------------------------ | ---- | -------------------------------------------- | --------------------------------------------------------------------------------------------- |
-| `admin_account_id` | String, max 64           | No   | PK, FK → admin identity account              | Administrator receiving role. Confirm whether customer accounts may also receive admin roles. |
-| `role_id`          | String, max 64           | No   | PK, FK → `admin_role.role_id`                | Assigned role.                                                                                |
-| `assigned_by`      | String, max 64           | Yes  | FK/reference to admin identity, if available | Administrator who made assignment.                                                            |
-| `assigned_at`      | Timestamp with time zone | No   | Default current UTC timestamp                | Time role was assigned.                                                                       |
-| `revoked_at`       | Timestamp with time zone | Yes  | Null means assignment active                 | Time assignment was revoked; preserves assignment history.                                    |
+| Column             | Data Type                | Null | Key / Constraint                             | Description                                                |
+| ------------------ | ------------------------ | ---- | -------------------------------------------- | ---------------------------------------------------------- |
+| `admin_account_id` | String, max 64           | No   | PK, FK → admin identity account              | Administrator receiving role.                              |
+| `role_id`          | String, max 64           | No   | PK, FK → `admin_role.role_id`                | Assigned role.                                             |
+| `assigned_by`      | String, max 64           | Yes  | FK/reference to admin identity, if available | Administrator who made assignment.                         |
+| `assigned_at`      | Timestamp with time zone | No   | Default current UTC timestamp                | Time role was assigned.                                    |
+| `revoked_at`       | Timestamp with time zone | Yes  | Null means assignment active                 | Time assignment was revoked; preserves assignment history. |
 
 Only one active assignment for a given account-role pair is allowed at a time. Database-specific partial unique index or transactional enforcement is required. Whether multiple simultaneous roles per account are supported is proposed as yes and needs confirmation.
 
@@ -147,7 +151,7 @@ Only one active assignment for a given account-role pair is allowed at a time. D
 ## Assumptions / Decisions Needed
 
 - Table names, columns, types, indexes, and `ROL` API model are proposals; database engine and physical naming conventions are TBD.
-- Confirm whether account-role management applies only to administrator accounts or also customer/member accounts. If admin identities live in an external IdP, decide whether `ADMIN_ACCOUNT` remains a local reference table or is replaced by an external subject identifier.
+- Confirm how the administrator account reference maps to an external identity provider, if used.
 - Confirm whether permission catalog is maintained in code/configuration or in the database, and whether permission rows need localized display names.
 - Confirm role status lifecycle, role system/protected marker, soft-delete policy, uniqueness reuse after delete, restore policy, and behavior of assignments when role becomes inactive.
 - Confirm whether all administrators can see all permissions or only delegated subsets; define high-risk permission classification and delegation safeguards.

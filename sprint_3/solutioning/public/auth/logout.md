@@ -223,5 +223,5 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 ## References
 
 - `./login.md` — customer login contract dan proposed session cookie.
-- `../../../../sprint_1/solutioning/erd/user-management-erd.md` — customer account status/lifecycle dan pemisahan admin account.
+- `../../erd/user-management-erd.md` — customer account status/lifecycle.
 - `src/features/Auth/views/organisms/LoginForm.organism.tsx` — current auth UI; backend belum terhubung.

@@ -30,7 +30,7 @@ erDiagram
 
 `PLATFORM_SETTINGS` stores the current general-settings snapshot. The proposed singleton rule allows exactly one active row for the platform; `settings_id` may use a fixed key such as `default`. Every successful update increments `version` and updates `updated_by` and `updated_at`. Detailed before/after history belongs in the shared audit log, not duplicated as rows in this table.
 
-`ADMIN_ACCOUNT` is defined in [User Management ERD](../../../sprint_1/solutioning/erd/user-management-erd.md). `updated_by` is nullable for bootstrap/system-managed configuration and references the admin actor for interactive updates. If audit retention requires the actor record to survive account deletion, retain the immutable actor ID in the audit store independently.
+`ADMIN_ACCOUNT` is defined in the Sprint 1 [Administrator Account ERD](../../../sprint_1/erd/admin-account-erd.md). `updated_by` is nullable for bootstrap/system-managed configuration and references the admin actor for interactive updates. If audit retention requires the actor record to survive account deletion, retain the immutable actor ID in the audit store independently.
 
 ## Table: `platform_settings`
 
@@ -106,4 +106,4 @@ The conceptual current-state relationship is many admins may update the singleto
 - `src/features/AdminSettings/views/interfaces/admin-settings.interface.ts` — current settings UI fields.
 - `src/features/AdminSettings/views/templates/AdminSettings.template.tsx` — settings sections and controls.
 - `src/features/AdminSettings/views/pages/AdminSettings.page.tsx` — demo defaults and session-only save behavior.
-- `./user-management-erd.md` — `ADMIN_ACCOUNT` actor reference.
+- `../../../sprint_1/erd/admin-account-erd.md` — `ADMIN_ACCOUNT` actor reference.

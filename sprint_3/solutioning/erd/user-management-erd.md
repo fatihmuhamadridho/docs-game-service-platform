@@ -2,7 +2,7 @@
 
 > **Document Type:** ERD  
 > **Status:** Draft  
-> **Scope:** Admin Dashboard member/user management and admin-account management records. Order-derived member metrics and role definitions are referenced, not duplicated here.
+> **Scope:** Customer account identity/status and member-profile model for Sprint 3 account and member management. Administrator account and role records are defined in the Sprint 1 [Administrator Account ERD](../../../sprint_1/erd/admin-account-erd.md) and [Role ERD](../../../sprint_1/erd/role-erd.md). Order-derived metrics and role definitions are referenced, not duplicated here.
 
 ## ERD
 
@@ -73,7 +73,7 @@ erDiagram
     }
 ```
 
-`ADMIN_ACCOUNT` and `ADMIN_ROLE` overlap with [Role ERD](role-erd.md), which currently shows an `ADMIN_ACCOUNT` reference entity and owns role assignment modeling. This document extends that entity with account-management attributes; reconcile into one canonical schema before implementation. Authentication credentials and provider subjects are owned by the identity/authentication design and are intentionally not specified here.
+Authentication credentials and provider subjects are owned by the identity/authentication design and are intentionally not specified here. Administrator role assignments remain owned by the Sprint 1 Role ERD.
 
 ## Table: `user_account`
 
@@ -163,8 +163,8 @@ These status history tables are proposed domain history, not a replacement for t
 | `user_account`  | `member_profile`       | 1 to 0..1   | A user may have one member profile. Confirm whether every storefront account is a member and whether profile is mandatory. |
 | `user_account`  | `user_status_history`  | 1 to 0..N   | Keep status changes; no cascade hard delete while history retention applies.                                               |
 | `admin_account` | `admin_status_history` | 1 to 0..N   | Keep admin status changes for auditability.                                                                                |
-| `admin_account` | `account_role`         | 1 to 0..N   | Role assignments are modeled in [Role ERD](role-erd.md); reconcile this shared entity and assignment cardinality.          |
-| `admin_role`    | `account_role`         | 1 to 0..N   | Role may be assigned to multiple admin accounts. Assignment history uses `revoked_at` per Role ERD.                        |
+| `admin_account` | `account_role`         | 1 to 0..N   | Administrator account-role assignments are defined in the Sprint 1 Role ERD.                                               |
+| `admin_role`    | `account_role`         | 1 to 0..N   | Role may be assigned to multiple administrator accounts. Assignment history uses `revoked_at` per Role ERD.                |
 
 ## Data Rules
 
@@ -177,7 +177,7 @@ These status history tables are proposed domain history, not a replacement for t
 7. Member tier values in the UI are proposed catalog values. Whether tier is manually assigned or derived from order/spend thresholds is TBD; one source of truth must be selected.
 8. `orderCount` and `totalSpend` are derived from order/transaction data. Define currency, refund treatment, time window, and consistency/freshness before presenting as authoritative metrics.
 9. Soft-deleted accounts, if enabled, are excluded from standard lists and cannot authenticate. Retention, restore, and uniqueness reuse policies must be approved.
-10. Role assignment and permission rules follow [Role ERD](role-erd.md). Do not implement role changes using a free-text role field on `admin_account`.
+10. Role assignment and permission rules follow the Sprint 1 Role ERD. Do not implement role changes using a free-text role field on `admin_account`.
 11. Personally identifying data such as email and WhatsApp is returned only to authorized administrators and must follow retention/access policy.
 
 ## Assumptions / Decisions Needed
@@ -194,7 +194,8 @@ These status history tables are proposed domain history, not a replacement for t
 
 ## References
 
-- `./role-erd.md` — proposed role, permission, and account-role assignment entities.
+- `../../../sprint_1/erd/admin-account-erd.md` — administrator account identity and lifecycle.
+- `../../../sprint_1/erd/role-erd.md` — proposed administrator role, permission, and account-role assignment entities.
 - `../dashboard/accounts-roles/get-list-roles.md`
 - `../dashboard/accounts-roles/get-detail-role.md`
 - `../dashboard/accounts-roles/update-role.md`

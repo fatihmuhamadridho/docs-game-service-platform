@@ -226,7 +226,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Assumptions
 
-- Endpoint `/api/admin/users/v1/detail/{userId}`, field response, envelope, prefix `USR`, dan status codes mengikuti kontrak [Get List Users](get-list-users.md) dan [Create User](create-user.md); API owner perlu menyetujui.
+- Endpoint `/api/admin/users/v1/detail/{userId}`, field response, envelope, prefix `USR`, dan status codes mengikuti kontrak [Get List Members](get-list-members.md) dan [Create Member](create-member.md); API owner perlu menyetujui.
 - Route action-based `/detail/{userId}` mengikuti pola solutioning admin project. Konfirmasi jika API standard memilih REST `GET /api/admin/users/v1/{userId}`.
 - Endpoint hanya membaca `USER_ACCOUNT` member; daftar/detail akun admin ada di Admin Management.
 - `accountType=MEMBER` adalah pembatas domain pada response, bukan kolom role bebas. Status menggunakan `ACTIVE`/`BLOCKED` sesuai usulan User Management ERD.
@@ -235,9 +235,9 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## References
 
-- `./get-list-users.md` — list user, status, PII boundaries, dan service codes.
-- `./create-user.md` — cakupan member dan pemisahan admin account creation.
-- `../../erd/user-management-erd.md` — user/admin account model.
+- `./get-list-members.md` — list fields, PII boundaries, and service codes.
+- `./create-member.md` — scope account provisioning and separation from administrator account creation.
+- `../../erd/user-management-erd.md` — customer account model.
 - `src/features/AdminUsers/views/interfaces/admin-user.interface.ts` — field detail user di UI.
 - `src/features/AdminUsers/views/templates/AdminUsers.template.tsx` — modal detail user dan data yang ditampilkan.
 - `docs-game-service-platform/sprint_1/solutioning/dashboard/games/get-detail-game.md` — pola endpoint detail admin.

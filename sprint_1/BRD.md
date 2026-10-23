@@ -1,18 +1,18 @@
-# JokiHub — Sprint 1 Business Requirements: Access, Users, and Games
+# JokiHub — Sprint 1 Business Requirements: Admin Access and Games
 
 > **Status:** Proposed priority sequence; not a delivery commitment or scope approval.  
 > **Sprint:** 1  
-> **Source:** Requirement IDs remain portfolio identifiers. See [portfolio sequence](../SPRINT-PLAN.md) and the [Sprint 1 AC index](./acceptance-criteria/README.md).
+> **Source:** Requirement IDs remain portfolio identifiers. See [portfolio sequence](../SPRINT-PLAN.md). Acceptance criteria are not being maintained for this planning revision.
 
 ## 1. Project Overview
 
-Sprint 1 prioritizes member/user management, roles, customer login, and games. Existing admin login/session behavior must be verified as a prerequisite. The source describes a shared /login UI with distinct customer and admin sessions. AC-PUB-004 is customer account access; no admin-login story is defined in the current 41 AC documents.
+Sprint 1 focuses on administrator access, roles, administrator accounts, and games.
 
 ## 2. Objectives
 
-- Establish approved access, member, and role foundations before later protected administration.
+- Establish approved admin access and role foundations before protected administration.
 - Make approved games manageable and discoverable.
-- Preserve separate customer and administrator actors, identity decisions, and permission boundaries.
+- Preserve administrator identity and permission boundaries.
 
 Estimates, owners, policy, targets, and dates remain **TBD**.
 
@@ -24,12 +24,11 @@ Verify current admin login/session and authorization behavior. BR-023 requires p
 
 ### Proposed delivery order
 
-1. [Member/customer user management](./acceptance-criteria/dashboard/users/admin-member-management.md) — BR-016 / AC-ADM-013.
-2. [Roles and permissions](./acceptance-criteria/dashboard/accounts-roles/admin-role-management.md) — BR-018 / AC-ADM-015.
-3. [Privileged admin accounts](./acceptance-criteria/dashboard/users/admin-account-management.md) — BR-017 / AC-ADM-014; depends on approved role taxonomy and identity/invitation flow.
-4. [Customer account access](./acceptance-criteria/public/auth/customer-account-access.md) — BR-006 / AC-PUB-004; distinct from admin login verification.
-5. [Admin game management](./acceptance-criteria/dashboard/games/admin-game-management.md) — game slice of BR-019 / AC-ADM-016.
-6. [Public game discovery](./acceptance-criteria/public/games/public-game-discovery.md) — BR-001/002 / AC-PUB-001, after active-game data and publication rules are approved.
+1. Verify current admin login/session and authorization behavior.
+2. Roles and permissions — BR-018. Depends on approved role taxonomy.
+3. Read-only administrator account directory — BR-017; see [admin account solutioning](./solutioning/dashboard/admin-accounts/). Super Admin is provisioned by a controlled backend/database/script bootstrap; dashboard exposes list and detail only.
+4. Admin game management — game slice of BR-019.
+5. Public game discovery — BR-001/002, after active-game data and publication rules are approved.
 
 ### Out of Scope / Later
 
@@ -37,29 +36,38 @@ Category/service management slices of BR-019 and public category/service discove
 
 ## 4. Business Requirements
 
-| ID     | Requirement                                                                                                                                                                                                                            |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| BR-001 | As a visitor, I need to view active public games so that I can find a game with available services.                                                                                                                                    |
-| BR-002 | As a visitor, I need to search, filter, sort, and paginate the game catalog so that I can find relevant games efficiently.                                                                                                             |
-| BR-006 | As a customer, I need to register and authenticate through the approved identity flow so that I can use account-based features. Credentials and OTPs must not be collected as general order fields.                                    |
-| BR-016 | As an authorized administrator, I need to manage member accounts separately from admin accounts so that customer lifecycle actions do not grant admin privileges implicitly.                                                           |
-| BR-017 | As an authorized administrator, I need to create and manage admin accounts with explicitly assigned roles so that privileged access is controlled and auditable. Credential setup uses the approved identity/invitation flow.          |
-| BR-018 | As an authorized administrator, I need to manage roles and permissions so that admin access follows least privilege; protected roles and unauthorized delegation cannot be changed.                                                    |
-| BR-019 | As an authorized administrator, I need to manage games, service categories, and services so that the public catalog reflects approved offerings. This sprint covers game management; category and service slices continue in Sprint 2. |
-| BR-023 | As the business, I need public and administrative operations to validate inputs and enforce caller authorization so invalid or unauthorized actions do not change protected data.                                                      |
+| ID     | Requirement                                                                                                                                                                                                                                                                                    |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| BR-001 | As a visitor, I need to view active public games so that I can find a game with available services.                                                                                                                                                                                            |
+| BR-002 | As a visitor, I need to search, filter, sort, and paginate the game catalog so that I can find relevant games efficiently.                                                                                                                                                                     |
+| BR-017 | As an authorized administrator, I need to view administrator accounts and their assigned roles so that privileged access is transparent and auditable. Super Admin provisioning is handled through a controlled backend/database/script bootstrap; dashboard account operations are read-only. |
+| BR-018 | As an authorized administrator, I need to manage roles and permissions so that admin access follows least privilege; protected roles and unauthorized delegation cannot be changed.                                                                                                            |
+| BR-019 | As an authorized administrator, I need to manage games, service categories, and services so that the public catalog reflects approved offerings. This sprint covers game management; category and service slices continue in Sprint 2.                                                         |
+| BR-023 | As the business, I need public and administrative operations to validate inputs and enforce caller authorization so invalid or unauthorized actions do not change protected data.                                                                                                              |
 
 ## 5. Assumptions and Dependencies
 
 - Current route/UI evidence does not approve target identity policy or prove production readiness.
 - Admin login verification is a prerequisite only. If current baseline fails target policy, scope an admin identity/login implementation explicitly before protected admin delivery.
-- Role taxonomy/delegation, member lifecycle fields/actions, admin invitation, customer identity/session policy, and game lifecycle/publication rules are unresolved.
+- Permission policy and role delegation require Security/Product sign-off; admin bootstrap is an operational backend/database/script process, not an invitation flow. Game lifecycle/publication rules remain unresolved.
 - Category/service data and pricing rules are prerequisites for public service discovery in Sprint 2.
 - No estimates, sprint duration, owners, or dates are approved; all remain TBD.
 
 ## 6. Open Questions
 
 - Does the existing admin login/session and authorization baseline meet target policy, or is new admin-auth work required? — Owner not identified; before protected admin work.
-- Which identity provider, permission taxonomy, role delegation, invitation, and credential setup rules apply to admin accounts? — Owner not identified; before role/account delivery.
-- Which customer registration/login/session rules apply, and are customer and admin identities isolated as source evidence indicates? — Product/security owner not identified; before customer account release.
-- Which member fields and lifecycle actions are permitted? — Owner not identified; before member-management approval.
+- Which permission-to-role matrix and delegation restrictions become the approved target policy? — Security/Product owner; before permission enforcement changes.
 - What game activation, publication, filtering, and production catalog rules are approved? — Owner not identified; before catalog release.
+
+## 7. SLA Baseline
+
+SLA baseline berlaku untuk operasi API dashboard dan katalog publik Sprint 1. Angka beban serta kapasitas berikut adalah asumsi target awal, bukan hasil pengukuran; validasi melalui NFT sebelum rilis.
+
+| Metrik                      | Target                                                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------ |
+| Availability bulanan        | 99,9%                                                                                                              |
+| Beban NFT                   | 50 VUser dan 20 request/detik dengan campuran route representatif                                                  |
+| Latency baca                | p95 ≤ 500 ms; p99 ≤ 2 detik                                                                                        |
+| Latency tulis               | p95 ≤ 1 detik; p99 ≤ 2 detik                                                                                       |
+| Kapasitas awal per instance | 2 vCPU, 4 GiB RAM; CPU ≤ 70% dan memori ≤ 75% pada beban target                                                    |
+| Error server                | ≤ 0,1% request valid per bulan; timeout dan HTTP 5xx dihitung, 4xx validasi/otorisasi yang diharapkan dikecualikan |

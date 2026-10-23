@@ -33,9 +33,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                        | VUser                                     | CPU / Memory                      | Response Time                                                                                                                                                                                                              |
-| ----------------------------------- | ----------------------------------------- | --------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| TBD; no approved target or baseline | TBD; no concurrent admin workload profile | TBD; no capacity/NFT run evidence | TBD; no measured handler latency supplied; target decision tracked in [dashboard QUESTION Q4](../../../sprint_1/solutioning/dashboard-management/QUESTION.md#q4--what-operational-targets-apply-to-admin-reads-and-writes) |
+| Success Rate                                                                         | VUser                                                            | CPU / Memory                                                                                               | Response Time                                                    |
+| ------------------------------------------------------------------------------------ | ---------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------- |
+| 99.9% monthly availability; valid-request server error ≤ 0.1% (proposed initial SLO) | 50 VUser and 20 requests/s NFT target (assumed initial workload) | Initial baseline 2 vCPU / 4 GiB per instance; CPU ≤ 70% and memory ≤ 75% at target load; validate with NFT | Read p95 ≤ 500 ms; write p95 ≤ 1 s; p99 ≤ 2 s; validate with NFT |
 
 ## General Information
 

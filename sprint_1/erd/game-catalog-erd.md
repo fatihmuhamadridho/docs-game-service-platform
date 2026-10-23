@@ -1,5 +1,9 @@
 # Game ERD
 
+## SLA Baseline
+
+Operasi game admin dan discovery publik mengikuti SLA dashboard/katalog: availability bulanan 99,9%; NFT 50 VUser / 20 request per detik; latency baca p95 ≤ 500 ms dan tulis p95 ≤ 1 detik, dengan p99 ≤ 2 detik. Target kapasitas awal per instance 2 vCPU / 4 GiB, CPU ≤ 70%, dan memori ≤ 75% pada beban target. Angka kapasitas/beban adalah asumsi dan wajib divalidasi melalui NFT.
+
 > **Document Type:** ERD  
 > **Status:** Draft  
 > **Scope:** Data used by Admin Dashboard game create/list/update and public popular-games list.

@@ -106,13 +106,13 @@ Targets are polymorphic references (`target_type`, `target_id`, `target_referenc
 - Confirm whether `action_label` is stored as a snapshot or generated from `action_code` at read time. Snapshot preserves wording at event time; generated labels simplify localization.
 - Confirm actor snapshot PII retention, IP/user-agent access, data retention period, archive/purge workflow, and legal hold requirements.
 - Confirm audit service ownership, transaction-outbox/retry behavior, event deduplication key, fail-open/fail-closed policy, pagination strategy (offset vs cursor), and search indexing.
-- `actor_admin_id` references `ADMIN_ACCOUNT` in `user-management-erd.md`; reconcile its canonical definition with `role-erd.md` before implementation.
+- `actor_admin_id` references `ADMIN_ACCOUNT` in the Sprint 1 Administrator Account ERD; reconcile its canonical definition with the Sprint 1 Role ERD before implementation.
 
 ## References
 
 - `../dashboard/activity-logs/get-list-activity-logs.md` — admin activity log list/filter contract.
-- `./user-management-erd.md` — `ADMIN_ACCOUNT` actor reference.
-- `./role-erd.md` — admin identity and RBAC references.
+- `../../../sprint_1/erd/admin-account-erd.md` — `ADMIN_ACCOUNT` actor reference.
+- `../../../sprint_1/erd/role-erd.md` — administrator identity and RBAC references.
 - `src/features/AdminActivityLogs/views/interfaces/admin-activity-log.interface.ts` — current UI activity fields and category labels.
 - `src/features/AdminActivityLogs/views/pages/AdminActivityLogs.page.tsx` — mock events and client-side filtering.
 - `src/features/AdminActivityLogs/views/templates/AdminActivityLogs.template.tsx` — activity table and visible information.

@@ -15,7 +15,7 @@ This sprint contains 22 story documents: catalog/settings/audit stories, support
 ## Dependencies and open decisions
 
 - Sprint 1 supplies approved game records and early identity/access foundations. Category and service availability depends on game, category, pricing, and publication rules.
-- Decide password recovery provider/OTP policy; approve help, about, home, and public settings content before release.
+- Password recovery remains gated and depends on the email-provider decision scheduled in Sprint 3; approve help, about, home, and public settings content before release.
 - Decide settings ownership, audit event taxonomy, retention, redaction, and audit-write failure behavior.
 - Keep mock admin features as observed UI candidates until explicit product approval.
 - Admin payment review/completion stays gated on payment lifecycle and BR-010 allocation decisions; implementation is sequenced with late payment work only if approved.

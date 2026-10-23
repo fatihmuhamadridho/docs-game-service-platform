@@ -49,9 +49,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                                     | VUser                                       | CPU / Memory                              | Response Time                                                                             |
-| ------------------------------------------------ | ------------------------------------------- | ----------------------------------------- | ----------------------------------------------------------------------------------------- |
-| TBD; confirm criticality and availability target | TBD; confirm peak concurrent administrators | TBD; determine from capacity estimate/NFT | TBD; proposed less-critical web baseline: ideal 200 ms, acceptable 1 s, max tolerable 2 s |
+| Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time                |
+| ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------- |
+| 99.9% monthly availability; valid-request server error ≤ 0.1% | 50 VUser / 20 request/s NFT target | Initial 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75% at target load | Read p95 ≤ 500 ms; p99 ≤ 2 s |
 
 ## General Information
 
@@ -241,7 +241,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 | Scope      | Required | Rationale / Handoff                                                                                                                                                      |
 | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| NFT        | Yes      | New admin list API. Test common and maximum page sizes, filters, search, and peak concurrent admin load. VUser, CPU/memory, and target TPS TBD pending traffic forecast. |
+| NFT        | Yes      | New admin list API. Test common and maximum page sizes, filters, search, and 50 VUser / 20 requests per second; measure CPU/memory against baseline.                     |
 | VA/Pentest | Yes      | Admin API. Verify authentication/authorization, privilege boundaries, query validation, injection resistance, and that customer/order/audit-private data is not exposed. |
 
 ## Assumptions

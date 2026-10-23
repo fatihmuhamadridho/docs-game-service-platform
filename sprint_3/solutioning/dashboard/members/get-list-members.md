@@ -249,9 +249,9 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## References
 
-- `./create-user.md` — cakupan akun member dan create-user security boundaries.
+- `./create-member.md` — account provisioning scope and security boundaries.
 - `../accounts-roles/get-list-roles.md` — role management tetap dipisahkan dari user list.
-- `../../erd/user-management-erd.md` — user/admin account fields and status model.
+- `../../erd/user-management-erd.md` — customer account fields and status model.
 - `src/features/AdminUsers/views/interfaces/admin-user.interface.ts` — UI list fields and filters.
 - `src/features/AdminUsers/views/templates/AdminUsers.template.tsx` — user table, search, filters, and role options.
 - `docs-game-service-platform/sprint_1/solutioning/dashboard/games/get-list-games.md` — admin list pagination and response pattern.

@@ -5,6 +5,8 @@
 > **Service / Domain:** Go Auth  
 > **Consumer / Partner:** JokiHub customer and admin web clients
 
+> **Sprint boundary:** Customer forgot/reset-password routes depend on the email provider and are assigned to Sprint 3. Admin login/logout/refresh and session status remain implementation evidence for the Sprint 1 admin-access prerequisite; this combined source map does not make customer recovery Sprint 1 scope.
+
 ## Design
 
 Internal-service IFA covering six registered routes: `GET /api/auth/v1/session`, customer `POST /api/auth/v1/forgot-password` and `/reset-password`, and admin `POST /api/admin/auth/v1/login`, `/logout`, and `/refresh-token`. Current Go handlers are evidence for method, path, validations, authentication, and status. Frontend has calls to customer recovery and session refresh; admin-specific routes are registered but no FE call was found. These routes do not imply email-provider configuration or invitation availability.

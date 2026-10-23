@@ -45,9 +45,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                                     | VUser                                       | CPU / Memory                        | Response Time                                                                             |
-| ------------------------------------------------ | ------------------------------------------- | ----------------------------------- | ----------------------------------------------------------------------------------------- |
-| TBD; confirm criticality and availability target | TBD; confirm peak concurrent administrators | TBD; set from capacity estimate/NFT | TBD; proposed less-critical web baseline: ideal 200 ms, acceptable 1 s, max tolerable 2 s |
+| Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time                |
+| ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------- |
+| 99.9% monthly availability; valid-request server error ≤ 0.1% | 50 VUser / 20 request/s NFT target | Initial 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75% at target load | Read p95 ≤ 500 ms; p99 ≤ 2 s |
 
 ## General Information
 
@@ -234,10 +234,10 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Testing & Documentation Scope
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                 |
-| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | API admin baru. Uji pencarian, filter status, pagination, empty result, permission visibility, serta beban daftar puncak. VUser, CPU/memory, dan target TPS TBD mengikuti forecast traffic dan SLA. |
-| VA/Pentest | Yes      | Data otorisasi admin. Uji authentication/authorization, permission disclosure, privilege boundaries, parameter tampering, dan akses lintas tenant/organisasi bila konsep tersebut berlaku.          |
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                        |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| NFT        | Yes      | API admin baru. Uji pencarian, filter status, pagination, empty result, permission visibility, serta beban 50 VUser / 20 request per detik dan target CPU/memory baseline.                 |
+| VA/Pentest | Yes      | Data otorisasi admin. Uji authentication/authorization, permission disclosure, privilege boundaries, parameter tampering, dan akses lintas tenant/organisasi bila konsep tersebut berlaku. |
 
 ## Assumptions
 

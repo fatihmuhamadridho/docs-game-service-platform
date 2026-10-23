@@ -6,7 +6,7 @@
 
 **Source / evidence gap:** `POST /api/admin/users/v1/create` is registered but inventory marks identity-provider invitation unavailable; the AC cannot establish a successful invitation lifecycle or credential setup.
 
-**Affected ACs / routes:** [Admin Account Management](../../../../sprint_1/acceptance-criteria/dashboard/users/admin-account-management.md), `/admin/admins`, `POST /api/admin/users/v1/create`.
+**Related solutioning / routes:** [Admin Account IFAs](../../../../sprint_1/solutioning/dashboard/admin-accounts/README.md), `/admin/admins`, `POST /api/admin/users/v1/create`.
 
 **Impact:** Account provisioning acceptance and operational fallback remain undefined.
 
@@ -16,6 +16,6 @@
 
 **Source / evidence gap:** Both routes map to one AC and no distinct behavior or role boundary is established in the supplied page evidence.
 
-**Affected ACs / routes:** [Admin Member Management](../../../../sprint_1/acceptance-criteria/dashboard/users/admin-member-management.md), `/admin/members`, `/admin/users`.
+**Affected docs / routes:** Sprint 3 [member management IFAs](../../../../sprint_3/solutioning/dashboard/members/), `/admin/members`, `/admin/users`.
 
 **Impact:** Navigation, permissions, and test coverage may duplicate or omit behavior until the distinction is confirmed.

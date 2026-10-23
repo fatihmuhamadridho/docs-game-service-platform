@@ -1,6 +1,15 @@
-# Sprint 3 Solutioning — Orders, Payments, and Dashboard Reads
+# Sprint 3 Solutioning — Customer Identity, Orders, Payments, and Dashboard Reads
 
-Final delivery group: order lifecycle, checkout, payment reporting/proof, tracking, and admin dashboard reads. Payment-evidence submission remains a separate BR-010 candidate with its existing release gate; technical source evidence does not approve release allocation.
+Final delivery group: email-dependent customer identity and account management, order lifecycle, checkout, payment reporting/proof, tracking, and admin dashboard reads. Payment-evidence submission remains a separate BR-010 candidate with its existing release gate; technical source evidence does not approve release allocation.
+
+## Customer identity and email dependency
+
+- [Email and customer-auth open questions](public/auth/QUESTION.md)
+- [Registration and login/session IFAs](public/auth)
+- [Admin-managed account IFAs](dashboard/members)
+- [Customer account and member ERDs](erd/user-management-erd.md) · [Member profile ERD](erd/member-erd.md)
+
+These flows remain gated until email-provider, verification, and account-lifecycle decisions are approved. The administrator account and role models remain in Sprint 1.
 
 ## Order and payment lifecycle
 
@@ -22,7 +31,7 @@ Checkout depends on catalog availability and approved guest/account and order-st
 - [Transaction list/detail](dashboard/transactions)
 - [Activity history](dashboard/activity-logs)
 
-These reads depend on persisted order/payment/activity records and approved metric definitions. Admin auth/RBAC behavior is verified as an access prerequisite in [Sprint 1 identity/access solutioning](../../sprint_1/solutioning/README.md).
+These reads depend on persisted order/payment/activity records and approved metric definitions. Admin auth/RBAC behavior is verified as an access prerequisite in Sprint 1 account and role solutioning.
 
 ## Shared late controls
 
