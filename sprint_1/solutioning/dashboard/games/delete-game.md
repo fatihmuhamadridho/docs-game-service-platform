@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini menghapus game dari katalog yang dikelola Admin Dashboard. Strategi yang diusulkan adalah soft delete menggunakan `deleted_at` agar referensi layanan dan riwayat pesanan tetap aman. ERD saat ini belum memiliki kolom tersebut atau relasi layanan/pesanan; persetujuan strategi dan pembaruan [Game ERD](../../erd/game-catalog-erd.md) menjadi prasyarat implementasi. Tidak ada hard delete atau cascade pada kontrak ini.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

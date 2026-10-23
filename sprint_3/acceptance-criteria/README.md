@@ -29,4 +29,4 @@ Twelve story documents are sequenced late because order/payment lifecycle data f
 - [Order and Evidence Retry Safety](./shared/shared-idempotent-retries.md) — AC-SHR-023; BR-024.
 - [Customer, Payment, and Audit Data Privacy](./shared/shared-data-privacy.md) — AC-SHR-024; BR-025.
 
-See [Sprint 3 BRD](../BRD.md), the separate [BR-010 candidate BRD](../payment-evidence-BRD.md), and [portfolio crosswalk](../../sprint_1/acceptance-criteria/portfolio-index.md). Estimates, policy, and release allocation remain TBD.
+See [Sprint 3 BRD](../BRD.md) and the separate [BR-010 candidate BRD](../payment-evidence-BRD.md). Estimates, policy, and release allocation remain TBD.

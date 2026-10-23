@@ -1,6 +1,6 @@
 # Checkout — Open Contract Decisions
 
-Current Go endpoint behavior is summarized in [the order/payment source IFA](../../backend-go/order-payment-ifa.md) and [implementation alignment](../../../../sprint_1/solutioning/source-inventory/backend-go/implementation-alignment.md). Existing checkout IFA describes proposed target behavior; source and target remain distinct.
+Current Go endpoint behavior is summarized in [the order/payment source IFA](../../backend-go/order-payment-ifa.md). Existing checkout IFA describes proposed target behavior; source and target remain distinct.
 
 ## Q1 — Which checkout state and response contract should clients adopt?
 
@@ -25,3 +25,11 @@ Current Go endpoint behavior is summarized in [the order/payment source IFA](../
 - **Affected routes/docs:** `POST /api/orders/v1/checkout`, `POST /api/orders/v1/payments/{paymentId}/report-paid`, `POST /api/orders/v1/payments/{paymentId}/proofs`; [continue to payment IFA](continue-to-payment.md), [submit proof IFA](submit-payment-proof.md), [Go order/payment IFA](../../backend-go/order-payment-ifa.md).
 - **Decision owner:** Product/API owner (release owner not identified in source).
 - **Impact:** Checkout next-step UI, required evidence, availability of payment confirmation, feature-flag rollout and support instructions.
+
+## Q4 — Should proof upload use the current provider token/callback flow or a target multipart contract?
+
+- **Question:** Should clients use Go's registered `/proofs/upload` token and signed-callback flow followed by `/proofs` finalization, or should the proposed multipart upload contract be retained under a coordinated API change?
+- **Evidence gap:** Current Go issues a provider upload token, verifies the callback signature, then finalizes proof metadata. The target proposal describes a different upload route and payload; no migration decision is recorded.
+- **Affected routes/docs:** Proof upload/finalization; [payment proof IFA](submit-payment-proof.md), [order/payment source IFA](../../backend-go/order-payment-ifa.md).
+- **Decision owner:** API/platform owner.
+- **Impact:** Frontend upload integration, provider coupling, callback validation, and route compatibility.

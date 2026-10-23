@@ -43,10 +43,10 @@
 
 ### Backend
 
-| Task                                                                                                     | Mandays | Story Point |
-| -------------------------------------------------------------------------------------------------------- | ------: | ----------: |
-| N/A — rendering states are frontend/framework behavior; protected-data decisions are covered by SHR-022. |     N/A |         N/A |
-| **Total**                                                                                                | **N/A** |     **N/A** |
+| Task                                                                                                                                            | Mandays | Story Point |
+| ----------------------------------------------------------------------------------------------------------------------------------------------- | ------: | ----------: |
+| N/A — rendering states are frontend/framework behavior; protected-data decisions are covered by the relevant admin feature acceptance criteria. |     N/A |         N/A |
+| **Total**                                                                                                                                       | **N/A** |     **N/A** |
 
 ### Summary
 

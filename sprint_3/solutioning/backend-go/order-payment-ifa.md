@@ -246,7 +246,7 @@ Target template envelope (not current Go wire): `{"status":{"code":"ORDS00000","
 - `QUESTION.md`
 - `../public/checkout/QUESTION.md`
 - `../public/orders/QUESTION.md`
-- `./implementation-alignment.md`
+- [Checkout IFA](../public/checkout/continue-to-payment.md) · [Payment proof IFA](../public/checkout/submit-payment-proof.md)
 - `../checkout-payment-implementation.md`
 - `../../../../go-game-service-platform/internal/controller/http/order_http.go`
 - `../../../../go-game-service-platform/internal/controller/http/payment_proof_http.go`

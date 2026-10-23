@@ -12,7 +12,7 @@
 
 ## Design
 
-API mengakhiri session customer aktif, mencabut session pada auth/session store, lalu menghapus cookie browser. Endpoint dirancang idempotent: request tanpa session valid tetap mengembalikan sukses dan mengirim cookie kedaluwarsa. Login contract mengusulkan opaque server-side session dalam secure HttpOnly cookie; pilihan identity provider dan session architecture masih perlu disetujui. Endpoint ini tidak menangani logout admin.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

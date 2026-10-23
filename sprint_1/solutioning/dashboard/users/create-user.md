@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini membuat akun pengguna/member dari Admin Dashboard menggunakan nama, username, dan email. Akun dibuat sebagai `MEMBER`; endpoint ini tidak membuat akun admin atau memberikan hak `ADMIN`/`SUPER_ADMIN`. UI saat ini menampilkan pilihan role tersebut pada form User Management, tetapi model akun memisahkan `USER_ACCOUNT` dari `ADMIN_ACCOUNT` dan role admin memakai relasi RBAC; pembuatan admin harus melalui alur Admin Management dan assignment role yang terproteksi. Credential provisioning/invitation bergantung pada identity provider yang belum ditetapkan.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

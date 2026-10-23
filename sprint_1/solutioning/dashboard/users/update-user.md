@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini memperbarui profil dan status satu akun member berdasarkan `userId`. Request bersifat parsial untuk `name`, `username`, `email`, dan `status`; `role` tidak dapat diubah melalui endpoint ini karena akun admin dan role RBAC dikelola melalui Admin Management. Perubahan identitas harus diselaraskan dengan identity provider bila field tersebut digunakan untuk login; aturan verification dan session revocation masih perlu ditetapkan.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

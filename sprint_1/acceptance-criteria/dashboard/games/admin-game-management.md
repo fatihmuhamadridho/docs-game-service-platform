@@ -16,11 +16,13 @@
 > **Then :**
 >
 > 1. Public choices reflect approved active entries; inactive/removed game is unavailable to new orders and existing snapshots remain intact
+> 2. Invalid input or missing permission rejects the action; protected data remains unchanged and is not disclosed
 
 ## Technical Flow
 
 1. authorized administrator: Administrator creates, views, updates, deactivates, or removes a game as allowed.
 2. System: Public choices reflect approved active entries; inactive/removed game is unavailable to new orders and existing snapshots remain intact.
+3. System: Invalid input or missing permission rejects the action; protected data remains unchanged and is not disclosed.
 
 ## Parameters
 

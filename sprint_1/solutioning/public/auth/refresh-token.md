@@ -12,7 +12,7 @@
 
 ## Design
 
-API memperbarui session customer menggunakan refresh token opaque pada cookie HttpOnly, lalu merotasi refresh token agar credential lama tidak dapat dipakai lagi. Endpoint juga memperbarui session/access cookie sesuai pola session auth yang disetujui. Login contract saat ini hanya mendefinisikan `__Host-jokihub-session`; implementasi endpoint ini mensyaratkan login contract diperbarui untuk menerbitkan refresh cookie dan menyimpan token family pada auth/session store.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

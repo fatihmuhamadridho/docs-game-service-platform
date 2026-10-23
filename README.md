@@ -8,11 +8,9 @@ Project documentation uses three proposed delivery groups, ordered from foundati
 - [Sprint 1 BRD — Access, identity, and games](./sprint_1/BRD.md)
 - [Sprint 2 BRD — Catalog and supporting features](./sprint_2/BRD.md)
 - [Sprint 3 BRD — Payment lifecycle and dashboard reads](./sprint_3/BRD.md) · [BR-010 payment evidence candidate](./sprint_3/payment-evidence-BRD.md)
-- [Cross-sprint AC index and route/feature coverage](./sprint_1/acceptance-criteria/portfolio-index.md)
 - [Sprint 1 — Access, identity, and games](./sprint_1/README.md)
 - [Sprint 2 — Catalog and supporting features](./sprint_2/README.md)
 - [Sprint 3 — Payment lifecycle and dashboard reads](./sprint_3/README.md)
-- [Portfolio Go/Next.js source evidence](./sprint_1/solutioning/source-inventory/README.md)
 - [Shared glossary](./sprint_1/GLOSSARY.md)
 - [Sprint 3 artwork reference](./sprint_3/reference/game-artwork-sources.md)
 

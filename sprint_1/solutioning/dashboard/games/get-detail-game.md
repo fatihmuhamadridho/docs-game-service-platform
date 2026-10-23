@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini mengambil satu record game berdasarkan `gameId` untuk ditampilkan pada halaman detail atau form edit Admin Dashboard. Data mengikuti field katalog dari [Create Game](create-game.md) dan skema usulan [Game ERD](../../erd/game-catalog-erd.md). API hanya membaca; perubahan game dilakukan melalui [Update Game](update-game.md).
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

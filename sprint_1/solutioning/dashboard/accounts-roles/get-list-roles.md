@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini mengambil daftar role yang tersedia untuk dikelola melalui Admin Dashboard. Daftar mendukung pencarian, filter status, dan pagination sebagai usulan untuk kebutuhan tabel role. Model akun, role, permission, dan relasinya belum didefinisikan pada ERD atau solutioning sprint ini; field status dan permission dalam kontrak ini perlu diselaraskan dengan model tersebut sebelum implementasi.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

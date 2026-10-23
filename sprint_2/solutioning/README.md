@@ -23,4 +23,3 @@ Second delivery group: service categories and services, public catalog discovery
 
 - Catalog publishing depends on active games, categories, and service records established in Sprint 1 or earlier in this group.
 - Price, quote-only services, public settings exposure, and route aliases remain governed by linked source evidence and open questions; contracts do not imply approval.
-- [Cross-sprint Go/Next.js source inventory](../../sprint_1/solutioning/source-inventory/README.md)

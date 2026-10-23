@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini memperbarui metadata dan permission pada satu role berdasarkan `roleId`. Dashboard mengirim field yang berubah; API memvalidasi izin pemanggil, keberadaan dan status role, keunikan nama/kode, serta hak delegasi permission sebelum menyimpan perubahan. Model RBAC, assignment akun-role, dan policy permission belum didefinisikan dalam ERD; perlindungan role system dan dampak perubahan permission pada sesi/otorisasi aktif harus disepakati sebelum implementasi.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

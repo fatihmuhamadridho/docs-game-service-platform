@@ -16,11 +16,13 @@
 > **Then :**
 >
 > 1. Only explicitly assigned approved access is granted; credential setup follows approved identity/invitation flow; protected assignments are prevented
+> 2. Invalid input or missing permission rejects the action; protected data remains unchanged and is not disclosed
 
 ## Technical Flow
 
 1. authorized administrator: Administrator creates or changes an account and assigns a role.
 2. System: Only explicitly assigned approved access is granted; credential setup follows approved identity/invitation flow; protected assignments are prevented.
+3. System: Invalid input or missing permission rejects the action; protected data remains unchanged and is not disclosed.
 
 ## Parameters
 

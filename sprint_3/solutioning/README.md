@@ -27,5 +27,4 @@ These reads depend on persisted order/payment/activity records and approved metr
 ## Shared late controls
 
 - Retry/idempotency and privacy remain cross-feature late hardening. Their AC live in [Sprint 3 shared criteria](../acceptance-criteria/shared); no separate solutioning contract is duplicated here.
-- [Portfolio Go and Next.js source inventory](../../sprint_1/solutioning/source-inventory/README.md)
 - [Artwork reference](../reference/game-artwork-sources.md)

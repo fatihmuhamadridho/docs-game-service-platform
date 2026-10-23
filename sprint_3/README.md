@@ -28,7 +28,6 @@ This sprint contains 12 AC story documents: four admin read/dashboard stories, s
 - [Sprint 3 BRD](./BRD.md)
 - [BR-010 payment-evidence candidate BRD](./payment-evidence-BRD.md)
 - [Sprint 3 AC index](./acceptance-criteria/README.md)
-- [Cross-sprint AC and route index](../sprint_1/acceptance-criteria/portfolio-index.md)
 - [Sprint 3 solutioning](./solutioning/README.md)
 - [Sprint 3 glossary](./GLOSSARY.md)
 - [Artwork reference](./reference/game-artwork-sources.md)

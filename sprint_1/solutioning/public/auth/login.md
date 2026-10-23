@@ -13,7 +13,7 @@
 
 ## Design
 
-Login page meminta email atau nomor WhatsApp dan password. API memverifikasi kredensial melalui identity/authentication provider yang disetujui, memastikan akun customer dapat digunakan, lalu membuat session. ERD memisahkan `USER_ACCOUNT` dari `ADMIN_ACCOUNT` dan secara eksplisit menyerahkan credential/provider subject ke desain authentication; endpoint ini hanya untuk customer, bukan login admin.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

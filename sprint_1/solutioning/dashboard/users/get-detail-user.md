@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini mengambil detail satu akun member berdasarkan `userId` untuk modal detail atau form edit pada menu User Management. Response mengikuti field yang ditampilkan UI dan kontrak [Get List Users](get-list-users.md). Endpoint hanya mengakses `USER_ACCOUNT`; akun admin dan role admin tetap dikelola melalui Admin Management/RBAC.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

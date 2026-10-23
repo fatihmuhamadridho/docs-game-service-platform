@@ -12,7 +12,7 @@
 
 ## Design
 
-API mendaftarkan akun customer dari form register dengan nama, email, nomor WhatsApp, password, dan persetujuan syarat/privasi. API membuat identity credential melalui auth provider, menyimpan profil customer, lalu memulai verifikasi kontak sebelum account boleh login. Form juga meminta konfirmasi password; client memeriksa kecocokan dan tidak perlu mengirim field konfirmasi. ERD memisahkan `USER_ACCOUNT` dan `ADMIN_ACCOUNT`, tetapi belum memodelkan status verifikasi, credential/provider subject, atau bukti persetujuan legal.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini mengambil daftar akun member pada menu User Management dengan pencarian, filter status, dan pagination. Kontrak mengikuti field UI user (`name`, `username`, `email`, `status`, `joinedAt`) dan membatasi hasil ke `USER_ACCOUNT`; akun admin serta role admin dikelola melalui Admin Management/RBAC terpisah. PII yang dikembalikan dibatasi pada field yang ditampilkan UI.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini menghapus akun member dari penggunaan aktif Admin Dashboard dengan soft delete berdasarkan `userId`. Service menandai akun terhapus dan menonaktifkan identity/session agar user tidak dapat login; order, pembayaran, dan riwayat audit tetap tersimpan. Penghapusan akun admin berada di Admin Management, sedangkan retensi atau anonymisasi PII mengikuti kebijakan privacy yang belum ditetapkan.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

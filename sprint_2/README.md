@@ -25,7 +25,5 @@ This sprint contains 22 story documents: catalog/settings/audit stories, support
 
 - [Sprint 2 BRD](./BRD.md)
 - [Sprint 2 AC index](./acceptance-criteria/README.md)
-- [Cross-sprint AC and route index](../sprint_1/acceptance-criteria/portfolio-index.md)
 - [Sprint 2 solutioning](./solutioning/README.md)
-- [Portfolio source evidence](../sprint_1/solutioning/source-inventory/README.md)
 - [Sprint 2 glossary](./GLOSSARY.md)

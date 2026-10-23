@@ -360,7 +360,6 @@ All 40 routes below are source registered; linked target IFAs are separate propo
 
 ## References
 
-- `route-service-inventory.md`
 - `../dashboard/QUESTION.md`
 - `../../../../go-game-service-platform/internal/controller/http/admin_game_http.go`
 - `../../../../go-game-service-platform/internal/controller/http/admin_catalog_http.go`

@@ -7,7 +7,7 @@
 
 ## Design
 
-Tujuan fitur ini adalah memberi administrator kemampuan menambahkan game ke katalog melalui Admin Dashboard. Administrator mengisi form game baru, lalu dashboard menyimpan data melalui Game Catalog API dan menampilkan hasilnya. Belum ada layar Games management atau kebutuhan Games yang terisi dalam BRD, sehingga field katalog di bawah masih berupa usulan. Referensi field kartu storefront: `src/features/HomeV2/views/interfaces/homeV2.interface.ts`.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 
@@ -154,8 +154,6 @@ None.
 9. Validation failures return HTTP 400 and `data: null`. Database failures return HTTP 500 and do not expose internal details.
 
 ## Response Body
-
-Every response uses `status` and `data`. Successful creation returns the persisted catalog record. Errors return `data: null`.
 
 | Attribute                  | E/N/T | Type               | M/O/C | Max Length | Description                                                       | Example                |
 | -------------------------- | ----- | ------------------ | ----- | ---------: | ----------------------------------------------------------------- | ---------------------- |

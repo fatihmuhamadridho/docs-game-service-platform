@@ -177,7 +177,6 @@ Target template envelope, not current Go wire: `{"status":{"code":"SETS00000","m
 
 ## References
 
-- [Backend Go QUESTION.md](../../../sprint_1/solutioning/source-inventory/backend-go/QUESTION.md)
 - [Public catalog QUESTION.md](../public/catalog/QUESTION.md)
 - `../public/services/get-list-services-by-game.md`
 - `../../../../go-game-service-platform/internal/controller/http/catalog_http.go`

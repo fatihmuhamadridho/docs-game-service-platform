@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini membuat akun administrator dan menetapkan satu atau lebih role RBAC pada akun tersebut. Pembuatan admin dipisahkan dari `POST /api/admin/users/v1/create` yang hanya membuat `MEMBER`. API memvalidasi kewenangan pemanggil untuk membuat akun admin dan mendelegasikan setiap role, lalu membuat akun, assignment role, invitation, dan audit secara konsisten. Admin baru tidak mengirim password melalui API; provisioning credential dilakukan oleh identity provider melalui invitation. Model `ADMIN_ACCOUNT`, role assignment, invitation, dan transaksi lintas identity provider belum dikonfirmasi pada ERD, sehingga pola provisioning dan kompensasi perlu disepakati sebelum implementasi.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

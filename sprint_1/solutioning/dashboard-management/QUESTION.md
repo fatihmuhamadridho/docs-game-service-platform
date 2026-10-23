@@ -6,7 +6,7 @@ Current Go behavior is documented in [the dashboard source IFA](../../../sprint_
 
 - **Question:** Which configured identity/email provider and rollout condition should enable account invitation for `POST /api/admin/admin-users/v1/create`?
 - **Evidence gap:** Handler requires Super Admin and `settings-manage`; controller validates unique identity then returns HTTP 503 `USRT02001` because identity-provider invitation is unavailable. No provider configuration/availability evidence in Go.
-- **Affected routes/docs:** `POST /api/admin/admin-users/v1/create`; [create admin user IFA](../dashboard/users/create-admin-user.md), [admin account IFA](../backend-go/admin-account-ifa.md), [source IFA](../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md).
+- **Affected routes/docs:** `POST /api/admin/admin-users/v1/create`; [create admin user IFA](../dashboard/users/create-admin-user.md), [admin account IFA](../dashboard/users/admin-account-management.md), [source IFA](../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md).
 - **Decision owner:** Identity/platform owner.
 - **Impact:** Account creation cannot succeed until provisioning dependency and failure/retry behavior are selected.
 
@@ -14,7 +14,7 @@ Current Go behavior is documented in [the dashboard source IFA](../../../sprint_
 
 - **Question:** Approve the implemented permission checks (`catalog-manage`, `users-manage`, `settings-manage`, `orders-manage`, `finance-read`, `dashboard-read`), with Super Admin bypass and Super Admin-only role assignment?
 - **Evidence gap:** Checks are explicit in handlers/controllers; no signed-off permission matrix or admin-role AC was located as source for the target policy.
-- **Affected routes/docs:** All 40 admin routes; [role management IFA](../dashboard/accounts-roles/update-role.md), [admin account IFA](../backend-go/admin-account-ifa.md), [dashboard source IFA](../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md).
+- **Affected routes/docs:** All 40 admin routes; [role management IFA](../dashboard/accounts-roles/update-role.md), [admin account IFA](../dashboard/users/admin-account-management.md), [dashboard source IFA](../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md).
 - **Decision owner:** Security/product owner.
 - **Impact:** Authorization matrix, UI affordances, and regression/security testing.
 
@@ -30,6 +30,6 @@ Current Go behavior is documented in [the dashboard source IFA](../../../sprint_
 
 - **Question:** What availability, concurrency, resource, and latency targets should be used for the 40 dashboard routes, and which routes require a separate target tier?
 - **Evidence gap:** Current Go handlers/controllers and Mongo repositories define synchronous behavior, but no approved SLA/SLO, production workload profile, measured latency, or NFT result was supplied. Source code cannot establish capacity targets.
-- **Affected routes/docs:** All 40 dashboard routes; [dashboard source IFA](../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md), [route inventory](../source-inventory/backend-go/route-service-inventory.md).
+- **Affected routes/docs:** All 40 dashboard routes; [dashboard source IFA](../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md).
 - **Decision owner:** Platform/SRE owner.
 - **Impact:** NFT acceptance thresholds, capacity planning, and release readiness.

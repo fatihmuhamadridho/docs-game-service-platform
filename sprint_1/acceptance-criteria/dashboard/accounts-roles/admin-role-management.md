@@ -16,11 +16,13 @@
 > **Then :**
 >
 > 1. Allowed changes follow approved least privilege; protected roles and unauthorized delegation cannot be changed
+> 2. Invalid input or missing permission rejects the action; protected data remains unchanged and is not disclosed
 
 ## Technical Flow
 
 1. authorized administrator: Administrator views or changes roles/permissions.
 2. System: Allowed changes follow approved least privilege; protected roles and unauthorized delegation cannot be changed.
+3. System: Invalid input or missing permission rejects the action; protected data remains unchanged and is not disclosed.
 
 ## Parameters
 

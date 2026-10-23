@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini menghapus satu definisi role dari Admin Dashboard berdasarkan `roleId`. Usulan kontrak menggunakan soft delete supaya jejak otorisasi dapat dipertahankan; kolom dan kebijakan lifecycle belum tersedia pada ERD. Penghapusan role yang masih di-assign ke akun harus ditolak sampai model assignment dan kebijakan migrasi role pengganti ditetapkan. Tidak ada cascade ke akun atau permission.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

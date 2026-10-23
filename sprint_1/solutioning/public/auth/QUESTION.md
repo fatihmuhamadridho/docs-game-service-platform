@@ -1,12 +1,12 @@
 # Public Authentication — Open Contract Decisions
 
-Current Go implementation evidence is in [auth source audit](source-audit-2026-10-23.md) and [auth handling baseline](../../auth-user-handling.md). Proposals below remain separate from implemented behavior.
+Current Go implementation evidence is in [auth source audit](source-audit-2026-10-23.md). Proposals below remain separate from implemented behavior.
 
 ## Q1 — Is immediate account activation and session creation the onboarding target?
 
 - **Question:** Should customer registration retain current immediate account/session creation, or require email/WhatsApp verification before sign-in?
 - **Evidence gap:** Go registration is feature-gated; when enabled it creates the account and session immediately, sets access/refresh cookies, and sends no verification message. The registration IFA proposes verification and no immediate session. No approved lifecycle decision found.
-- **Affected routes/docs:** `POST /api/auth/v1/register`; [registration IFA](register.md), [auth handling baseline](../../auth-user-handling.md), source audit.
+- **Affected routes/docs:** `POST /api/auth/v1/register`; [registration IFA](register.md), source audit.
 - **Decision owner:** Product/identity owner.
 - **Impact:** Registration response, session state, verification/resend endpoints, notification integration, and release criteria.
 
@@ -33,3 +33,11 @@ Current Go implementation evidence is in [auth source audit](source-audit-2026-1
 - **Affected routes/docs:** All auth routes; source audit and auth IFAs.
 - **Decision owner:** Security owner.
 - **Impact:** Abuse protection, availability, and client retry behavior.
+
+## Q5 — Should Go API response envelopes be standardized across route families?
+
+- **Question:** Should route families using `{code,message,data}` move to the nested `{status:{code,message},data}` envelope already used by auth and public catalog, or should both formats remain supported in v1?
+- **Evidence gap:** Current Go handlers expose both formats. IFAs use the nested target envelope, but no API-wide migration or compatibility decision is recorded.
+- **Affected routes/docs:** Auth, admin, order/payment, and public catalog APIs; [auth source audit](source-audit-2026-10-23.md), [admin source IFA](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md), [order/payment source IFA](../../../../sprint_3/solutioning/backend-go/order-payment-ifa.md), and [public catalog source audit](../../../../sprint_2/solutioning/public/catalog/source-audit-2026-10-23.md).
+- **Decision owner:** API owner.
+- **Impact:** Client parsing, error handling, examples, and backward compatibility if changed in v1.

@@ -24,7 +24,6 @@ Total: 41 AC story documents (7 + 22 + 12). The payment-report story contains mu
 ## Traceability
 
 - [Sprint 1 BRD](./sprint_1/BRD.md) · [Sprint 2 BRD](./sprint_2/BRD.md) · [Sprint 3 BRD](./sprint_3/BRD.md)
-- [Sprint 1–3 AC indexes](./sprint_1/acceptance-criteria/README.md) · [portfolio AC/route index](./sprint_1/acceptance-criteria/portfolio-index.md)
-- [Portfolio Go/Next.js source inventory](./sprint_1/solutioning/source-inventory/README.md)
+- [Sprint 1 AC index](./sprint_1/acceptance-criteria/README.md) · [Sprint 2 AC index](./sprint_2/acceptance-criteria/README.md) · [Sprint 3 AC index](./sprint_3/acceptance-criteria/README.md)
 
 Questions, sizing TBDs, exclusions, and solutioning evidence gaps remain unresolved until their decision owners close them.

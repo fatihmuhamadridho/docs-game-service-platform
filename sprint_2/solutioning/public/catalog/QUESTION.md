@@ -33,3 +33,11 @@ Current Go implementation evidence is in [catalog source audit](source-audit-202
 - **Affected routes/docs:** Public games list/popular, service categories, canonical/alternate services-by-game; source audit and catalog IFAs.
 - **Decision owner:** API owner.
 - **Impact:** Client compatibility, typo handling, and route alias equivalence.
+
+## Q5 — Should the alternate services-by-game route remain supported?
+
+- **Question:** Should `GET /api/services/v1/games/{gameSlug}` remain a supported alias alongside canonical `GET /api/games/v1/{gameSlug}/services`?
+- **Evidence gap:** Both handlers are registered, but their query behavior differs and no deprecation or consumer decision is recorded.
+- **Affected routes/docs:** Both routes; [public catalog extensions IFA](../../backend-go/public-catalog-extensions-ifa.md), [services-by-game IFA](../services/get-list-services-by-game.md), and [catalog source audit](source-audit-2026-10-23.md).
+- **Decision owner:** API/catalog owner.
+- **Impact:** Route compatibility, query policy, and maintenance of the alternate handler.

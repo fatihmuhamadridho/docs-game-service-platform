@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini memperbarui record game yang sudah ada di katalog melalui Admin Dashboard. Dashboard mengirim hanya field yang berubah; API memvalidasi hak akses, keberadaan game, keunikan `name`/`slug`, dan konsistensi status aktif-populer sebelum menyimpan perubahan. Field katalog mengikuti [Create Game](create-game.md) dan skema usulan pada [Game ERD](../../erd/game-catalog-erd.md). Belum ada kebutuhan Games yang terisi dalam BRD, sehingga kontrak ini merupakan usulan.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

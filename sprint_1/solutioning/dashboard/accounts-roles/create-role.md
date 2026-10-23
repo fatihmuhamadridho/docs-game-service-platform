@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini membuat definisi role baru beserta permission awal. Dashboard mengirim metadata role dan daftar permission; API memvalidasi akses admin, format, keunikan nama/kode, serta kewenangan delegasi permission sebelum menyimpan role, relasi permission, dan audit secara atomik. Model RBAC, permission catalog, dan assignment akun-role belum ditetapkan dalam ERD; kontrak dan policy terkait masih perlu dikonfirmasi sebelum implementasi.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

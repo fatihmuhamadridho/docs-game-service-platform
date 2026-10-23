@@ -2,7 +2,7 @@
 
 > **Status:** Proposed priority sequence; not a delivery commitment or scope approval.  
 > **Sprint:** 1  
-> **Source:** Requirement IDs remain portfolio identifiers. See [portfolio sequence](../SPRINT-PLAN.md) and [AC crosswalk](./acceptance-criteria/portfolio-index.md).
+> **Source:** Requirement IDs remain portfolio identifiers. See [portfolio sequence](../SPRINT-PLAN.md) and the [Sprint 1 AC index](./acceptance-criteria/README.md).
 
 ## 1. Project Overview
 
@@ -20,7 +20,7 @@ Estimates, owners, policy, targets, and dates remain **TBD**.
 
 ### Prerequisite
 
-Verify current admin login/session and authorization behavior. [AC-SHR-022](./acceptance-criteria/shared/shared-authorization-validation.md) is the shared authorization/input-validation foundation. If a new admin identity or RBAC implementation is required, protected work is gated pending explicit scope and policy approval.
+Verify current admin login/session and authorization behavior. BR-023 requires protected admin actions to reject invalid input or missing permission without changing or disclosing protected data; this criterion is included in each affected admin feature AC. If a new admin identity or RBAC implementation is required, protected work is gated pending explicit scope and policy approval.
 
 ### Proposed delivery order
 

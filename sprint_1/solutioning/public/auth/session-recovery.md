@@ -222,7 +222,5 @@ Proposed template target (not current Go wire):
 
 ## References
 
-- [Backend Go QUESTION.md](../source-inventory/backend-go/QUESTION.md)
-- [Public auth QUESTION.md](../public/auth/QUESTION.md)
-- `../auth-user-handling.md`
-- `../../../../go-game-service-platform/internal/controller/http/auth_http.go`
+- [Public auth QUESTION.md](QUESTION.md)
+- `../../../../../go-game-service-platform/internal/controller/http/auth_http.go`

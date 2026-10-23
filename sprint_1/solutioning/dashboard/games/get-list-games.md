@@ -7,7 +7,7 @@
 
 ## Design
 
-Tujuan fitur ini adalah memberi administrator akses melihat dan mengelola daftar game katalog dari Admin Dashboard. Daftar mendukung pencarian, filter status, dan pagination agar administrator dapat menemukan data yang perlu dikelola. Belum ada layar Games management atau kebutuhan Games yang terisi dalam BRD; perilaku tabel dan field mengikuti usulan pada [Create Game](create-game.md).
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 

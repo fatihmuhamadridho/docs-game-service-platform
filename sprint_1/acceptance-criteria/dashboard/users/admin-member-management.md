@@ -16,11 +16,13 @@
 > **Then :**
 >
 > 1. Allowed member action is applied; it cannot grant administrative access implicitly
+> 2. Invalid input or missing permission rejects the action; protected data remains unchanged and is not disclosed
 
 ## Technical Flow
 
 1. authorized administrator: Administrator creates, views, updates, or removes a member.
 2. System: Allowed member action is applied; it cannot grant administrative access implicitly.
+3. System: Invalid input or missing permission rejects the action; protected data remains unchanged and is not disclosed.
 
 ## Parameters
 

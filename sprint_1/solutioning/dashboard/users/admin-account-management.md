@@ -222,7 +222,6 @@ Current Go wire envelope: `{code,message,data?}`. List, detail/update, and deact
 
 ## References
 
-- [Backend Go QUESTION.md](../source-inventory/backend-go/QUESTION.md)
-- [Dashboard QUESTION.md](../dashboard-management/QUESTION.md)
-- `../auth-user-handling.md`
-- `../../../../go-game-service-platform/internal/controller/http/admin_access_http.go`
+- [Dashboard QUESTION.md](../../dashboard-management/QUESTION.md)
+- [Admin authentication and sessions](../../public/auth/session-recovery.md)
+- `../../../../../go-game-service-platform/internal/controller/http/admin_access_http.go`

@@ -353,7 +353,6 @@ See [checkout open contract decisions](QUESTION.md) for target-state and idempot
 
 - `QUESTION.md` — unresolved current-vs-target checkout decisions.
 - `../../backend-go/order-payment-ifa.md` — current Go source behavior.
-- `../../backend-go/implementation-alignment.md` — frontend/Go integration evidence.
 - `src/app/order/[gameSlug]/page.tsx` — dynamic game slug route.
 - `src/features/Checkout/views/pages/Checkout.page.tsx` — selected game/service, quantity, and simulated continue action.
 - `src/features/Checkout/views/organisms/OrderSummary.organism.tsx` — `Lanjut Pembayaran` CTA and order summary.

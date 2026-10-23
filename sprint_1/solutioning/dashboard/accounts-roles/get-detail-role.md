@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini mengambil satu role berdasarkan `roleId` untuk ditampilkan pada halaman detail atau form edit Admin Dashboard. Response mengikuti usulan field pada [Get List Roles](get-list-roles.md), dengan metadata role dan permission yang boleh dilihat oleh administrator pemanggil. Model akun, role, permission, serta relasinya belum didefinisikan pada ERD atau solutioning sprint ini; field status dan aturan visibilitas harus diselaraskan dengan model RBAC yang disetujui.
+![Design reference](./__assets__/[design-file])
 
 ## Sequence Diagram
 
