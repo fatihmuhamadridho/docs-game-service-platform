@@ -98,7 +98,7 @@ sequenceDiagram
 
 1. Hanya administrator terautentikasi dengan izin role-delete yang dapat menghapus role. Pemetaan role/permission dan identity provider TBD.
 2. Operasi yang diusulkan adalah soft delete. Service mengisi `deleted_at` dan memperbarui `updated_at` dalam satu transaksi; field `deleted_at` belum ada pada model/ERD dan harus disetujui sebelum implementasi.
-3. Role system/built-in atau role yang ditetapkan sebagai protected tidak dapat dihapus. Penanda protected dan daftar role bawaan perlu ditetapkan oleh pemilik identity/RBAC.
+3. `SUPER_ADMIN` (`Super Admin`) adalah satu-satunya role hasil seed Sprint 1, ditandai `is_system=true`, dan tidak dapat dihapus oleh endpoint ini. Setiap upaya menghapusnya ditolak dengan `ROLB02005`. Role lain yang dibuat secara eksplisit setelah bootstrap mengikuti aturan delete custom role.
 4. Role dengan assignment akun aktif tidak dapat dihapus. Admin harus terlebih dahulu mencabut assignment atau memindahkan akun ke role lain melalui proses yang disetujui. Kebijakan ini mencegah hilangnya otorisasi tanpa pengganti.
 5. API tidak menghapus akun, permission catalog, atau riwayat assignment. Tidak ada cascade delete.
 6. `roleId` yang tidak ditemukan atau sudah dihapus mengembalikan `ROLB02004`. Pengulangan request setelah penghapusan tidak mengubah data dan menghasilkan status tidak ditemukan; retry dianggap aman tanpa efek tambahan.
@@ -231,7 +231,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - Path `/api/admin/roles/v1/delete/{roleId}`, HTTP `DELETE`, response envelope, prefix `ROL`, serta kode status mengikuti pola solutioning admin; API owner perlu menyetujui.
 - Model role dan role-account assignment belum tersedia di ERD. Pemeriksaan assignment aktif dan proteksi built-in merupakan syarat desain; relasi/tabel pendukung harus dirancang sebelum implementasi.
 - `ROLB02005` dan `ROLB02006` adalah kode usulan untuk kasus protected role dan assignment aktif.
-- Format `roleId`, identity provider, permission name, protected-role registry, audit storage/retention, restore policy, SLA, dan HTTP status mapping masih TBD.
+- Format `roleId`, identity provider, permission name, audit storage/retention, restore policy, SLA, dan HTTP status mapping masih TBD. Identitas `SUPER_ADMIN` dan perlindungan delete-nya sudah ditetapkan.
 - Cakupan hanya menghapus definisi role; penghapusan permission catalog, pencabutan assignment akun otomatis, hard delete, dan pemindahan akun ke role pengganti tidak termasuk.
 
 ## References

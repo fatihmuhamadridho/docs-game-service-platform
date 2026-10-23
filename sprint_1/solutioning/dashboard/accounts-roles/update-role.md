@@ -81,7 +81,7 @@ sequenceDiagram
 | Request Verb       | PUT                                                                                                                                                                                                          |
 | Content Type       | `application/json`                                                                                                                                                                                           |
 | Interaction Type   | Synchronous                                                                                                                                                                                                  |
-| Security Policy    | Admin authentication dan izin role-update. Identity provider, permission name, protected-role policy, dan permission delegation policy TBD. Terapkan least privilege, rate limiting, serta audit aktor/aksi. |
+| Security Policy    | Hanya Super Admin terautentikasi dapat mengubah custom role. `SUPER_ADMIN` adalah role sistem immutable; semua perubahan ditolak. Terapkan rate limiting dan audit aktor/aksi. |
 
 ### Path / Endpoint
 
@@ -110,7 +110,7 @@ sequenceDiagram
 4. Minimal satu field mutable wajib dikirim. Field immutable seperti `id`, `createdAt`, dan `updatedAt` tidak boleh dikirim.
 5. `name` yang dinormalisasi trim dan case-insensitive harus unik selain terhadap role yang sedang diperbarui. `code` uppercase harus unik selain terhadap role yang sama.
 6. Jika `permissions` dikirim, seluruh daftar diganti secara atomik. Semua ID harus terdaftar, unik, dan dapat didelegasikan oleh pemanggil. Permission yang tidak dikirim tetap tidak berubah.
-7. Role system/built-in atau role protected tidak dapat diperbarui melalui API ini, kecuali perubahan field tertentu secara eksplisit diizinkan oleh policy; policy tersebut TBD.
+7. `SUPER_ADMIN` (`Super Admin`) adalah satu-satunya role hasil seed Sprint 1, ditandai `is_system=true`, dan tidak dapat diubah melalui endpoint ini. Semua field, termasuk status, permission, nama, dan deskripsi, immutable. Setiap upaya mengubahnya ditolak dengan `ROLB02005`.
 8. Perubahan status ke `INACTIVE` harus ditolak bila role masih dipakai akun aktif, kecuali ada alur migrasi/reassignment yang telah disetujui. Model assignment belum tersedia; aturan ini merupakan dependency implementasi.
 9. Perubahan permission atau status harus memicu invalidasi cache/otorisasi atau mekanisme refresh hak akses sesuai desain identity system. Strategi propagasi dan batas waktu konsistensi TBD.
 10. Seluruh perubahan metadata, relasi permission, dan audit harus atomik. Jika satu validasi gagal, tidak ada perubahan parsial.
@@ -185,6 +185,7 @@ None.
 | `data.role.code`        | N     | String             | C     |         50 | Kode role tersimpan.                                  | `SENIOR_SUPPORT_AGENT`          |
 | `data.role.description` | N     | String/null        | O     |        500 | Deskripsi role tersimpan.                             | `Menangani eskalasi pelanggan.` |
 | `data.role.status`      | N     | String             | C     |         20 | Status role tersimpan.                                | `ACTIVE`                        |
+| `data.role.isSystem`    | N     | Boolean            | M     |          — | `false` untuk custom role yang dapat diubah melalui endpoint ini. | `false`                  |
 | `data.role.permissions` | N     | Array of String    | C     |  100 items | Permission IDs tersimpan dan dapat dilihat pemanggil. | `["admin.orders.read"]`         |
 | `data.role.createdAt`   | N     | String (date-time) | C     |         35 | Waktu pembuatan ISO 8601 UTC; tidak berubah.          | `2026-10-11T09:45:00Z`          |
 | `data.role.updatedAt`   | N     | String (date-time) | C     |         35 | Waktu update terbaru ISO 8601 UTC.                    | `2026-10-11T10:15:00Z`          |
@@ -204,6 +205,7 @@ None.
       "code": "SENIOR_SUPPORT_AGENT",
       "description": "Menangani eskalasi pelanggan.",
       "status": "ACTIVE",
+      "isSystem": false,
       "permissions": ["admin.orders.read", "admin.complaints.read", "admin.complaints.update"],
       "createdAt": "2026-10-11T09:45:00Z",
       "updatedAt": "2026-10-11T10:15:00Z"
@@ -283,9 +285,9 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 ## Assumptions
 
 - Request/response fields and service codes remain proposal except validations verified above; target envelope needs API owner decision against current Go envelope.
-- `status`, field `permissions`, serta protected-role behavior belum didukung ERD/model role terkonfirmasi. Selaraskan kontrak dengan model RBAC yang disetujui sebelum implementasi.
+- Custom role `status` dan `permissions` mengikuti model role; `SUPER_ADMIN` immutable sesuai ERD dan tidak dapat diubah.
 - Field `permissions` mengganti seluruh permission role saat dikirim; perilaku merge/incremental update tidak didukung oleh kontrak ini.
-- Penolakan perubahan role aktif yang masih memiliki assignment, policy role system, cache invalidation, delegated-permission rules, dan optimistic locking bergantung keputusan IAM/security owner.
+- Penolakan perubahan role aktif yang masih memiliki assignment, cache invalidation, delegated-permission rules, dan optimistic locking bergantung keputusan IAM/security owner. Perlindungan `SUPER_ADMIN` sudah menjadi aturan target.
 - Identity provider, ID generation, permission catalog, audit storage/retention, SLA, dan HTTP status mapping masih TBD.
 - Cakupan hanya memperbarui definisi role; assignment akun, create/list/detail/delete, dan CRUD permission catalog berada di luar API ini.
 

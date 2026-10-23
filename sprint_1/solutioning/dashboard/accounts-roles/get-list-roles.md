@@ -82,7 +82,7 @@ sequenceDiagram
 ## Business Rules
 
 1. Hanya administrator terautentikasi dengan izin role-read yang dapat mengakses endpoint. Pemetaan role/permission dan identity provider TBD.
-2. API mengembalikan role yang masih tersedia untuk administrasi. Apakah role nonaktif atau role system/built-in harus ditampilkan dan bagaimana penandaannya perlu ditetapkan dalam model role.
+2. Pada seed awal Sprint 1, hasil hanya memuat satu role aktif `SUPER_ADMIN` (`Super Admin`) dengan `isSystem=true`. Role ini selalu ditampilkan dan tidak dapat dihapus. Custom roles hanya muncul setelah dibuat eksplisit.
 3. Pencarian mencocokkan `name` atau `code` secara case-insensitive setelah trim. Pencarian permission tidak termasuk dalam kontrak ini.
 4. Filter `status` hanya menerima nilai yang disepakati oleh model role. Nilai awal yang diusulkan `ACTIVE` dan `INACTIVE`; status tersebut belum dikonfirmasi oleh ERD.
 5. Hasil diurutkan secara deterministik berdasarkan `name` ascending, lalu `id` ascending sebagai tie-breaker.
@@ -141,7 +141,8 @@ Tidak ada request body.
 | `data.roles[].name`          | N     | String             | M     |              100 | Nama tampilan role.                                                | `Support Agent`                   |
 | `data.roles[].code`          | N     | String             | M     |               50 | Kode role unik.                                                    | `SUPPORT_AGENT`                   |
 | `data.roles[].description`   | N     | String/null        | O     |              500 | Deskripsi role.                                                    | `Menangani pertanyaan pelanggan.` |
-| `data.roles[].status`        | N     | String             | C     |               20 | Status role; nama status menunggu keputusan model.                 | `ACTIVE`                          |
+| `data.roles[].status`        | N     | String             | C     |               20 | Status role (`ACTIVE`/`INACTIVE`); initial Super Admin is `ACTIVE`. | `ACTIVE`                          |
+| `data.roles[].isSystem`      | N     | Boolean            | M     |                — | `true` untuk seeded `SUPER_ADMIN`; penanda bahwa role immutable.   | `true`                            |
 | `data.roles[].permissions`   | N     | Array of String    | M     |        100 items | ID permission yang dapat dilihat pemanggil.                        | `["admin.orders.read"]`           |
 | `data.roles[].createdAt`     | N     | String (date-time) | M     |               35 | Waktu pembuatan ISO 8601 UTC.                                      | `2026-10-11T09:45:00Z`            |
 | `data.roles[].updatedAt`     | N     | String (date-time) | M     |               35 | Waktu perubahan terakhir ISO 8601 UTC.                             | `2026-10-11T09:45:00Z`            |
@@ -163,11 +164,12 @@ Tidak ada request body.
     "roles": [
       {
         "id": "role_01JXYZ",
-        "name": "Support Agent",
-        "code": "SUPPORT_AGENT",
-        "description": "Menangani pertanyaan pelanggan.",
+        "name": "Super Admin",
+        "code": "SUPER_ADMIN",
+        "description": "Role system dengan akses ke seluruh fungsi admin.",
         "status": "ACTIVE",
-        "permissions": ["admin.orders.read", "admin.complaints.read"],
+        "isSystem": true,
+        "permissions": ["catalog-manage", "users-manage", "settings-manage", "orders-manage", "finance-read", "dashboard-read"],
         "createdAt": "2026-10-11T09:45:00Z",
         "updatedAt": "2026-10-11T09:45:00Z"
       }
@@ -243,7 +245,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 - Endpoint `/api/admin/roles/v1/list`, query parameters, response envelope, prefix `ROL`, dan kode status adalah usulan mengikuti pola API admin project; perlu persetujuan API owner.
 - Field `status`, permission IDs, dan timestamps mengikuti usulan create-role contract, tetapi belum ada role ERD atau model yang dikonfirmasi. Hapus/ubah field agar cocok dengan model yang disetujui sebelum implementasi.
-- Nilai status `ACTIVE`/`INACTIVE`, ukuran halaman default `20`, maksimum `100`, search behavior, sort order, serta penyertaan role system/built-in masih TBD.
+- Nilai status custom role `ACTIVE`/`INACTIVE`, ukuran halaman default `20`, maksimum `100`, search behavior, dan sort order masih TBD. `SUPER_ADMIN` wajib disertakan dan `isSystem=true`.
 - Permission filtering/redaction harus mengikuti prinsip least privilege. Definisi permission sensitif dan apakah semua permission IDs boleh dilihat administrator pemanggil belum diputuskan.
 - Identity provider, nama permission role-read, schema identity/authorization, audit policy, SLA, dan HTTP status mapping masih TBD.
 - Cakupan hanya daftar role; detail, create, update, delete, dan assignment role ke akun berada di API terpisah.

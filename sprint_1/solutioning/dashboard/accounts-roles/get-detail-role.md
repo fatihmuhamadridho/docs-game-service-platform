@@ -91,7 +91,7 @@ sequenceDiagram
 4. Permission yang dikembalikan dibatasi pada permission yang berhak dilihat pemanggil. Permission sensitif tidak boleh bocor melalui response; aturan delegasi dan redaksi TBD.
 5. Jika role tidak ditemukan, tidak aktif/tidak tersedia, atau tidak boleh diungkap kepada pemanggil, API mengembalikan `ROLB02004` tanpa membedakan keadaan yang dapat menyebabkan enumerasi data.
 6. API hanya membaca data. Perubahan role dan permission dilakukan melalui endpoint update terpisah.
-7. Role system/built-in dapat memiliki atribut atau aturan tambahan; apakah detailnya dapat diakses dan field apa yang ditampilkan TBD.
+7. Detail `SUPER_ADMIN` dapat dibaca oleh pemanggil yang berwenang dan menandai `isSystem=true`. Role tetap immutable; detail read tidak membuka operasi perubahan.
 8. Cache detail, bila digunakan, harus diinvalidate ketika role atau permission berubah. Strategi cache belum ditentukan.
 
 ## Request Headers
@@ -137,7 +137,8 @@ Tidak ada request body.
 | `data.role.name`        | N     | String             | C     |        100 | Nama tampilan role.                                | `Support Agent`                   |
 | `data.role.code`        | N     | String             | C     |         50 | Kode role unik.                                    | `SUPPORT_AGENT`                   |
 | `data.role.description` | N     | String/null        | O     |        500 | Deskripsi role.                                    | `Menangani pertanyaan pelanggan.` |
-| `data.role.status`      | N     | String             | C     |         20 | Status role; nama status menunggu keputusan model. | `ACTIVE`                          |
+| `data.role.status`      | N     | String             | C     |         20 | Status role (`ACTIVE`/`INACTIVE`); Super Admin selalu `ACTIVE`. | `ACTIVE`                          |
+| `data.role.isSystem`    | N     | Boolean            | M     |          — | `true` untuk seeded `SUPER_ADMIN`; role immutable.               | `true`                            |
 | `data.role.permissions` | N     | Array of String    | C     |  100 items | ID permission yang dapat dilihat pemanggil.        | `["admin.orders.read"]`           |
 | `data.role.createdAt`   | N     | String (date-time) | C     |         35 | Waktu pembuatan ISO 8601 UTC.                      | `2026-10-11T09:45:00Z`            |
 | `data.role.updatedAt`   | N     | String (date-time) | C     |         35 | Waktu perubahan terakhir ISO 8601 UTC.             | `2026-10-11T10:00:00Z`            |
@@ -153,11 +154,12 @@ Tidak ada request body.
   "data": {
     "role": {
       "id": "role_01JXYZ",
-      "name": "Support Agent",
-      "code": "SUPPORT_AGENT",
-      "description": "Menangani pertanyaan pelanggan.",
+      "name": "Super Admin",
+      "code": "SUPER_ADMIN",
+      "description": "Role system dengan akses ke seluruh fungsi admin.",
       "status": "ACTIVE",
-      "permissions": ["admin.orders.read", "admin.complaints.read"],
+      "isSystem": true,
+      "permissions": ["catalog-manage", "users-manage", "settings-manage", "orders-manage", "finance-read", "dashboard-read"],
       "createdAt": "2026-10-11T09:45:00Z",
       "updatedAt": "2026-10-11T10:00:00Z"
     }
@@ -228,7 +230,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - Endpoint `/api/admin/roles/v1/detail/{roleId}`, nama field, response envelope, prefix `ROL`, dan kode status mengikuti usulan [Get List Roles](get-list-roles.md); perlu persetujuan API owner.
 - Route action-based `/detail/{roleId}` dipilih agar konsisten dengan pola solutioning admin project. Konfirmasi jika API standard memilih resource REST `GET /api/admin/roles/v1/{roleId}`.
 - Model role, field `status`, permission IDs, serta relasi akun-role belum disepakati atau dimodelkan pada ERD. Kontrak ini bersifat usulan sampai model RBAC disetujui.
-- Permission visibility, role system/built-in, format ID, identity provider, permission name, strategi cache, SLA, audit policy, serta pemetaan HTTP untuk authentication/authorization/not-found masih TBD.
+- Permission visibility untuk custom role, format ID, identity provider, permission name, strategi cache, SLA, audit policy, serta pemetaan HTTP untuk authentication/authorization/not-found masih TBD. Detail Super Admin dapat dibaca dan menampilkan `isSystem=true`; role tidak dapat diubah atau dihapus.
 - Cakupan hanya membaca detail role; create, list, update, delete, dan assignment role ke akun berada di endpoint terpisah.
 
 ## References

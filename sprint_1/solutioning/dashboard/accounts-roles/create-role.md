@@ -96,13 +96,13 @@ sequenceDiagram
 
 ## Business Rules
 
-1. Hanya administrator terautentikasi dengan izin role-create yang dapat membuat role. Pemetaan role/permission dan identity provider TBD.
+1. Hanya Super Admin terautentikasi yang dapat membuat custom role. Pada kondisi awal Sprint 1, `SUPER_ADMIN` adalah satu-satunya role hasil seed.
 2. `id`, `createdAt`, dan `updatedAt` dibuat oleh server; klien tidak boleh menetapkan nilai tersebut.
 3. `name` setelah trim dan perbandingan case-insensitive harus unik di antara role yang belum dihapus.
 4. `code` dinormalisasi uppercase dan harus unik di antara role yang belum dihapus.
 5. Role baru berstatus `ACTIVE` jika `status` tidak dikirim. Status awal lain hanya boleh dipakai jika policy mengizinkan; enum status final TBD.
 6. `permissions` merupakan daftar permission ID awal. Semua ID harus terdaftar, unik, dan dapat didelegasikan oleh pemanggil. Daftar kosong diizinkan untuk role tanpa akses.
-7. Klien tidak dapat membuat role system/built-in atau mengatur atribut protected. Registrasi dan policy role protected TBD.
+7. Klien tidak dapat membuat role system/built-in, menggunakan code `SUPER_ADMIN`, atau mengatur atribut protected. Bootstrap Super Admin adalah proses backend/database/script terpisah, bukan endpoint ini.
 8. Request identik yang dikirim ulang dapat membuat duplikat hanya jika business key tidak unik; keunikan `name`/`code` mencegah duplikasi semantik. Dukungan `Idempotency-Key` belum ditetapkan.
 9. Pembuatan metadata, relasi permission, dan audit harus atomik. Jika satu langkah gagal, tidak ada role parsial yang tersimpan.
 10. ID dibuat server menggunakan strategi yang disepakati dan tidak dapat diprediksi; format/strategi ID TBD.
@@ -176,6 +176,7 @@ None.
 | `data.role.code`        | N     | String             | C     |         50 | Kode role tersimpan.                                   | `SENIOR_SUPPORT_AGENT`          |
 | `data.role.description` | N     | String/null        | O     |        500 | Deskripsi role tersimpan.                              | `Menangani eskalasi pelanggan.` |
 | `data.role.status`      | N     | String             | C     |         20 | Status role tersimpan.                                 | `ACTIVE`                        |
+| `data.role.isSystem`    | N     | Boolean            | M     |          — | `false` untuk custom role yang dibuat melalui endpoint ini. | `false`                     |
 | `data.role.permissions` | N     | Array of String    | C     |  100 items | Permission IDs tersimpan dan dapat dilihat pemanggil.  | `[`admin.orders.read`]`         |
 | `data.role.createdAt`   | N     | String (date-time) | C     |         35 | Waktu pembuatan ISO 8601 UTC.                          | `2026-10-12T09:45:00Z`          |
 | `data.role.updatedAt`   | N     | String (date-time) | C     |         35 | Waktu awal update ISO 8601 UTC; sama dengan createdAt. | `2026-10-12T09:45:00Z`          |
@@ -195,6 +196,7 @@ None.
       "code": "SENIOR_SUPPORT_AGENT",
       "description": "Menangani eskalasi pelanggan.",
       "status": "ACTIVE",
+      "isSystem": false,
       "permissions": ["admin.orders.read", "admin.complaints.read"],
       "createdAt": "2026-10-12T09:45:00Z",
       "updatedAt": "2026-10-12T09:45:00Z"

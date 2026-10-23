@@ -18,6 +18,7 @@ Istilah berikut digunakan dalam BRD, acceptance criteria, HLD, ERD, dan solution
 | IFA (Interface/Functional Analysis)  | Dokumen analisis solusi fitur atau API, termasuk alur, kontrak, validasi, response, dan error.                           |
 | Permission                           | Hak untuk melakukan tindakan tertentu pada fitur atau data.                                                              |
 | RBAC (Role-Based Access Control)     | Model kontrol akses yang mengelompokkan permission ke dalam role, lalu memberikan role kepada akun administrator.        |
+| Super Admin                          | Satu-satunya role hasil seed awal Sprint 1; memiliki akses ke seluruh fungsi admin dan tidak dapat diubah atau dihapus.   |
 | Session                              | Keadaan autentikasi yang memungkinkan pengguna melanjutkan akses setelah identitasnya diverifikasi.                      |
 | TBD (To Be Determined)               | Hal yang belum diputuskan atau diketahui dan masih memerlukan tindak lanjut.                                             |
 | Validation                           | Pemeriksaan bahwa input atau tindakan memenuhi format, aturan, dan batas yang ditentukan.                                |
