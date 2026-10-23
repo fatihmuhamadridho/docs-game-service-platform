@@ -126,8 +126,6 @@ Tidak ada request body.
 
 ## Response Body
 
-Semua response menggunakan `status` dan `data`. Penghapusan sukses mengembalikan ID game dan waktu soft delete; error mengembalikan `data: null`.
-
 | Attribute        | E/N/T | Type               | M/O/C | Max Length | Description                             | Example                |
 | ---------------- | ----- | ------------------ | ----- | ---------: | --------------------------------------- | ---------------------- |
 | `status`         | N     | Object             | M     |          — | Object status response.                 | `{}`                   |
@@ -225,7 +223,3 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - `./update-game.md` — pola endpoint update dan status code Game Catalog.
 - `../../erd/game-catalog-erd.md` — skema saat ini belum mendefinisikan soft delete atau relasi layanan/pesanan.
 - `docs-game-service-platform/sprint_1/solutioning/public/games/get-popular-games.md` — consumer storefront yang perlu mengecualikan soft-deleted games.
-
-## Current Go Implementation Alignment
-
-Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../dashboard-management/QUESTION.md).

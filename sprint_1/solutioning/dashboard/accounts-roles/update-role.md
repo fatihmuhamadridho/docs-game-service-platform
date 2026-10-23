@@ -173,8 +173,6 @@ None.
 
 ## Response Body
 
-Semua response menggunakan `status` dan `data`. Sukses mengembalikan snapshot role terbaru; error mengembalikan `data: null`.
-
 | Attribute               | E/N/T | Type               | M/O/C | Max Length | Description                                           | Example                         |
 | ----------------------- | ----- | ------------------ | ----- | ---------: | ----------------------------------------------------- | ------------------------------- |
 | `status`                | N     | Object             | M     |          — | Object status response.                               | `{}`                            |
@@ -298,7 +296,3 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - `./delete-role.md` — protected-role dan assignment checks yang diusulkan.
 - `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — template kontrak API sprint.
 - `src/features/AdminAccountsRoles/` — UI Admin Dashboard akun & role; tidak menyediakan backend contract.
-
-## Current Go Implementation Alignment
-
-Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../dashboard-management/QUESTION.md).
