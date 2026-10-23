@@ -1,0 +1,15 @@
+{
+  "name": "docs-game-service-platform",
+  "version": "0.0.1",
+  "description": "",
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "prettier": "prettier --write",
+    "prettier:all": "prettier --write ."
+  },
+  "dependencies": {
+    "prettier": "^3.9.10"
+  }
+}
