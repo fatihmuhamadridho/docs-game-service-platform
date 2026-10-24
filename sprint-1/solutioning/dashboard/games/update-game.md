@@ -19,7 +19,7 @@ sequenceDiagram
     participant DB as Catalog Database
     Admin->>UI: Buka detail game, ubah field, lalu simpan
     UI->>API: PATCH /api/admin/games/v1/update/{gameId} + kredensial admin + field yang berubah
-    API->>API: Autentikasi dan otorisasi izin katalog
+    API->>API: Autentikasi, izin game.update, dan hak Super Admin untuk status publikasi
     alt Tidak terautentikasi atau tidak berizin
         API-->>UI: 401 GAMB01001 atau 403 GAMB01002, data null
         UI-->>Admin: Tampilkan pesan akses
@@ -32,7 +32,7 @@ sequenceDiagram
             API->>DB: Ambil game berdasarkan gameId
             alt Game tidak ditemukan
                 DB-->>API: Record tidak ada
-                API-->>UI: 400 GAMB02004, data null
+                API-->>UI: 404 GAMB02004, data null
                 UI-->>Admin: Tampilkan bahwa game tidak ditemukan
             else Game ditemukan
                 API->>API: Gabungkan field request dengan nilai tersimpan
@@ -40,21 +40,27 @@ sequenceDiagram
                     API-->>UI: 400 GAMB02003, data null
                     UI-->>Admin: Minta admin sesuaikan status aktif dan populer
                 else State akhir valid
-                    API->>DB: Cek keunikan name/slug/sortOrder selain game ini
-                    alt Name atau slug dipakai game lain
-                        DB-->>API: Konflik name/slug/sortOrder
-                        API-->>UI: 409 GAMB02002, data null
-                        UI-->>Admin: Tampilkan konflik data
-                    else Tidak ada duplikat
-                        API->>DB: Update field yang berubah dan updated_at
-                        alt Penyimpanan berhasil
-                            DB-->>API: Game terbarui
-                            API-->>UI: 200 GAMS00000, data null
-                            UI-->>Admin: Tampilkan konfirmasi berhasil dan muat ulang detail game
-                        else Database gagal
-                            DB-->>API: Kegagalan update
-                            API-->>UI: 500 GAMT03001, data null
-                            UI-->>Admin: Tampilkan kegagalan dan opsi coba lagi
+                    API->>API: Bandingkan state hasil normalisasi dengan record tersimpan
+                    alt Tidak ada perubahan efektif
+                        API-->>UI: 200 GAMS00000, data null tanpa write atau perubahan updatedAt
+                        UI-->>Admin: Tampilkan sukses tanpa perubahan
+                    else Ada perubahan efektif
+                        API->>DB: Cek keunikan name/slug/sortOrder selain game ini
+                        alt Name atau slug dipakai game lain
+                            DB-->>API: Konflik name/slug/sortOrder
+                            API-->>UI: 409 GAMB02002, data null
+                            UI-->>Admin: Tampilkan konflik data
+                        else Tidak ada duplikat
+                            API->>DB: Update field yang berubah dan updated_at
+                            alt Penyimpanan berhasil
+                                DB-->>API: Game terbarui
+                                API-->>UI: 200 GAMS00000, data null
+                                UI-->>Admin: Tampilkan konfirmasi berhasil dan muat ulang detail game
+                            else Database gagal
+                                DB-->>API: Kegagalan update
+                                API-->>UI: 500 GAMT03001, data null
+                                UI-->>Admin: Tampilkan kegagalan dan opsi coba lagi
+                            end
                         end
                     end
                 end
@@ -110,13 +116,13 @@ sequenceDiagram
 3. Request bersifat parsial: field yang tidak dikirim mempertahankan nilai tersimpan; `description` dan `imageUrl` yang dikirim sebagai `null` menghapus nilai opsional tersebut.
 4. Minimal satu field mutable harus dikirim. `createdAt` dan `updatedAt` bukan field mutable yang diterima dari consumer.
 5. `name` setelah trim dan normalisasi harus unik dibandingkan game lain. `slug` harus unik dibandingkan game lain. Record yang sedang diperbarui dikecualikan dari pemeriksaan duplikasi.
-6. `isPopular=true` hanya berlaku bila hasil akhir `isActive=true`. Bila game populer dinonaktifkan, consumer harus sekaligus mengirim `isPopular=false`; API menolak state akhir yang tidak konsisten.
+6. Hanya Super Admin yang dapat mengubah `isActive` atau `isPopular`; pemanggil lain yang mengirim salah satu field tersebut ditolak dengan `GAMB01002`. State akhir harus memenuhi `isPopular=true` hanya jika `isActive=true`; perubahan non-Super Admin pada field katalog lain tetap mengikuti permission `game.update`.
 7. sortOrder tidak boleh negatif dan harus unik di antara seluruh game tersimpan, termasuk game tidak aktif dan soft-deleted. Nilai yang tidak dikirim tetap.
 8. `imageUrl`, bila dikirim, harus berupa URL HTTPS absolut; host tidak dibatasi. Nilai `null` ditolak karena URL gambar wajib.
-9. `updatedAt` dibuat oleh service dalam UTC pada setiap update sukses. `createdAt` tidak berubah.
+9. `updatedAt` dibuat oleh service dalam UTC hanya bila nilai efektif berubah; request no-op tetap sukses tanpa write dan tanpa mengubah `updatedAt`. `createdAt` tidak berubah.
 10. Sprint 1 tidak mencatat audit event sesuai keputusan BRD.
 11. API mengembalikan `data: null` setelah update berhasil. UI memuat ulang detail game untuk mengambil nilai terbaru. Bila satu validasi gagal, tidak ada field yang disimpan; operasi bersifat atomik.
-12. Sprint 1 tidak memakai optimistic locking (`ETag`, `If-Match`, atau version field); concurrent update memakai last-write-wins dan perubahan terakhir memperbarui `updatedAt`.
+12. Sprint 1 tidak memakai optimistic locking (`ETag`, `If-Match`, atau version field); concurrent perubahan efektif memakai last-write-wins dan update yang mengubah state memperbarui `updatedAt`.
 
 ## Request Headers
 
@@ -218,31 +224,31 @@ sequenceDiagram
 
 ## HTTP Status Codes
 
-| HTTP Status | Usage                                                                                         |
-| ----------- | --------------------------------------------------------------------------------------------- |
-| `200`       | Game berhasil diperbarui; `data` bernilai `null`.                                             |
-| `400`       | Payload tidak valid.                                                                          |
-| `401`       | Admin belum terautentikasi atau session tidak valid.                                          |
-| `403`       | Admin tidak memiliki permission `game.update`, Origin tidak diizinkan, atau CSRF tidak valid. |
-| `404`       | Game tidak ditemukan, sudah dihapus, atau sudah dipurge.                                      |
-| `409`       | Konflik unik atau perubahan state tidak diizinkan.                                            |
-| `500`       | Kegagalan service atau database katalog yang tidak terduga.                                   |
-| `429`       | Rate limit terlampaui; response menyertakan header `Retry-After`.                             |
+| HTTP Status | Usage                                                                                                                                |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `200`       | Game berhasil diperbarui; `data` bernilai `null`.                                                                                    |
+| `400`       | Payload tidak valid.                                                                                                                 |
+| `401`       | Admin belum terautentikasi atau session tidak valid.                                                                                 |
+| `403`       | Admin tidak memiliki permission `game.update`/hak Super Admin untuk status publikasi, Origin tidak diizinkan, atau CSRF tidak valid. |
+| `404`       | Game tidak ditemukan, sudah dihapus, atau sudah dipurge.                                                                             |
+| `409`       | Konflik unik atau perubahan state tidak diizinkan.                                                                                   |
+| `500`       | Kegagalan service atau database katalog yang tidak terduga.                                                                          |
+| `429`       | Rate limit terlampaui; response menyertakan header `Retry-After`.                                                                    |
 
 ## Service Status Codes
 
 Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
-| Code        | Type      | Category        | Meaning                                                           |
-| ----------- | --------- | --------------- | ----------------------------------------------------------------- |
-| `GAMS00000` | Success   | General         | Game berhasil diperbarui.                                         |
-| `GAMB01001` | Business  | Authentication  | Administrator belum terautentikasi.                               |
-| `GAMB01002` | Business  | Authentication  | Administrator tidak memiliki izin update katalog game.            |
-| `GAMB02001` | Business  | User validation | ID, body, field, format, panjang, atau state request tidak valid. |
-| GAMB02002   | Business  | User validation | name, slug, atau sortOrder sudah digunakan game lain.             |
-| `GAMB02003` | Business  | User validation | State populer tidak konsisten dengan state aktif.                 |
-| `GAMB02004` | Business  | User validation | Game dengan `gameId` tersebut tidak ditemukan.                    |
-| `GAMT03001` | Technical | Database        | Record katalog gagal diperbarui atau database tidak tersedia.     |
+| Code        | Type      | Category        | Meaning                                                                              |
+| ----------- | --------- | --------------- | ------------------------------------------------------------------------------------ |
+| `GAMS00000` | Success   | General         | Game berhasil diperbarui.                                                            |
+| `GAMB01001` | Business  | Authentication  | Administrator belum terautentikasi.                                                  |
+| `GAMB01002` | Business  | Authentication  | Permission `game.update` atau hak Super Admin untuk status publikasi tidak tersedia. |
+| `GAMB02001` | Business  | User validation | ID, body, field, format, panjang, atau state request tidak valid.                    |
+| GAMB02002   | Business  | User validation | name, slug, atau sortOrder sudah digunakan game lain.                                |
+| `GAMB02003` | Business  | User validation | State populer tidak konsisten dengan state aktif.                                    |
+| `GAMB02004` | Business  | User validation | Game dengan `gameId` tersebut tidak ditemukan.                                       |
+| `GAMT03001` | Technical | Database        | Record katalog gagal diperbarui atau database tidak tersedia.                        |
 
 ## API Exposure Classification
 
@@ -261,8 +267,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 - Path `/api/admin/games/v1/update/{gameId}`, HTTP `PATCH`, field request, envelope, dan kode status mengikuti kontrak game Sprint 1 serta BRD.
 - Field katalog mengikuti [Create Game](create-game.md); response mengikuti struktur item pada [Get List Games](get-list-games.md).
-- `description` dan `imageUrl` adalah mapping dari field storefront `service` dan `art`. `mark` tidak disertakan karena belum ada kebutuhan produk yang dikonfirmasi.
-- Asset berupa URL HTTPS absolut tanpa pembatasan host. Rate limit mutasi 1.200 request/IP/menit dan 60 request/admin/menit. SLA mengikuti BRD. Kebijakan concurrency optimistis di luar cakupan kontrak Sprint 1.
+- Asset berupa URL HTTPS absolut tanpa pembatasan host. Rate limit mutasi 1.200 request/IP/menit dan 60 request/admin/menit. SLA mengikuti BRD. Concurrency update memakai last-write-wins tanpa optimistic locking.
 - HTTP mapping: 400 validasi, 401 authentication, 403 authorization, 404 not-found, 409 conflict, 429 rate limit, 500 kegagalan teknis.
 
 ## References

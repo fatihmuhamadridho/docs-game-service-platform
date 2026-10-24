@@ -84,12 +84,12 @@ sequenceDiagram
 1. Hanya game dengan `isActive=true` dan `deleted_at=null` yang dapat ditampilkan. `isActive` adalah gerbang visibilitas publik.
 2. Pengurutan mengikuti parameter sort; default `SORT_ORDER_ASC`; pilihan `POPULAR` mengurutkan `isPopular DESC` lalu `sortOrder ASC`, sedangkan `NAME_ASC` mengurutkan nama ascending.
 3. `NAME_ASC` mengurutkan nama A–Z secara locale `id-ID`, lalu `id` sebagai tie-breaker.
-4. `RATING_DESC` tidak didukung pada Sprint 1 karena katalog tidak memiliki rating dan review count.
-5. Search mencocokkan nama game dan alias publik yang disetujui. Query di-trim; case-insensitive behavior disarankan. Maksimal 100 karakter.
+4. Search mencocokkan nama dan slug; pengurutan berdasarkan rating tidak tersedia pada Sprint 1.
+5. Search mencocokkan `name` dan `slug`; query di-trim dan tidak membedakan kapitalisasi. Maksimal 100 karakter.
 6. `platform` mengacu pada platform game, bukan jenis layanan. Field bersifat opsional dan menerima `MOBILE`, `PC`, atau `CONSOLE`.
 7. Filter platform mencocokkan nilai `platform` pada katalog aktif. Nilai filter yang diterima adalah `MOBILE`, `PC`, atau `CONSOLE`.
 8. Response tidak mencakup service categories atau service count karena katalog layanan dan relasi game-service belum termasuk Sprint 1.
-9. API tidak mengembalikan rating atau review count; sort `RATING_DESC` tidak didukung pada Sprint 1.
+9. API tidak mengembalikan rating atau review count; sort berdasarkan rating tidak didukung pada Sprint 1.
 10. imageUrl adalah URL HTTPS absolut dari host mana pun. API mengembalikan URL untuk ditampilkan storefront.
 11. Pagination menggunakan `page` berbasis 1 dan `limit`; default `page=1`, `limit=20`, maksimum `limit=100`.
 12. `total` adalah jumlah seluruh hasil filter sebelum pagination; `totalPages` adalah jumlah halaman dan bernilai `0` jika tidak ada hasil.
@@ -111,7 +111,7 @@ None.
 
 | Parameter  | E/N/T | Type    | M/O/C | Max Length | Description                                                                   | Example    |
 | ---------- | ----- | ------- | ----- | ---------: | ----------------------------------------------------------------------------- | ---------- |
-| `search`   | N     | String  | O     |        100 | Cari nama/alias game; trim dan case-insensitive.                              | `mobile`   |
+| `search`   | N     | String  | O     |        100 | Cari nama/slug game; trim dan case-insensitive.                               | `mobile`   |
 | `platform` | N     | String  | O     |         30 | Filter platform opsional; nilai yang diterima `MOBILE`, `PC`, atau `CONSOLE`. | `MOBILE`   |
 | `sort`     | N     | String  | O     |         20 | `SORT_ORDER_ASC`, `POPULAR`, atau `NAME_ASC`; default `SORT_ORDER_ASC`.       | `NAME_ASC` |
 | `page`     | N     | Integer | O     |   9 digits | One-based page number; default `1`, minimum `1`.                              | `1`        |
@@ -125,7 +125,7 @@ None. GET request has no body.
 
 1. `search`, bila ada, harus string maksimal 100 karakter setelah trim.
 2. `platform` harus `MOBILE`, `PC`, atau `CONSOLE`; nilai lain mengembalikan HTTP 400 `GAMB02001`.
-3. `sort` harus `POPULAR` atau `NAME_ASC`; nilai lain, termasuk `RATING_DESC`, ditolak dengan `GAMB02001`.
+3. `sort` harus `SORT_ORDER_ASC`, `POPULAR`, atau `NAME_ASC`; nilai lain ditolak dengan `GAMB02001`.
 4. `page` harus integer lebih besar atau sama dengan `1`; default `1`, selain itu `GAMB02001`.
 5. `limit` harus integer 1–100; default `20`, selain itu `GAMB02001`.
 6. Unknown query parameters diabaikan. `Accept-Language` juga diabaikan karena Sprint 1 belum mendukung multi-bahasa; konten menggunakan bahasa Indonesia.
@@ -228,26 +228,23 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Testing & Documentation Scope
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                    |
-| ---------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | Uji list/search/filter/sort/page pada peak visitors, termasuk cache hit/miss dan katalog besar. Target TPS, CPU/memory, serta response time menunggu traffic forecast. |
-| VA/Pentest | Yes      | Public API. Uji validasi query, injection, pagination bounds, inactive-game leakage, asset URL handling, platform filter bypass, dan excessive data exposure.          |
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                  |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| NFT        | Yes      | Uji list/search/filter/sort/page pada beban baseline 50 VUser dan 20 request/detik; ukur SLA, CPU, dan memori sesuai BRD. Cache hit/miss dan katalog besar tetap masuk skenario uji. |
+| VA/Pentest | Yes      | Public API. Uji validasi query, injection, pagination bounds, inactive-game leakage, asset URL handling, platform filter bypass, dan excessive data exposure.                        |
 
 ## Assumptions
 
 - Kontrak endpoint `/api/games/v1/list`, sort/platform, pagination, response, envelope, dan unknown-query behavior mengikuti keputusan BRD Sprint 1.
-- Existing `/api/games/v1/popular` remains the dedicated popular-games subset endpoint.
+- Endpoint `/api/games/v1/popular` menjadi kontrak khusus untuk subset game populer.
 - [Game ERD](../../../erd/game-catalog-erd.md) supplies active state, popular flag, sort order, name, slug, summary, image URL, and nullable platform. Nilai platform yang didukung adalah `MOBILE`, `PC`, atau `CONSOLE`.
 - Service categories, service counts, and game-service relationships are deferred until the service catalog enters scope in a later sprint.
 - Game `description` dikelola Super Admin melalui API game dashboard. Rate limit katalog publik 1.200 request/IP/menit; SLA mengikuti BRD. Cache/CDN policy bukan bagian dari kontrak Sprint 1.
-- Current `/games` UI count/rating/tags/platform values are mock data and are not verified catalog facts; rating and review count are excluded from this API response.
+- Rating dan review count tidak termasuk dalam response API daftar game Sprint 1.
 
 ## References
 
 - `./get-popular-games.md` — public popular games subset contract and shared catalog conventions.
 - `../../../../sprint_1/solutioning/erd/game-catalog-erd.md` — game fields and active/popular/sort constraints.
-- `src/features/Games/views/pages/Games.page.tsx` — current catalog UI mock data, search/filter/sort/pagination state.
-- `src/features/Games/views/interfaces/game.interface.ts` — current game card display fields.
-- `src/features/Games/views/atoms/SortSelect.atom.tsx` — visible sort choices.
 
 - ERD game memakai ID berprefix game_, platform opsional MOBILE/PC/CONSOLE, dan sort_order unik; skema selaras dengan kontrak ini.

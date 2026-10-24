@@ -40,7 +40,7 @@ sequenceDiagram
                 UI-->>Admin: Tampilkan bahwa role dilindungi
             else Role masih di-assign ke akun
                 DB-->>API: Assignment aktif ditemukan
-                API-->>UI: 400 ROLB02006, data null
+                API-->>UI: 409 ROLB02006, data null
                 UI-->>Admin: Minta admin cabut atau pindahkan assignment
             else Role dapat dihapus
                 API->>DB: Tandai role terhapus secara atomik
@@ -228,15 +228,14 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 ## Assumptions
 
 - Soft delete menggunakan `deleted_at` adalah kebijakan yang berlaku. Role terhapus tidak dapat dipulihkan melalui produk, dikecualikan dari daftar/detail, lalu dipurge permanen setelah retensi 2 bulan.
-- Path `/api/admin/roles/v1/delete/{roleId}`, HTTP `DELETE`, response envelope, prefix `ROL`, serta kode status mengikuti pola solutioning admin; API owner perlu menyetujui.
-- Role ERD Sprint 1 mendefinisikan `admin_role`, `account_role`, dan `deleted_at`. Implementasi memeriksa assignment aktif sebelum soft-delete; ERD mendefinisikan relasi dan penanda deleted_at.
-- `ROLB02005` dan `ROLB02006` adalah kode usulan untuk kasus protected role dan assignment aktif.
+- Endpoint `DELETE /api/admin/roles/v1/delete/{roleId}`, envelope `{code,message,data}`, prefix service `ROL`, dan kode status adalah kontrak Sprint 1 pada IFA ini. Mutasi sukses mengembalikan `data: null`.
+- Role ERD Sprint 1 mendefinisikan `admin_role`, `account_role`, dan `deleted_at`. Penghapusan ditolak selama role masih memiliki assignment aktif; ERD mendefinisikan relasi dan penanda `deleted_at`.
+- `ROLB02005` digunakan untuk role system yang dilindungi; `ROLB02006` digunakan untuk role dengan assignment aktif.
 - Data role yang dihapus dipurge permanen setelah 2 bulan; tidak tersedia flow pemulihan. SLA dan HTTP status mengikuti BRD. Audit event tidak dicatat pada Sprint 1.
 - Cakupan hanya menghapus definisi role; penghapusan permission catalog, pencabutan assignment akun otomatis, hard delete, dan pemindahan akun ke role pengganti tidak termasuk.
 
 ## References
 
-- `./get-list-roles.md` — field role dan usulan daftar role.
+- `./get-list-roles.md` — field dan aturan daftar role Sprint 1.
 - `./get-detail-role.md` — detail role dan aturan permission visibility.
 - `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — template kontrak API sprint.
-- `src/features/AdminAccountsRoles/` — UI Admin Dashboard akun & role; tidak menyediakan backend contract.

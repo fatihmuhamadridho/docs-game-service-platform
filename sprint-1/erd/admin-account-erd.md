@@ -1,7 +1,7 @@
 # Administrator Account ERD
 
 > **Document Type:** ERD  
-> **Status:** Draft  
+> **Status:** Baseline Sprint 1  
 > **Scope:** Administrator identity, login credential, and refresh session data for Sprint 1. Account list/detail remains read-only; credential provisioning is controlled and no email-provider flow is in scope.
 
 ## ERD
@@ -50,7 +50,7 @@ erDiagram
         string account_role_id PK
         string admin_account_id FK
         string role_id FK
-        string assigned_by
+
         datetime assigned_at
         datetime revoked_at
     }
@@ -60,28 +60,27 @@ erDiagram
 
 ### `admin_account`
 
-| Column             | Type                     | Null | Key / constraint              | Meaning                                                                                                     |
-| ------------------ | ------------------------ | ---- | ----------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| `admin_account_id` | String, max 64           | No   | PK                            | Immutable administrator identifier with the admin_ entity prefix.                                           |
-| `username`         | String, max 30           | No   | —                             | Administrator username returned by list/detail APIs.                                                        |
-| `name`             | String, max 150          | No   | —                             | Display name returned by list/detail APIs.                                                                  |
-| `email`            | String, max 254          | No   | —                             | Administrator email; no email sending is in scope.                                                          |
-| `status`           | Enum/string, max 20      | No   | `ACTIVE` or `INACTIVE`        | Account status used by list filters and authentication policy.                                              |
-| `last_active`      | Timestamp with time zone | Yes  | —                             | Activity timestamp. Updated at successful admin login; API returns `null` until the first successful login. |
-| `created_at`       | Timestamp with time zone | No   | Default current UTC timestamp | Account creation time. Not currently returned by account list/detail contracts.                             |
-| `updated_at`       | Timestamp with time zone | No   | Default current UTC timestamp | Last account data update; exposed as `updatedAt` in list/detail responses.                                  |
-| `deleted_at`       | Timestamp with time zone | Yes  | Null means not soft-deleted   | Soft-delete marker. Soft-deleted accounts are excluded from list and detail APIs and retained for 2 months. |
+| Column             | Type                     | Null | Key / constraint              | Meaning                                                                                                                                                     |
+| ------------------ | ------------------------ | ---- | ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `admin_account_id` | String, max 64           | No   | PK                            | Immutable administrator identifier with the admin_ entity prefix.                                                                                           |
+| `username`         | String, max 30           | No   | —                             | Administrator username returned by list/detail APIs.                                                                                                        |
+| `name`             | String, max 150          | No   | —                             | Display name returned by list/detail APIs.                                                                                                                  |
+| `email`            | String, max 254          | No   | —                             | Administrator email; no email sending is in scope.                                                                                                          |
+| `status`           | Enum/string, max 20      | No   | `ACTIVE` or `INACTIVE`        | Account status used by list filters and authentication policy.                                                                                              |
+| `last_active`      | Timestamp with time zone | Yes  | —                             | Activity timestamp. Updated at successful admin login; API returns `null` until the first successful login.                                                 |
+| `created_at`       | Timestamp with time zone | No   | Default current UTC timestamp | Account creation time. Not currently returned by account list/detail contracts.                                                                             |
+| `updated_at`       | Timestamp with time zone | No   | Default current UTC timestamp | Last account data update; exposed as `updatedAt` in list/detail responses.                                                                                  |
+| `deleted_at`       | Timestamp with time zone | Yes  | Null means not soft-deleted   | Soft-delete marker. Soft-deleted accounts are excluded from login and list/detail APIs; retain 2 months then purge with associated credential/session data. |
 
 ### `account_role`
 
-| Column             | Type                     | Null | Key / constraint                        | Meaning                                                                           |
-| ------------------ | ------------------------ | ---- | --------------------------------------- | --------------------------------------------------------------------------------- |
-| `account_role_id`  | String, max 64           | No   | PK                                      | Immutable role-assignment identifier.                                             |
-| `admin_account_id` | String, max 64           | No   | FK → `admin_account.admin_account_id`   | Administrator receiving the role.                                                 |
-| `role_id`          | String, max 64           | No   | FK → `admin_role.role_id`               | Assigned role. The account APIs expose its `id`, `name`, `code`, and system flag. |
-| `assigned_by`      | String, max 24           | Yes  | Administrator/bootstrap actor reference | Actor or bootstrap process making the assignment.                                 |
-| `assigned_at`      | Timestamp with time zone | No   | Default current UTC timestamp           | Assignment time.                                                                  |
-| `revoked_at`       | Timestamp with time zone | Yes  | Null means assignment active            | Revocation time; retained to preserve assignment history.                         |
+| Column             | Type                     | Null | Key / constraint                      | Meaning                                                                           |
+| ------------------ | ------------------------ | ---- | ------------------------------------- | --------------------------------------------------------------------------------- |
+| `account_role_id`  | String, max 64           | No   | PK; internal prefix `account_role_`   | Immutable role-assignment identifier; not returned by API.                        |
+| `admin_account_id` | String, max 64           | No   | FK → `admin_account.admin_account_id` | Administrator receiving the role.                                                 |
+| `role_id`          | String, max 64           | No   | FK → `admin_role.role_id`             | Assigned role. The account APIs expose its `id`, `name`, `code`, and system flag. |
+| `assigned_at`      | Timestamp with time zone | No   | Default current UTC timestamp         | Assignment time.                                                                  |
+| `revoked_at`       | Timestamp with time zone | Yes  | Null means assignment active          | Revocation time; retained to preserve assignment history.                         |
 
 Only one row per administrator may have `revoked_at IS NULL`. Enforce this with a partial unique index or equivalent transaction-level constraint. Assignment history allows a role to be revoked and later reassigned without overwriting the prior row.
 
@@ -141,15 +140,15 @@ One document represents one refresh-token generation. Rotated generations remain
 9. Refresh creates a new ADMIN_SESSION generation in the same family and marks the previous generation rotated atomically. Reuse of a rotated refresh token revokes the whole family.
 10. Refresh tokens expire seven days after issuance/rotation. Expired generation documents are removed by TTL only after their own expiry, preserving replay detection while a token remains valid.
 11. Logout revokes one session family. Session cookie lifetimes are independent of the administrator account read-only APIs.
-12. Associated credential and session records are purged when their soft-deleted administrator is permanently removed after the two-month retention period.
+12. Credential records are purged with the account after two months. Session families are revoked on offboarding; each session generation is removed by TTL after its own expiry to preserve replay detection during token validity.
 13. Sprint 1 does not write audit events. Secret values, hashes, raw cookies, and CSRF tokens are never written to application logs.
 
-## Assumptions / Decisions Needed
+## Decisions
 
-- Account IDs use the `admin_` prefix, role IDs use `role_`, credential IDs use `credential_`, and session generation IDs use `session_`.
+- Domain IDs use `admin_`, `role_`, and `permission_`; internal credential and session generation IDs use `credential_` and `session_` and are never returned by API.
 - Login identifier comparison is trim + case-insensitive. Stored username/email values have no leading or trailing whitespace; MongoDB unique collation indexes on the original fields enforce case-insensitive uniqueness.
 - Rate limit login: 5 failed attempts per trimmed lowercase identifier in a rolling 15-minute window; login and refresh: 20 requests per IP in a rolling 15-minute window. `Retry-After` reports seconds until capacity is available.
-- Bootstrap secrets are supplied securely and never committed to source or written to logs.
+- Rahasia bootstrap disediakan melalui kanal aman dan tidak dicatat pada log.
 - Full audit-event storage and retention are outside this ERD; account reads must not be treated as account mutation capability.
 
 ## References

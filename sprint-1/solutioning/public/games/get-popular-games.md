@@ -21,21 +21,21 @@ sequenceDiagram
     Web->>API: GET /api/games/v1/popular
     API->>API: Validasi query dan batas pagination
     alt Query tidak valid
-        API-->>Web: 400 ORDB02001, data null
+        API-->>Web: 400 GAMB02001, data null
         Web-->>User: Tampilkan kegagalan memuat katalog
     else Query valid
         API->>DB: Ambil game aktif yang ditandai populer
         alt Data ditemukan
             DB-->>API: Daftar game terurut dan metadata pagination
-            API-->>Web: 200 ORDS00000 dan data games
+            API-->>Web: 200 GAMS00000 dan data games
             Web-->>User: Tampilkan kartu game populer
         else Tidak ada game populer
             DB-->>API: Daftar kosong
-            API-->>Web: 200 ORDS00000 dan games kosong
+            API-->>Web: 200 GAMS00000 dan games kosong
             Web-->>User: Tampilkan keadaan kosong
         else Database gagal
             DB-->>API: Kegagalan baca data
-            API-->>Web: 500 ORDT03001, data null
+            API-->>Web: 500 GAMT03001, data null
             Web-->>User: Tampilkan pesan gagal dan opsi coba lagi
         end
     end
@@ -71,9 +71,8 @@ sequenceDiagram
 
 ### API Versioning
 
-- **Decision:** New Endpoint
-- **Previous Endpoint:** Not applicable; current HomeV2 list is static UI data.
-- **Final Endpoint:** `/api/games/v1/popular`
+- **Decision:** Endpoint baru v1 untuk daftar game populer Sprint 1.
+- **Endpoint:** `/api/games/v1/popular`
 - **Backward Compatibility:** No existing API consumer identified. Additive optional response fields are backward-compatible; breaking field or semantic changes require a new major version.
 - **Reason:** Storefront needs a catalog-owned source for popular game cards.
 
@@ -85,8 +84,8 @@ sequenceDiagram
 4. Pagination uses one-based `page` and `limit`. Defaults are `page=1` and `limit=6`; allowed `limit` range is 1–50.
 5. `total` counts all matching popular games before pagination; `totalPages` is the number of pages and is `0` when no games match.
 6. No matching popular games is a successful response with `data: []`, `pagination.total: 0`, and `pagination.totalPages: 0`.
-7. `description`, `imageUrl`, and `mark` are presentation metadata. `imageUrl` is an absolute HTTPS URL from any HTTPS host; it is not an embedded image.
-8. Example game names from current UI are illustrative until availability is confirmed in the catalog.
+7. `description` and `imageUrl` are presentation metadata. `imageUrl` is an absolute HTTPS URL from any HTTPS host; it is not an embedded image.
+8. Nama game pada contoh bersifat ilustratif; response hanya memuat game yang aktif dan ditandai populer.
 
 ## Request Headers
 
@@ -209,19 +208,12 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Testing & Documentation Scope
 
-| Scope      | Required | Rationale / Handoff                                                                                                                |
-| ---------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | New customer-facing read API. Measure list retrieval at agreed peak concurrency; target TPS and CPU/memory await traffic forecast. |
-| VA/Pentest | Yes      | Public API. Include valid pagination, invalid bounds, unknown query parameters, empty catalog, and response data exposure checks.  |
+| Scope      | Required | Rationale / Handoff                                                                                                               |
+| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------- |
+| NFT        | Yes      | Uji pengambilan daftar populer pada baseline 50 VUser dan 20 request/detik; ukur latency baca, CPU, dan memori sesuai SLA BRD.    |
+| VA/Pentest | Yes      | Public API. Include valid pagination, invalid bounds, unknown query parameters, empty catalog, and response data exposure checks. |
 
 ## Assumptions
 
-- Endpoint prefix `/api`, service name, service codes, response envelope, pagination, and response field names are proposed contract decisions pending API owner review.
+- Kontrak endpoint `/api/games/v1/popular`, service code, envelope `{code,message,data,pagination}`, field response, dan pagination mengikuti keputusan BRD Sprint 1 serta IFA daftar game publik.
 - `Accept-Language` diabaikan dan konten menggunakan bahasa Indonesia. Rate limit katalog publik adalah 1.200 request/IP/menit; SLA mengikuti BRD. Urutan populer mengikuti `sortOrder ASC`; host gambar HTTPS tidak dibatasi. Super Admin mengatur status aktif dan populer game.
-- Current static list in HomeV2 contains Roblox, Mobile Legends, Free Fire, PUBG Mobile, Valorant, and Genshin Impact as illustrative UI data only.
-
-## References
-
-- `src/features/HomeV2/views/organisms/PopularGames.organism.tsx` — current section display and list consumer.
-- `src/features/HomeV2/views/molecules/GameCard.molecule.tsx` — current card fields and order link behavior.
-- `src/features/HomeV2/views/interfaces/homeV2.interface.ts` — current UI model (`name`, `service`, `art`, `mark`).

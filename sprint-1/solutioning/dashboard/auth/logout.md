@@ -81,7 +81,7 @@ Baseline Sprint 1; validasi kapasitas melalui NFT.
 5. Logout dengan cookie/session yang tidak ada atau sudah dicabut tetap mengembalikan sukses setelah menghapus cookie. Operasi ini idempotent. Dashboard juga menghapus CSRF token dari localStorage.
 6. Jika session store gagal, API mengembalikan 500 dan tidak menyatakan revokasi berhasil. Cookie tidak dihapus agar pengguna dapat mengulangi request.
 7. CSRF/origin gagal menghasilkan 403 tanpa mencabut session. Token autentikasi tidak dimasukkan ke body, error, atau log.
-8. Semua response memakai `Cache-Control: no-store`. Session yang dicabut langsung ditolak oleh middleware pada pemeriksaan access berikutnya.
+8. Semua response memakai `Cache-Control: no-store`. Session yang dicabut langsung ditolak pada pemeriksaan akses berikutnya.
 9. Request logout tidak memerlukan permission role karena endpoint berfungsi untuk mengakhiri session milik pemanggil sendiri.
 
 ## Request Headers

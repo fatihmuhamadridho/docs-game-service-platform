@@ -18,7 +18,7 @@ sequenceDiagram
     participant API as Admin Account & Role API
     participant DB as Identity / Authorization Database
     Admin->>UI: Ubah field role dan simpan
-    UI->>API: PUT /api/admin/roles/v1/update/{roleId} + cookie/token admin + field berubah
+    UI->>API: PATCH /api/admin/roles/v1/update/{roleId} + cookie/token admin + field berubah
     API->>API: Autentikasi dan otorisasi izin role.update
     alt Tidak terautentikasi atau tidak berizin
         API-->>UI: 401 ROLB01001 atau 403 ROLB01002, data null
@@ -32,11 +32,11 @@ sequenceDiagram
             API->>DB: Ambil role dan metadata proteksi
             alt Role tidak ditemukan atau sudah dihapus
                 DB-->>API: Record tidak tersedia
-                API-->>UI: 400 ROLB02004, data null
+                API-->>UI: 404 ROLB02004, data null
                 UI-->>Admin: Tampilkan bahwa role tidak ditemukan
             else Role system/built-in terlindungi
                 DB-->>API: Role tidak dapat diedit
-                API-->>UI: 400 ROLB02005, data null
+                API-->>UI: 409 ROLB02005, data null
                 UI-->>Admin: Tampilkan bahwa role dilindungi
             else Role dapat diedit
                 API->>DB: Validasi keunikan name/code dan keanggotaan permission aktif pada katalog sistem
@@ -49,15 +49,23 @@ sequenceDiagram
                     API-->>UI: 400 ROLB02003 atau 403 ROLB01002, data null
                     UI-->>Admin: Tampilkan permission yang perlu diperbaiki
                 else Semua valid
-                    API->>DB: Simpan perubahan role dan relasi permission secara atomik
-                    alt Penyimpanan berhasil
-                        DB-->>API: Snapshot role terbaru
-                        API-->>UI: 200 ROLS00000, data.role
-                        UI-->>Admin: Tampilkan role yang diperbarui
-                    else Database gagal
-                        DB-->>API: Kegagalan transaksi
-                        API-->>UI: 500 ROLT03001, data null
-                        UI-->>Admin: Tampilkan kegagalan dan opsi coba lagi
+                    API->>API: Bandingkan state hasil normalisasi; permissions dibandingkan sebagai set
+                    alt Tidak ada perubahan efektif
+                        API-->>UI: 200 ROLS00000, data null tanpa write atau perubahan updatedAt
+                        UI-->>Admin: Tampilkan role tanpa perubahan
+                    else Ada perubahan efektif
+                        API->>DB: Simpan perubahan role dan relasi permission secara atomik
+                        alt Penyimpanan berhasil
+                            DB-->>API: Snapshot role terbaru
+                            API-->>UI: 200 ROLS00000, data null
+                            UI->>API: GET daftar/detail role setelah mutasi sukses
+                            API-->>UI: Data role terbaru melalui response read
+                            UI-->>Admin: Tampilkan role yang diperbarui
+                        else Database gagal
+                            DB-->>API: Kegagalan transaksi
+                            API-->>UI: 500 ROLT03001, data null
+                            UI-->>Admin: Tampilkan kegagalan dan opsi coba lagi
+                        end
                     end
                 end
             end
@@ -78,7 +86,7 @@ sequenceDiagram
 | Description        | Memperbarui metadata dan/atau permission pada satu custom role. Role system SUPER_ADMIN tidak dapat diubah.                                                                                                                                                                                              |
 | Resource URL       | https://{host}/api/admin/roles/v1/update/{roleId}                                                                                                                                                                                                                                                        |
 | Transport Protocol | HTTPS, REST                                                                                                                                                                                                                                                                                              |
-| Request Verb       | PUT                                                                                                                                                                                                                                                                                                      |
+| Request Verb       | PATCH                                                                                                                                                                                                                                                                                                    |
 | Content Type       | application/json                                                                                                                                                                                                                                                                                         |
 | Interaction Type   | Synchronous                                                                                                                                                                                                                                                                                              |
 | Security Policy    | Memerlukan cookie access admin valid, akun ACTIVE, dan session family belum dicabut, role Super Admin, dan permission `role.update` dari [katalog permission Sprint 1](./permission-model.md). Semua permission aktif pada katalog dapat dipilih untuk custom role. Sprint 1 tidak mencatat audit event. |
@@ -95,11 +103,10 @@ sequenceDiagram
 
 ### API Versioning
 
-- **Decision:** Enhance Existing API
-- **Previous Endpoint:** PUT /api/admin/roles/v1/update/{roleId} pada Go API yang ada.
-- **Final Endpoint:** PUT /api/admin/roles/v1/update/{roleId}
-- **Backward Compatibility:** Path dan method tetap sama. Kontrak permission Sprint 1 memakai key katalog; perubahan dari ID permission yang digunakan implementasi saat ini perlu dirilis serentak dengan consumer dashboard.
-- **Reason:** Menyelaraskan endpoint Go yang ada dengan kebijakan permission dan role Sprint 1.
+- **Decision:** Tetapkan kontrak API v1 untuk Sprint 1.
+- **Endpoint:** PATCH /api/admin/roles/v1/update/{roleId}
+- **Backward Compatibility:** Path dan method mengikuti kontrak v1. Permission memakai key dari katalog Sprint 1.
+- **Reason:** Menetapkan pembaruan role dengan kebijakan permission Sprint 1.
 
 ## Business Rules
 
@@ -114,11 +121,11 @@ sequenceDiagram
 5. `name` yang dinormalisasi trim dan case-insensitive harus unik selain terhadap role yang sedang diperbarui. `code` uppercase harus unik selain terhadap role yang sama.
 6. Jika `permissions` dikirim, seluruh daftar diganti secara atomik. Semua key harus terdaftar, aktif, dan unik. Super Admin dapat memilih seluruh key aktif di katalog. Permission yang tidak dikirim tetap tidak berubah.
 7. `SUPER_ADMIN` (`Super Admin`) adalah satu-satunya role hasil seed Sprint 1, ditandai `is_system=true`, dan tidak dapat diubah melalui endpoint ini. Semua field, termasuk status, permission, nama, dan deskripsi, immutable. Setiap upaya mengubahnya ditolak dengan `ROLB02005`.
-8. Perubahan status ke `INACTIVE` harus ditolak bila role masih dipakai akun aktif, kecuali ada alur migrasi/reassignment yang telah disetujui. Model assignment belum tersedia; aturan ini merupakan dependency implementasi.
-9. Perubahan permission atau status harus memicu invalidasi cache/otorisasi atau mekanisme refresh hak akses. Batas waktu propagasi tetap perlu ditetapkan pada desain implementasi.
+8. Perubahan status ke `INACTIVE` ditolak bila role masih dipakai akun aktif. Penonaktifan harus didahului perubahan assignment melalui proses yang tersedia; role assignment tercakup di model ERD.
+9. Perubahan permission atau status berlaku pada request dashboard berikutnya. Backend membaca state otorisasi terkini dan tidak memakai cache permission yang stale.
 10. Seluruh perubahan metadata dan relasi permission harus atomik. Jika satu validasi gagal, tidak ada perubahan parsial.
-11. Perubahan sukses memperbarui updatedAt dalam UTC. Sprint 1 tidak mencatat audit event sesuai BRD.
-12. Sprint 1 tidak memakai optimistic locking (`ETag`, `If-Match`, atau version field); concurrent update memakai last-write-wins dan perubahan terakhir memperbarui `updatedAt`.
+11. `updatedAt` diperbarui dalam UTC hanya bila nilai efektif metadata atau grant berubah. Request no-op tetap sukses tanpa write dan tanpa mengubah `updatedAt`. Sprint 1 tidak mencatat audit event sesuai BRD.
+12. Sprint 1 tidak memakai optimistic locking (`ETag`, `If-Match`, atau version field); concurrent perubahan efektif memakai last-write-wins dan update yang mengubah state memperbarui `updatedAt`.
 
 ## Request Headers
 
@@ -147,7 +154,7 @@ None.
 | Attribute     | E/N/T | Type            | M/O/C | Max Length | Description                                                                          | Example                         |
 | ------------- | ----- | --------------- | ----- | ---------: | ------------------------------------------------------------------------------------ | ------------------------------- |
 | `name`        | N     | String          | O     |        100 | Nama tampilan role; trim sebelum disimpan.                                           | `Senior Support Agent`          |
-| `code`        | N     | String          | O     |         50 | Kode role unik uppercase; format usulan `^[A-Z][A-Z0-9_]*$`.                         | `SENIOR_SUPPORT_AGENT`          |
+| `code`        | N     | String          | O     |         50 | Kode role unik uppercase; .                                                          | `SENIOR_SUPPORT_AGENT`          |
 | `description` | N     | String/null     | O     |        500 | Deskripsi role; `null` menghapus deskripsi.                                          | `Menangani eskalasi pelanggan.` |
 | `status`      | N     | String          | O     |         20 | Status role kustom yang diterima: `ACTIVE` atau `INACTIVE`. `SUPER_ADMIN` immutable. | `ACTIVE`                        |
 | `permissions` | N     | Array of String | O     |  100 items | Daftar key permission Sprint 1 pengganti; bila dikirim minimal satu key.             | `["role.read", "game.read"]`    |
@@ -170,7 +177,7 @@ None.
 4. `name`, bila dikirim, harus string non-empty setelah trim dan maksimal 100 karakter.
 5. `code`, bila dikirim, harus string non-empty, maksimal 50 karakter, dinormalisasi uppercase, dan mengikuti `^[A-Z][A-Z0-9_]*$`.
 6. `description`, bila dikirim, harus string atau `null` dan maksimal 500 karakter.
-7. `status`, bila dikirim, harus salah satu nilai yang disepakati. Usulan saat ini `ACTIVE` atau `INACTIVE`; nilai lainnya mengembalikan `ROLB02001`.
+7. `status`, bila dikirim, harus `ACTIVE` atau `INACTIVE`; nilai lainnya mengembalikan `ROLB02001`.
 8. `permissions`, bila dikirim, harus berupa array berisi 1 sampai 100 key permission unik dari katalog Sprint 1. Key di luar katalog atau tidak aktif mengembalikan `ROLB02003`.
 9. Field tak dikenal atau immutable seperti `id`, `createdAt`, `updatedAt`, dan atribut protected ditolak dengan `ROLB02001`.
 10. Jika `roleId` tidak ditemukan atau sudah dihapus, kembalikan `ROLB02004`. Role protected/system yang tidak dapat diubah mengembalikan `ROLB02005`.
@@ -179,22 +186,11 @@ None.
 
 ## Response Body
 
-| Attribute               | E/N/T | Type               | M/O/C | Max Length | Description                                                       | Example                         |
-| ----------------------- | ----- | ------------------ | ----- | ---------: | ----------------------------------------------------------------- | ------------------------------- |
-| `status`                | N     | Object             | M     |          — | Object status response.                                           | `{}`                            |
-| `status.code`           | N     | String             | M     |         20 | Service status code.                                              | `ROLS00000`                     |
-| `status.message`        | N     | String             | O     |        200 | Pesan hasil untuk consumer.                                       | `Role updated`                  |
-| `data`                  | N     | Object/null        | M     |          — | Payload hasil; `null` ketika error.                               | `{}`                            |
-| `data.role`             | N     | Object             | C     |          — | Snapshot role setelah perubahan.                                  | `{}`                            |
-| `data.role.id`          | N     | String             | C     |         64 | ID role immutable.                                                | `role_01JXYZ`                   |
-| `data.role.name`        | N     | String             | C     |        100 | Nama tampilan role tersimpan.                                     | `Senior Support Agent`          |
-| `data.role.code`        | N     | String             | C     |         50 | Kode role tersimpan.                                              | `SENIOR_SUPPORT_AGENT`          |
-| `data.role.description` | N     | String/null        | O     |        500 | Deskripsi role tersimpan.                                         | `Menangani eskalasi pelanggan.` |
-| `data.role.status`      | N     | String             | C     |         20 | Status role tersimpan.                                            | `ACTIVE`                        |
-| `data.role.isSystem`    | N     | Boolean            | M     |          — | `false` untuk custom role yang dapat diubah melalui endpoint ini. | `false`                         |
-| `data.role.permissions` | N     | Array of String    | C     |  100 items | Permission IDs tersimpan dan dapat dilihat pemanggil.             | `["role.read", "game.read"]`    |
-| `data.role.createdAt`   | N     | String (date-time) | C     |         35 | Waktu pembuatan ISO 8601 UTC; tidak berubah.                      | `2026-10-11T09:45:00Z`          |
-| `data.role.updatedAt`   | N     | String (date-time) | C     |         35 | Waktu update terbaru ISO 8601 UTC.                                | `2026-10-11T10:15:00Z`          |
+| Attribute | E/N/T | Type   | M/O/C | Max Length | Description                                  | Example        |
+| --------- | ----- | ------ | ----- | ---------: | -------------------------------------------- | -------------- |
+| `code`    | N     | String | M     |         20 | Kode status service Sprint 1.                | `ROLS00000`    |
+| `message` | N     | String | M     |        200 | Pesan hasil operasi.                         | `Role updated` |
+| `data`    | N     | Null   | M     |          — | Selalu `null` untuk operasi mutasi Sprint 1. | `null`         |
 
 ### Success Example
 
@@ -202,19 +198,7 @@ None.
 {
   "code": "ROLS00000",
   "message": "Role updated",
-  "data": {
-    "role": {
-      "id": "role_01JXYZ",
-      "name": "Senior Support Agent",
-      "code": "SENIOR_SUPPORT_AGENT",
-      "description": "Menangani eskalasi pelanggan.",
-      "status": "ACTIVE",
-      "isSystem": false,
-      "permissions": ["role.read", "game.read"],
-      "createdAt": "2026-10-11T09:45:00Z",
-      "updatedAt": "2026-10-11T10:15:00Z"
-    }
-  }
+  "data": null
 }
 ```
 
@@ -242,7 +226,7 @@ None.
 
 | HTTP Status | Usage                                                                                           |
 | ----------- | ----------------------------------------------------------------------------------------------- |
-| `200`       | Role berhasil diperbarui dan snapshot terbaru dikembalikan.                                     |
+| `200`       | Role berhasil diperbarui; response memiliki `data: null`.                                       |
 | `400`       | Payload tidak valid atau permission key tidak dikenal/tidak aktif.                              |
 | `401`       | Admin belum terautentikasi atau session tidak valid.                                            |
 | `403`       | Admin tidak memiliki permission `role.update`, Origin tidak diizinkan, atau CSRF tidak valid.   |
@@ -281,25 +265,17 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 | NFT        | Yes      | API admin write baru. Uji update parsial, konflik nama/kode, perubahan permission/status, role protected, assignment aktif, atomicity, dan beban 50 VUser / 20 request per detik; ukur CPU/memory terhadap baseline. |
 | VA/Pentest | Yes      | API mengubah kontrol akses. Uji authentication/authorization, pemilihan permission dari seluruh katalog, privilege escalation, mass assignment, IDOR, injection, concurrent update, cache invalidation.              |
 
-## Current Go behavior vs proposed target
-
-- **Current Go:** `PUT /api/admin/roles/v1/update/{roleId}`; JSON body accepts only `name`, `code`, `description`, `status`, `permissions`; update requires at least one recognized field. `permissions` is a string-ID array and replaces the supplied assignment set. Handler returns Go envelope `{code,message,data?}`. Current handler checks admin session plus legacy `settings-manage`; target Sprint 1 key is `role.update`; authorization errors use HTTP 401/403; validation uses HTTP 400; success uses HTTP 200. This is existing implementation behavior, not Sprint 1's target permission catalog.
-- **FE evidence:** `AdminAccountsRolesPage` sends PUT to this exact path with `name`, `code`, `description`, `status`, and permission IDs.
-- **Proposed IFA:** nested `status` response examples remain target-format documentation; they are not the current Go wire envelope. Align envelope only by explicit API owner decision.
-
 ## Assumptions
 
-- Request/response fields dan service codes mengikuti kontrak target Sprint 1; perbedaan dengan implementasi Go saat ini dicatat sebagai pekerjaan alignment implementasi.
 - Custom role `status` dan `permissions` mengikuti model role; `SUPER_ADMIN` immutable sesuai ERD dan tidak dapat diubah.
 - Field `permissions` mengganti seluruh permission role saat dikirim; perilaku merge/incremental update tidak didukung oleh kontrak ini.
-- Penolakan perubahan role aktif yang masih memiliki assignment, cache invalidation, dan optimistic locking masih memerlukan keputusan desain implementasi. Perlindungan `SUPER_ADMIN` sudah menjadi aturan target.
-- Audit event tidak dicatat pada Sprint 1. SLA mengikuti baseline BRD; HTTP status memakai mapping BRD. Perubahan berlaku mulai request berikutnya. Target permission `role.update` mengikuti katalog Sprint 1; Go saat ini memeriksa legacy settings-manage; selaraskan ke key target Sprint 1.
+- Role aktif dengan assignment aktif tidak dapat dinonaktifkan atau dihapus. Perubahan hak akses berlaku pada request berikutnya karena backend membaca state otorisasi terkini; concurrency memakai last-write-wins tanpa optimistic locking. Perlindungan `SUPER_ADMIN` mengikuti ERD dan BRD.
+- Audit event tidak dicatat pada Sprint 1. SLA mengikuti baseline BRD; HTTP status memakai mapping BRD. Target permission `role.update` mengikuti katalog Sprint 1.
 - Cakupan hanya memperbarui definisi role; assignment akun, create/list/detail/delete, dan CRUD permission catalog berada di luar API ini.
 
 ## References
 
-- `./get-list-roles.md` — field role, status, permission IDs, dan envelope yang diusulkan.
+- `./get-list-roles.md` — field role, status, permission keys, dan envelope Sprint 1.
 - `./get-detail-role.md` — kontrak membaca detail role dan permission katalog.
-- `./delete-role.md` — protected-role dan assignment checks yang diusulkan.
+- `./delete-role.md` — protected-role dan assignment checks Sprint 1.
 - `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — template kontrak API sprint.
-- `src/features/AdminAccountsRoles/` — UI Admin Dashboard akun & role; tidak menyediakan backend contract.

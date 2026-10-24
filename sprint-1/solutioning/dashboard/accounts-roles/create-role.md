@@ -134,7 +134,7 @@ None.
 | Attribute     | E/N/T | Type            | M/O/C | Max Length | Description                                                       | Example                         |
 | ------------- | ----- | --------------- | ----- | ---------: | ----------------------------------------------------------------- | ------------------------------- |
 | `name`        | N     | String          | M     |        100 | Nama tampilan role; trim sebelum disimpan.                        | `Senior Support Agent`          |
-| `code`        | N     | String          | M     |         50 | Kode role unik uppercase; format usulan `^[A-Z][A-Z0-9_]*$`.      | `SENIOR_SUPPORT_AGENT`          |
+| `code`        | N     | String          | M     |         50 | Kode role unik uppercase; .                                       | `SENIOR_SUPPORT_AGENT`          |
 | `description` | N     | String/null     | O     |        500 | Deskripsi role; `null` atau string kosong disimpan sebagai null.  | `Menangani eskalasi pelanggan.` |
 | `status`      | N     | String          | O     |         20 | Status role kustom: `ACTIVE` atau `INACTIVE`; default `ACTIVE`.   | `ACTIVE`                        |
 | `permissions` | N     | Array of String | O     |  100 items | Key permission aktif dari katalog Sprint 1; default array kosong. | `["role.read", "game.read"]`    |
@@ -158,7 +158,7 @@ None.
 3. `name` harus string non-empty setelah trim dan maksimal 100 karakter.
 4. `code` harus string non-empty, maksimal 50 karakter, dinormalisasi uppercase, dan mengikuti `^[A-Z][A-Z0-9_]*$`.
 5. `description`, bila dikirim, harus string atau `null` dan maksimal 500 karakter.
-6. `status`, bila dikirim, harus salah satu nilai yang disepakati. Usulan saat ini `ACTIVE` atau `INACTIVE`; nilai lainnya mengembalikan `ROLB02001`.
+6. `status`, bila dikirim, harus `ACTIVE` atau `INACTIVE`; nilai lainnya mengembalikan `ROLB02001`.
 7. `permissions`, bila dikirim, harus berupa array maksimal 100 key permission unik dari katalog Sprint 1. Array kosong valid. Key di luar katalog atau tidak aktif mengembalikan `ROLB02003`.
 8. Field tak dikenal atau immutable seperti `id`, `createdAt`, `updatedAt`, dan atribut protected ditolak dengan `ROLB02001`.
 9. Nama/kode duplikat setelah normalisasi mengembalikan `ROLB02002`. Validasi unique constraint harus tetap ditegakkan saat commit untuk menangani request bersamaan.
@@ -205,15 +205,15 @@ None.
 
 ## HTTP Status Codes
 
-| HTTP Status | Usage                                                                                                                          |
-| ----------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `200`       | Role berhasil dibuat; response memakai `data: null`. Konfirmasi apakah standar API memilih `201 Created` untuk operasi create. |
-| `400`       | Payload tidak valid atau permission key tidak dikenal/tidak aktif.                                                             |
-| `401`       | Admin belum terautentikasi atau session tidak valid.                                                                           |
-| `403`       | Admin tidak memiliki permission `role.create`, Origin tidak diizinkan, atau CSRF tidak valid.                                  |
-| `409`       | Nama/kode role sudah digunakan.                                                                                                |
-| `500`       | Kegagalan service atau database identity/authorization yang tidak terduga.                                                     |
-| `429`       | Rate limit terlampaui; response menyertakan header `Retry-After`.                                                              |
+| HTTP Status | Usage                                                                                         |
+| ----------- | --------------------------------------------------------------------------------------------- |
+| `200`       | Role berhasil dibuat; sesuai pemetaan mutasi sukses pada BRD, response memakai `data: null`.  |
+| `400`       | Payload tidak valid atau permission key tidak dikenal/tidak aktif.                            |
+| `401`       | Admin belum terautentikasi atau session tidak valid.                                          |
+| `403`       | Admin tidak memiliki permission `role.create`, Origin tidak diizinkan, atau CSRF tidak valid. |
+| `409`       | Nama/kode role sudah digunakan.                                                               |
+| `500`       | Kegagalan service atau database identity/authorization yang tidak terduga.                    |
+| `429`       | Rate limit terlampaui; response menyertakan header `Retry-After`.                             |
 
 ## Service Status Codes
 
@@ -244,18 +244,17 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Assumptions
 
-- Endpoint `/api/admin/roles/v1/create`, HTTP `POST`, field request/response, envelope, prefix `ROL`, serta kode status mengikuti pola solutioning admin; API owner perlu menyetujui.
+- Endpoint `POST /api/admin/roles/v1/create`, field request, envelope `{code,message,data}`, prefix service `ROL`, dan kode status adalah kontrak Sprint 1 pada IFA ini. Mutasi sukses mengembalikan `data: null`.
 - `name`, `code`, `status`, dan `permissions` adalah field kontrak yang mengikuti Role ERD Sprint 1.
 - `permissions` berisi identifier katalog permission Sprint 1 sebagaimana [permission model](./permission-model.md), dan default kosong. Super Admin dapat memberikan key permission aktif apa pun dari katalog sistem; definisi permission tetap dikelola sistem.
-- Role baru default `ACTIVE`; status final dan apakah role boleh dibuat tanpa permission harus dikonfirmasi oleh product/security owner.
+- Role baru default `ACTIVE`; role dapat dibuat dengan permission kosong, sehingga tidak memberikan grant kepada akun selain `SUPER_ADMIN`.
 - Audit event tidak dicatat pada Sprint 1. SLA mengikuti baseline BRD; HTTP status memakai mapping BRD. Create tidak menerima `Idempotency-Key`; duplicate business key menghasilkan konflik. ID role memakai prefix role_; suffix unik dibuat service.
 - Cakupan hanya membuat definisi role; assignment akun, CRUD permission catalog, dan aktivasi workflow approval berada di luar API ini.
 
 ## References
 
-- `./get-list-roles.md` — field role dan usulan daftar role.
+- `./get-list-roles.md` — field role dan format daftar role Sprint 1.
 - `./get-detail-role.md` — kontrak membaca detail role dan permission visibility.
 - `./update-role.md` — format metadata, permission, dan error code role.
-- `./delete-role.md` — protected-role dan assignment checks yang diusulkan.
+- `./delete-role.md` — protected-role dan assignment checks Sprint 1.
 - `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — template kontrak API sprint.
-- `src/features/AdminAccountsRoles/` — UI Admin Dashboard akun & role; tidak menyediakan backend contract.

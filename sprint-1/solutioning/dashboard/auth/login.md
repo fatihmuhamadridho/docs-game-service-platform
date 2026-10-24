@@ -24,30 +24,39 @@ sequenceDiagram
     Admin->>UI: Submit identifier and password
     UI->>API: POST /api/admin/auth/v1/login with Origin
     API->>API: Check Origin allowlist, CORS and request format
-    alt Origin or request invalid
-        API-->>UI: 403 or 400, data null
+    alt Origin invalid or payload invalid
+        API-->>UI: 403 or 400, safe envelope, data null
     else Request accepted
-        API->>Account: Find trimmed identifier on username/email with case-insensitive collation, require active and non-deleted admin
+        API->>Account: Find trimmed identifier using case-insensitive collation; require ACTIVE and non-deleted
         Account-->>API: Admin account or no match
         alt Account missing, inactive, or deleted
             API-->>UI: 401 generic credentials error, data null
         else Active account found
             API->>Credential: Read Argon2id hash by admin_account_id
-            Credential-->>API: Password hash
-            API->>API: Verify password
-            alt Password invalid or credential unavailable
+            alt Credential record missing
                 API-->>UI: 401 generic credentials error, data null
-            else Password valid
-                API->>Role: Read active role for admin
-                Role-->>API: Active role or no valid role
-                alt Role invalid
+            else Credential available
+                Credential-->>API: Password hash
+                API->>API: Verify Argon2id password
+                alt Password mismatch
                     API-->>UI: 401 generic credentials error, data null
-                else Role active
-                    API->>API: Prepare access JWT and opaque refresh token
-                    API->>Session: Create session family, store refresh and CSRF digests
-                    Session-->>API: Session created
-                    API-->>UI: 200, set access and refresh cookies, return admin profile and csrfToken
-                    UI-->>Admin: Show dashboard
+                else Password matches
+                    API->>Role: Read active role for admin
+                    Role-->>API: Active role or no valid role
+                    alt Role invalid
+                        API-->>UI: 401 generic credentials error, data null
+                    else Role active
+                        API->>API: Prepare access JWT, opaque refresh token, and CSRF token
+                        API->>Session: Persist session family and refresh/CSRF digests
+                        alt Session store failure
+                            Session-->>API: Persistence failed
+                            API-->>UI: 500 ADMT03001, safe envelope, data null; set no cookies
+                        else Session committed
+                            Session-->>API: Session created
+                            API-->>UI: 200, set access/refresh cookies, return admin profile and csrfToken
+                            UI-->>Admin: Show dashboard
+                        end
+                    end
                 end
             end
         end
@@ -94,7 +103,7 @@ Target merupakan baseline Sprint 1, bukan hasil benchmark. Uji beban autentikasi
 
 1. Hanya akun administrator berstatus `ACTIVE`, belum soft-deleted, memiliki credential valid, dan memiliki tepat satu role aktif yang dapat login.
 2. `identifier` menerima username atau email. Nilai yang mengandung `@` diperlakukan sebagai email; selain itu diperlakukan sebagai username. Username tidak boleh mengandung `@`. API menghapus whitespace di tepi dan mencari pada field `email` atau `username` memakai case-insensitive collation MongoDB; database menyimpan field asli tanpa whitespace tepi. Password diverifikasi persis seperti dikirim; API tidak trim atau mengubah password.
-3. Akun tidak ditemukan, password salah, akun `INACTIVE`/terhapus, credential tidak tersedia, atau role tidak aktif menghasilkan error kredensial generik yang sama.
+3. Akun tidak ditemukan, password salah, akun `INACTIVE`/terhapus, credential tidak tersedia, atau role tidak aktif menghasilkan error kredensial generik yang sama. Kegagalan infrastruktur saat membaca credential/session atau menjalankan verifikasi hash menghasilkan HTTP 500 dengan pesan aman, bukan error kredensial.
 4. Password hash disimpan di MongoDB collection `ADMIN_CREDENTIAL` dengan Argon2id. Password mentah tidak disimpan, ditulis ke log, atau dikembalikan melalui API.
 5. Provisioning credential dilakukan melalui proses backend/database/script terkendali. Tidak ada password default, reset password melalui email, SMTP, atau CRUD akun admin di dashboard.
 6. Login membuat satu session family. API menyimpan digest refresh token dan CSRF token, lalu menetapkan access JWT dan refresh token opaque acak minimal 32 byte yang dikodekan base64url lewat dua header `Set-Cookie`.
@@ -221,14 +230,14 @@ Header response menetapkan access JWT dan refresh token melalui dua `Set-Cookie`
 
 ## Service Status Codes
 
-| Code        | Type      | Category          | Meaning                                                                 |
-| ----------- | --------- | ----------------- | ----------------------------------------------------------------------- |
-| `ADMS00000` | Success   | General           | Login admin berhasil.                                                   |
-| `ADMB01001` | Business  | Authentication    | Username/email atau password tidak valid; tidak mengungkap status akun. |
-| `ADMB02001` | Business  | User validation   | Payload login tidak valid.                                              |
-| `ADMB02002` | Business  | User validation   | Batas rate limit login tercapai.                                        |
-| `ADMB01002` | Business  | Authentication    | Origin dashboard tidak diizinkan.                                       |
-| `ADMT03001` | Technical | Database/security | Credential/session store atau pembentukan token tidak tersedia.         |
+| Code        | Type      | Category          | Meaning                                                                    |
+| ----------- | --------- | ----------------- | -------------------------------------------------------------------------- |
+| `ADMS00000` | Success   | General           | Login admin berhasil.                                                      |
+| `ADMB01001` | Business  | Authentication    | Username/email atau password tidak valid; tidak mengungkap status akun.    |
+| `ADMB02001` | Business  | User validation   | Payload login tidak valid.                                                 |
+| `ADMB02002` | Business  | User validation   | Batas rate limit login tercapai.                                           |
+| `ADMB01002` | Business  | Authentication    | Origin dashboard tidak diizinkan.                                          |
+| `ADMT03001` | Technical | Database/security | Credential/session store, hash verification, atau pembentukan token gagal. |
 
 ## API Exposure Classification
 
@@ -247,7 +256,7 @@ Header response menetapkan access JWT dan refresh token melalui dua `Set-Cookie`
 
 - Origin dashboard adalah konfigurasi deployment. Nilai rate limit mengikuti batas tetap pada business rules.
 - Pemanggil adalah dashboard JokiHub; login pelanggan menggunakan flow terpisah di sprint lain.
-- Password hash operator mengikuti format Argon2id yang disepakati implementasi; detail parameter hash tidak mengubah kontrak API.
+- Password hash yang disiapkan operator menggunakan Argon2id; API tidak menerima atau mengembalikan password hash.
 
 ## References
 

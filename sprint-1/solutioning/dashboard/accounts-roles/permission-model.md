@@ -6,23 +6,23 @@
 
 ## Tujuan
 
-Dokumen ini mendefinisikan kemampuan admin yang dilindungi permission pada Sprint 1. Dokumen ini bukan IFA dan tidak menetapkan kontrak endpoint. Nama permission di bawah adalah key kanonis untuk kontrak Sprint 1; implementasi API harus diselaraskan dengan key ini.
+Dokumen ini mendefinisikan kemampuan admin yang dilindungi permission pada Sprint 1. Dokumen ini bukan IFA dan tidak menetapkan kontrak endpoint. Nama permission di bawah adalah key kanonis yang digunakan pada kontrak API Sprint 1.
 
 ## Katalog Permission Sprint 1
 
-| Permission key       | Kemampuan yang diberikan                                                   | Batas Sprint 1                                                                          |
-| -------------------- | -------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
-| `role.read`          | Melihat daftar dan detail role beserta permission yang terkait.            | Mencakup pembacaan role; tidak memberi hak perubahan.                                   |
-| `role.create`        | Membuat custom role dan memilih permission dari katalog sistem.            | Role tambahan dibuat eksplisit setelah bootstrap; tidak dibuat otomatis.                |
-| `role.update`        | Mengubah metadata atau permission custom role.                             | Tidak dapat mengubah atau menonaktifkan `SUPER_ADMIN`.                                  |
-| `role.delete`        | Menghapus custom role sesuai aturan assignment dan lifecycle role.         | Tidak dapat menghapus `SUPER_ADMIN`.                                                    |
-| `admin-account.read` | Melihat daftar dan detail akun administrator beserta role yang ditugaskan. | Read-only. Tidak mencakup pembuatan, perubahan, atau penghapusan akun.                  |
-| `game.read`          | Melihat daftar dan detail game di dashboard admin.                         | Permission untuk route admin; katalog publik membaca game aktif tanpa grant akun admin. |
-| `game.create`        | Membuat data game.                                                         | Hanya pengelolaan game; kategori layanan dan layanan masuk Sprint 2.                    |
-| `game.update`        | Mengubah data game.                                                        | Mengikuti aturan lifecycle/publikasi game Sprint 1.                                     |
-| `game.delete`        | Menghapus data game secara soft delete.                                    | Mengisi `deleted_at`; bukan hak untuk mengubah kategori/layanan.                        |
+| Permission key       | Kemampuan yang diberikan                                                   | Batas Sprint 1                                                                                                                                    |
+| -------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `role.read`          | Melihat daftar dan detail role beserta permission yang terkait.            | Mencakup pembacaan role; tidak memberi hak perubahan.                                                                                             |
+| `role.create`        | Membuat custom role dan memilih permission dari katalog sistem.            | Role tambahan dibuat eksplisit setelah bootstrap; tidak dibuat otomatis.                                                                          |
+| `role.update`        | Mengubah metadata atau permission custom role.                             | Tidak dapat mengubah atau menonaktifkan `SUPER_ADMIN`.                                                                                            |
+| `role.delete`        | Menghapus custom role sesuai aturan assignment dan lifecycle role.         | Tidak dapat menghapus `SUPER_ADMIN`.                                                                                                              |
+| `admin-account.read` | Melihat daftar dan detail akun administrator beserta role yang ditugaskan. | Read-only. Tidak mencakup pembuatan, perubahan, atau penghapusan akun.                                                                            |
+| `game.read`          | Melihat daftar dan detail game di dashboard admin.                         | Permission untuk route admin; katalog publik membaca game aktif tanpa grant akun admin.                                                           |
+| `game.create`        | Membuat data game.                                                         | Hanya pengelolaan game; kategori layanan dan layanan masuk Sprint 2.                                                                              |
+| `game.update`        | Mengubah data game.                                                        | Perubahan `isActive` dan `isPopular` hanya dapat dilakukan Super Admin.                                                                           |
+| `game.delete`        | Menghapus data game secara soft delete.                                    | Mengisi `deleted_at`; lifecycle soft delete otomatis menonaktifkan game dan membersihkan flag populer. Bukan hak untuk mengubah kategori/layanan. |
 
-Key permission pada tabel adalah identifier stabil yang dipakai API dalam array `permissions`. ID internal entitas permission memakai prefix `permission_`; key seperti `game.read` bukan ID record. Super Admin dapat memberikan seluruh key aktif pada katalog kepada role kustom. Handler Go harus diselaraskan dengan katalog ini.
+Key permission pada tabel adalah identifier stabil yang dipakai API dalam array `permissions`. ID internal entitas permission memakai prefix `permission_`; key seperti `game.read` bukan ID record. Super Admin dapat memberikan seluruh key aktif pada katalog kepada role kustom. API memvalidasi permission key terhadap katalog ini.
 
 ## Kebijakan Role dan Grant
 
@@ -46,12 +46,16 @@ Key permission pada tabel adalah identifier stabil yang dipakai API dalam array 
 
 Permission adalah hak untuk menjalankan kemampuan; role mengelompokkan permission; akun administrator menerima role. Model relasi `ADMIN_ROLE`, `PERMISSION`, `ROLE_PERMISSION`, dan `ACCOUNT_ROLE` dijelaskan di [Role ERD](../../../erd/role-erd.md). Kebijakan awal `SUPER_ADMIN` dan bootstrap-nya dijelaskan di [BRD Sprint 1](../../../BRD.md).
 
-## Implementasi Lanjutan
+## Pengelolaan Katalog Permission
 
-- Selaraskan pemeriksaan authorization Go API dengan key pada katalog ini.
-- Permission catalog dikelola sistem, bukan melalui CRUD role; mekanisme seed atau penyimpanannya ditetapkan pada desain implementasi.
+- API memvalidasi hak akses menggunakan key aktif pada katalog ini.
+- Katalog permission dikelola oleh sistem, bukan melalui CRUD role. Hanya permission aktif dari katalog yang dapat ditetapkan pada role kustom.
 - Role ERD memisahkan permission_id berprefix permission_ sebagai ID record dari permission_key seperti game.read yang digunakan API; relasi grant menyimpan ID record.
 - Role dan game dihapus secara soft delete melalui `deleted_at`; `SUPER_ADMIN` tetap immutable.
+
+## SLA Baseline
+
+Evaluasi permission termasuk dalam latency dan availability route dashboard pada [BRD Sprint 1](../../../BRD.md): availability 99,9% per bulan, 50 VUser / 20 request per detik, baca p95 ≤ 500 ms dan tulis p95 ≤ 1 detik; p99 ≤ 2 detik. Katalog ini tidak menetapkan SLA route tersendiri.
 
 ## Referensi
 

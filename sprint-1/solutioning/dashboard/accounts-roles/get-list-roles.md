@@ -130,7 +130,7 @@ Tidak ada request body.
 
 1. Request harus membawa cookie access admin valid, Origin dashboard yang diizinkan, CSRF token valid, akun ACTIVE/non-deleted, session family aktif, dan permission `role.read`. Kembalikan HTTP 401 `ROLB01001` bila belum terautentikasi dan HTTP 403 `ROLB01002` bila permission tidak tersedia.
 2. `search`, bila dikirim, harus berupa string maksimal 100 karakter setelah trim.
-3. `status`, bila dikirim, harus cocok dengan nilai status yang disetujui. Usulan saat ini `ACTIVE` atau `INACTIVE`; nilai lain mengembalikan `ROLB02001`.
+3. `status`, bila dikirim, harus `ACTIVE` atau `INACTIVE`; nilai lain mengembalikan `ROLB02001`.
 4. `sortBy` harus `name`, `createdAt`, atau `updatedAt`; `sortOrder` harus `ASC` atau `DESC`. Default `createdAt DESC`, lalu `id ASC`.
 5. `page` harus integer lebih besar atau sama dengan 1. Default `1`.
 6. `limit` harus integer antara 1 dan 100. Default `10`.
@@ -278,6 +278,4 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 ## References
 
 - `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — template kontrak API sprint.
-- `docs-game-service-platform/sprint_1/solutioning/dashboard/accounts-roles/create-role.md` — model request role yang diusulkan, belum tersedia pada workspace saat dokumen ini dibuat.
-- `src/features/AdminAccountsRoles/` — UI Admin Dashboard akun & role; tidak menyediakan backend contract.
 - `docs-game-service-platform/sprint_1/solutioning/dashboard/games/get-list-games.md` — pola daftar admin, filter, pagination, dan response envelope.

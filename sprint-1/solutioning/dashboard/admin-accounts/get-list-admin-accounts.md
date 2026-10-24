@@ -1,7 +1,7 @@
 # Get List Admin Accounts — Interface Agreement
 
 > **Document Type:** IFA / API Contract  
-> **Status:** Source-mapped draft  
+> **Status:** Sprint 1 target  
 > **Service / Domain:** Admin Access and Accounts  
 > **Consumer / Partner:** JokiHub Admin Dashboard
 
@@ -19,14 +19,14 @@ sequenceDiagram
     participant Auth as AuthPresenter
     participant Repo as AdminAccountRepository
     Admin->>UI: Buka daftar akun admin
-    UI->>API: GET /api/admin/admin-users/v1/list?filters
+    UI->>API: GET /api/admin/admin-users/v1/list?page&limit&search&status&roleId
     API->>Auth: Verifikasi sesi dan admin-account.read
     alt Authorized
         API->>Repo: Cari akun sesuai filter dan pagination
         Repo-->>API: Daftar akun dan total hasil
-        API-->>UI: 200 USRS00000 dengan data[] dan pagination
+        API-->>UI: 200 USRS00000 dengan `data: []` dan `pagination` pada level yang sama
     else Unauthorized atau forbidden
-        API-->>UI: 401/403 dengan error envelope Go
+        API-->>UI: 401/403 dengan envelope `{code,message,data}` dan `data: null`
     else Validasi query gagal
         API-->>UI: 400 USRB02001 dengan data null
     end
@@ -62,8 +62,8 @@ sequenceDiagram
 
 ### API Versioning
 
-- **Decision:** Existing v1 route, source-mapped.
-- **Backward Compatibility:** Pertahankan path/action dan parameter query Go yang berjalan.
+- **Decision:** Use route v1 yang ditetapkan untuk Sprint 1.
+- **Backward Compatibility:** Pertahankan path/action dan parameter query yang ditetapkan dalam kontrak Sprint 1.
 - **Reason:** Tidak ada permintaan perubahan endpoint atau major-version dalam sumber.
 
 ## Business Rules
@@ -77,7 +77,7 @@ sequenceDiagram
 3. Akun soft-deleted tidak ditampilkan. Akun `INACTIVE` tidak dapat login; session aktifnya dibatalkan pada pemeriksaan autentikasi berikutnya.
 4. Filter status menerima `ACTIVE` atau `INACTIVE`; filter role menggunakan `roleId`. Akun `INACTIVE` tidak dapat login dan session aktifnya dibatalkan.
 5. Pagination default `page=1`, `limit=20`, maksimum `limit=100`; `limit` adalah jumlah record per halaman.
-6. Current Go response envelope adalah `{code,message,data?}`; ini bukti implementasi, bukan keputusan format target lintas API.
+6. Response mengikuti envelope Sprint 1 `{code, message, data}`.
 
 ## Request Headers
 
@@ -89,13 +89,13 @@ sequenceDiagram
 
 ## Request Parameters
 
-| Parameter | Type    | M/O/C |     Max Length | Description                                           | Example     |
-| --------- | ------- | ----- | -------------: | ----------------------------------------------------- | ----------- |
-| `page`    | Integer | O     |              — | Halaman positif; default `1`.                         | `1`         |
-| `limit`   | Integer | O     |            100 | Ukuran halaman positif; default `20`, maksimum `100`. | `20`        |
-| `search`  | String  | O     |            100 | Pencarian identitas admin.                            | `operator`  |
-| `status`  | String  | O     |              — | Filter `ACTIVE` atau `INACTIVE`.                      | `ACTIVE`    |
-| `roleId`  | String  | O     | Source-defined | Filter berdasarkan role.                              | `{role-id}` |
+| Parameter | Type    | M/O/C |     Max Length | Description                                           | Example       |
+| --------- | ------- | ----- | -------------: | ----------------------------------------------------- | ------------- |
+| `page`    | Integer | O     |              — | Halaman positif; default `1`.                         | `1`           |
+| `limit`   | Integer | O     |            100 | Ukuran halaman positif; default `20`, maksimum `100`. | `20`          |
+| `search`  | String  | O     |            100 | Pencarian identitas admin.                            | `operator`    |
+| `status`  | String  | O     |              — | Filter `ACTIVE` atau `INACTIVE`.                      | `ACTIVE`      |
+| `roleId`  | String  | O     | Sesuai ID role | Filter berdasarkan role.                              | `role_01JXYZ` |
 
 ### Request Validation
 
@@ -103,15 +103,15 @@ sequenceDiagram
 2. `page` dan `limit` harus integer positif; `limit` tidak boleh lebih dari `100`.
 3. `search` maksimum 100 karakter.
 4. `status` hanya boleh kosong, `ACTIVE`, atau `INACTIVE`.
-5. `roleId` harus memenuhi format ID role yang diterima handler.
+5. `roleId` harus memakai format ID role berprefix `role_`.
 
 ## Response Body
 
-Current Go wire envelope `{code,message,data?}`; field berikut adalah source projection.
+Bentuk response sukses mengikuti envelope Sprint 1 `{code, message, data}`.
 
 | Attribute               | Type          | M/O/C | Max Length | Description                                           | Example                          |
 | ----------------------- | ------------- | ----- | ---------: | ----------------------------------------------------- | -------------------------------- |
-| `code`                  | String        | M     |         10 | Kode hasil Go service.                                | `USRS00000`                      |
+| `code`                  | String        | M     |         10 | Kode hasil service.                                   | `USRS00000`                      |
 | `message`               | String        | M     |        200 | Pesan hasil.                                          | `Daftar admin berhasil diambil.` |
 | `data[]`                | Object[]      | C     |          — | Baris akun admin; tanpa record soft-deleted.          | `[{}]`                           |
 | `data[].id`             | String        | C     |         64 | ID akun administrator dengan prefix `admin_`.         | `admin_01JXYZ`                   |
@@ -217,13 +217,12 @@ Current Go wire envelope `{code,message,data?}`; field berikut adalah source pro
 | NFT        | Yes      | Uji filter, pagination, dataset besar, 50 VUser / 20 request/s, dan SLA baseline pada dataset representatif. |
 | VA/Pentest | Yes      | Uji authorization, IDOR, PII exposure, filter injection, dan akses record soft-deleted.                      |
 
-## Implementation Alignment
+## Sprint 1 Alignment
 
 - ERD akun memakai ID dengan prefix admin_ sesuai IFA.
 
-Target Sprint 1 memakai permission `admin-account.read` dari katalog permission. Implementasi Go yang ada masih memeriksa legacy `settings-manage`; selaraskan middleware ke key target Sprint 1 `admin-account.read` saat API admin disesuaikan. Perubahan login tidak termasuk Sprint 1.
+API daftar dan detail akun admin memakai permission `admin-account.read` dari katalog permission. Kebijakan autentikasi admin dijelaskan pada IFA auth.
 
 ## References
 
 - [Admin Account Detail IFA](./get-admin-account-detail.md)
-- `../../../../../go-game-service-platform/internal/controller/http/admin_access_http.go`

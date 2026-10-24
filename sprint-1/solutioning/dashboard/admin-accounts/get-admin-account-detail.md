@@ -1,7 +1,7 @@
 # Get Admin Account Detail — Interface Agreement
 
 > **Document Type:** IFA / API Contract  
-> **Status:** Source-mapped draft  
+> **Status:** Sprint 1 target  
 > **Service / Domain:** Admin Access and Accounts  
 > **Consumer / Partner:** JokiHub Admin Dashboard
 
@@ -9,7 +9,7 @@
 
 ![Sprint 1 dashboard design](../../../design/dashboard.png)
 
-Dokumen ini memetakan endpoint Go yang berjalan.
+Dokumen ini menetapkan kontrak untuk melihat detail akun admin pada Sprint 1.
 
 ## Sequence Diagram
 
@@ -26,9 +26,9 @@ sequenceDiagram
     alt Authorized
         API->>Repo: Ambil akun admin berdasarkan adminId
         Repo-->>API: Akun admin atau tidak ditemukan
-        API-->>UI: 200 USRS00000 dengan data akun langsung atau 404 USRB02004
+        API-->>UI: 200 USRS00000 dengan data akun object atau 404 USRB02004, data null
     else Unauthorized/forbidden
-        API-->>UI: 401/403 dengan error envelope Go
+        API-->>UI: 401/403 dengan envelope `{code,message,data}` dan `data: null`
     end
 ```
 
@@ -62,7 +62,7 @@ sequenceDiagram
 
 ### API Versioning
 
-- **Decision:** Existing v1 route, source-mapped.
+- **Decision:** Use route v1 yang ditetapkan untuk Sprint 1.
 - **Backward Compatibility:** Pertahankan path/action dan ID path parameter yang berjalan.
 - **Reason:** Tidak ada permintaan perubahan endpoint atau major-version dalam sumber.
 
@@ -77,7 +77,7 @@ sequenceDiagram
 3. Akun tidak ditemukan atau soft-deleted menghasilkan `404 USRB02004`. Akun `INACTIVE` tidak dapat login dan session aktifnya dibatalkan pada pemeriksaan autentikasi berikutnya.
 4. Setiap akun administrator hanya memiliki satu role aktif; response menyajikannya sebagai object `role` tunggal.
 5. Response hanya memuat projection admin; credential dan password hash tidak dikembalikan.
-6. Current Go response envelope adalah `{code,message,data?}`; ini bukti implementasi, bukan keputusan format target lintas API.
+6. Response mengikuti envelope Sprint 1 `{code, message, data}`.
 
 ## Request Headers
 
@@ -102,7 +102,7 @@ sequenceDiagram
 
 | Attribute          | Type          | M/O/C | Max Length | Description                                           | Example                                                                        |
 | ------------------ | ------------- | ----- | ---------: | ----------------------------------------------------- | ------------------------------------------------------------------------------ |
-| `code`             | String        | M     |         10 | Kode hasil Go service.                                | `USRS00000`                                                                    |
+| `code`             | String        | M     |         10 | Kode hasil API.                                       | `USRS00000`                                                                    |
 | `message`          | String        | M     |        200 | Pesan hasil.                                          | `Detail admin berhasil diambil.`                                               |
 | `data`             | Object/null   | C     |          — | Projection akun admin langsung; `null` pada error.    | `{}`                                                                           |
 | `data.id`          | String        | C     |         64 | ID akun administrator dengan prefix `admin_`.         | `admin_01JXYZ`                                                                 |
@@ -196,13 +196,12 @@ sequenceDiagram
 | NFT        | Yes      | Uji ID valid/tidak valid, akun tidak ada/soft-deleted, 50 VUser / 20 request/s, dan SLA baseline. |
 | VA/Pentest | Yes      | Uji authorization, IDOR lintas akun, PII exposure, dan kebocoran credential.                      |
 
-## Implementation Alignment
+## Sprint 1 Alignment
 
 - ERD akun memakai ID dengan prefix admin_ sesuai IFA.
 
-Target Sprint 1 memakai permission `admin-account.read` dari katalog permission. Implementasi Go yang ada masih memeriksa legacy `settings-manage`; selaraskan middleware ke key target Sprint 1 `admin-account.read` saat API admin disesuaikan. Perubahan login tidak termasuk Sprint 1.
+API daftar dan detail akun admin memakai permission `admin-account.read` dari katalog permission. Kebijakan autentikasi admin dijelaskan pada IFA auth.
 
 ## References
 
 - [List Admin Accounts IFA](./get-list-admin-accounts.md)
-- `../../../../../go-game-service-platform/internal/controller/http/admin_access_http.go`

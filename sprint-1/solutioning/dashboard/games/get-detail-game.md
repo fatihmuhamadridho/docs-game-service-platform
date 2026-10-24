@@ -91,11 +91,11 @@ sequenceDiagram
 
 1. Hanya administrator dengan cookie access admin valid, akun ACTIVE/non-deleted, session family aktif, Origin allowlist, dan CSRF token valid dan permission `game.read` yang dapat mengakses endpoint.
 2. `gameId` mengidentifikasi satu record katalog dan tidak dapat diubah.
-3. API mengembalikan seluruh field katalog yang didefinisikan dalam kontrak: `id`, `name`, `slug`, `description`, `imageUrl`, `isActive`, `isPopular`, `sortOrder`, `createdAt`, dan `updatedAt`.
+3. API mengembalikan seluruh field katalog yang didefinisikan dalam kontrak: `id`, `name`, `slug`, `description`, `imageUrl`, `platform`, `isActive`, `isPopular`, `sortOrder`, `createdAt`, dan `updatedAt`.
 4. Nilai opsional yang belum diisi dikembalikan sebagai `null`, bukan dihilangkan, agar consumer dapat membedakan nilai kosong secara konsisten.
 5. Jika record tidak ditemukan, API mengembalikan HTTP 404 dengan `GAMB02004`.
 6. Endpoint tidak mengubah data game. Perubahan dilakukan melalui endpoint update terpisah.
-7. Cache detail, bila digunakan, harus dihentikan atau diinvalidate setelah update game agar Admin Dashboard tidak menerima data lama. Strategi cache belum ditentukan.
+7. Sprint 1 tidak menggunakan application cache untuk detail game; API membaca state terbaru dari MongoDB pada setiap request agar hasil tidak stale setelah update.
 8. Game dengan `deleted_at` terisi tidak dikembalikan oleh endpoint detail dan dipetakan sebagai tidak ditemukan.
 
 ## Request Headers
@@ -232,8 +232,8 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Assumptions
 
-- Endpoint `/api/admin/games/v1/detail/{gameId}`, field response, envelope, prefix `GAM`, dan kode status mengikuti pola API admin game yang sudah didokumentasikan dan memerlukan persetujuan API owner.
-- Route segmen `/detail/{gameId}` dipilih agar konsisten dengan action-based endpoint project (`/list`, `/create`, `/update/{gameId}`, `/delete/{gameId}`). Konfirmasi bila API standard memakai resource REST `GET /api/admin/games/v1/{gameId}`.
+- Endpoint `/api/admin/games/v1/detail/{gameId}`, field response, envelope `{code,message,data}`, prefix `GAM`, dan kode status mengikuti kontrak game Sprint 1 serta konsisten dengan IFA daftar game admin.
+- Route detail menggunakan pola action-based `/detail/{gameId}` sesuai keputusan BR-Q01 pada BRD Sprint 1.
 - Response detail memakai field yang sama dengan item pada [Get List Games](get-list-games.md) dan record pada [Game ERD](../../../erd/game-catalog-erd.md).
 - Format ID game mengikuti `game_` + ULID kanonis 26 karakter. Route dashboard bersifat Public dengan session admin, permission, CORS allowlist, dan CSRF. SLA mengikuti BRD; HTTP mapping memakai 400/401/403/404/429/500.
 - Soft delete dengan `deleted_at` adalah kebijakan yang berlaku; game terhapus tidak dikembalikan oleh endpoint ini.
@@ -244,4 +244,4 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - `./get-list-games.md` — kontrak daftar game dan pola response.
 - `./update-game.md` — operasi update game.
 - `./delete-game.md` — kebijakan soft delete dan perilaku record terhapus.
-- `../../../erd/game-catalog-erd.md` — skema game katalog saat ini.
+- `../../../erd/game-catalog-erd.md` — skema game katalog Sprint 1.

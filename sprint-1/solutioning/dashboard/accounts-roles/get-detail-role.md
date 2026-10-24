@@ -89,7 +89,7 @@ sequenceDiagram
 
 1. Hanya administrator dengan cookie access admin valid, akun ACTIVE/non-deleted, session family aktif, Origin allowlist, dan CSRF token valid dan permission `role.read` yang dapat mengakses endpoint.
 2. `roleId` mengidentifikasi satu definisi role dan tidak dapat diubah.
-3. Response memuat `id`, `name`, `code`, `description`, `status`, `permissions`, `createdAt`, dan `updatedAt` sesuai usulan kontrak daftar role.
+3. Response memuat `id`, `name`, `code`, `description`, `status`, `permissions`, `createdAt`, dan `updatedAt` sesuai kontrak role Sprint 1.
 4. Response memuat seluruh key permission yang ditetapkan pada role.
 5. Jika role tidak ditemukan, tidak aktif, atau soft-deleted, API mengembalikan `ROLB02004`.
 6. API hanya membaca data. Perubahan role dan permission dilakukan melalui endpoint update terpisah.
@@ -134,8 +134,6 @@ Tidak ada request body.
 | ------------------ | ----- | ------------------ | ----- | ---------: | --------------------------------------------------------------------------------------------------------- | --------------------------------- |
 | `code`             | N     | String             | M     |         20 | Status code response.                                                                                     | `ROLS00000`                       |
 | `message`          | N     | String             | M     |        200 | Pesan hasil operasi.                                                                                      | `Role detail retrieved`           |
-| `status.code`      | N     | String             | M     |         20 | Service status code.                                                                                      | `ROLS00000`                       |
-| `status.message`   | N     | String             | O     |        200 | Pesan hasil untuk consumer.                                                                               | `Role detail retrieved`           |
 | `data`             | N     | Object/null        | M     |          — | Payload hasil; `null` ketika error.                                                                       | `{}`                              |
 | `data`             | N     | Object             | C     |          — | Snapshot role.                                                                                            | `{}`                              |
 | `data.id`          | N     | String             | C     |         64 | ID role immutable.                                                                                        | `role_01JXYZ`                     |
@@ -239,7 +237,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 ## Assumptions
 
 - Endpoint `/api/admin/roles/v1/detail/{roleId}`, nama field, response envelope, prefix `ROL`, dan HTTP mapping mengikuti kontrak [Get List Roles](get-list-roles.md) dan BRD Sprint 1.
-- Route action-based `/detail/{roleId}` dipilih agar konsisten dengan pola solutioning admin project. Konfirmasi jika API standard memilih resource REST `GET /api/admin/roles/v1/{roleId}`.
+- Route detail menggunakan pola action-based `/detail/{roleId}` sesuai keputusan BR-Q01 pada BRD Sprint 1.
 - Role ERD memisahkan permission_id berprefix permission_ sebagai ID record dari permission_key seperti game.read yang digunakan API; relasi grant menyimpan ID record.
 - SLA dan pemetaan HTTP mengikuti BRD. Sprint 1 tidak mencatat audit event. Role ID memakai prefix role_.
 - Cakupan hanya membaca detail role; create, list, update, delete, dan assignment role ke akun berada di endpoint terpisah.
@@ -248,6 +246,5 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 - `./get-list-roles.md` — field role, status code, dan aturan visibilitas permission yang diusulkan.
 - `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — template kontrak API sprint.
-- `src/features/AdminAccountsRoles/` — UI Admin Dashboard akun & role; tidak menyediakan backend contract.
 
 - Permission di API direpresentasikan dengan permission_key; ID record permission terpisah dan disimpan sebagai permission_id berprefix permission_.

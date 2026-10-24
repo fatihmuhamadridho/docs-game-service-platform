@@ -251,13 +251,12 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Assumptions
 
-- Endpoint `/api/admin/games/v1/list`, query names, response envelope, service codes, and page defaults are proposed to align with [Create Game](create-game.md), pending API owner approval.
-- `description`/`imageUrl` dipetakan dari model UI saat ini (`service`/`art`); skema persistensi final mengikuti [ERD katalog game](../../../erd/game-catalog-erd.md).
-- Search covers only `name` and `slug`; sort and exact-match rules need product confirmation.
+- Endpoint `/api/admin/games/v1/list`, query, envelope `{code,message,data,pagination}`, service code, dan default pagination mengikuti kontrak game Sprint 1. Default `page=1`, `limit=20`; maximum limit mengikuti batas yang ditetapkan IFA ini.
+- Response menggunakan field game yang ditetapkan BRD dan [ERD katalog game](../../../erd/game-catalog-erd.md); model UI lama (`service`/`art`) bukan sumber kontrak API.
+- Search mencocokkan `name` dan `slug`; filter platform dan opsi sort mengikuti aturan BRD. Filter memakai exact match enum; pencarian nama/slug tidak membedakan kapitalisasi.
 - Rate limit route baca admin: 1.200 request/IP/menit dan 600 request/admin/menit. SLA mengikuti BRD. Cache policy bukan bagian dari kontrak.
 
 ## References
 
-- `./create-game.md` — proposed game catalog fields and admin access assumptions.
+- `./create-game.md` — field katalog dan kebijakan akses admin Sprint 1.
 - `docs-game-service-platform/sprint_1/solutioning/public/games/get-popular-games.md` — public popular-games consumer contract.
-- `src/features/AdminDashboard/views/pages/AdminDashboard.page.tsx` — existing Admin Dashboard entry point; Games list UI is not yet implemented.

@@ -29,15 +29,19 @@ sequenceDiagram
             API-->>UI: 400 GAMB02001, data null
             UI-->>Admin: Tampilkan kesalahan ID
         else gameId valid
-            API->>DB: Ambil record aktif berdasarkan gameId
-            alt Game tidak ditemukan
-                DB-->>API: Record tidak ada atau sudah dipurge
+            API->>DB: Cari game berdasarkan gameId, termasuk tombstone dalam retensi
+            alt Game tidak ditemukan atau sudah dipurge
+                DB-->>API: Record tidak ditemukan
                 API-->>UI: 404 GAMB02004, data null
                 UI-->>Admin: Tampilkan bahwa game tidak ditemukan
-            else Game ditemukan
-                API->>DB: Set deleted_at dan updated_at secara atomik
+            else Tombstone masih dalam retensi
+                DB-->>API: Record sudah dihapus
+                API-->>UI: 200 GAMS00000, data null
+                UI-->>Admin: Tampilkan sukses yang sama tanpa mengubah record
+            else Game belum dihapus
+                API->>DB: Atomik set deleted_at, is_active=false, is_popular=false, updated_at
                 alt Penyimpanan berhasil
-                    DB-->>API: Waktu penghapusan tersimpan
+                    DB-->>API: Transisi penghapusan tersimpan
                     API-->>UI: 200 GAMS00000, data null
                     UI-->>Admin: Hapus game dari daftar dashboard
                 else Database gagal
@@ -93,14 +97,14 @@ sequenceDiagram
 **Autentikasi bersama:** Setiap request dashboard wajib memakai cookie access admin dari backend, Origin yang exact-match dengan allowlist, dan X-CSRF-Token. Backend memeriksa session family aktif serta status akun ACTIVE/non-deleted pada setiap autentikasi. Jika akun INACTIVE, request ditolak pada pemeriksaan berikutnya dan session family aktif dicabut. Setiap endpoint tetap memerlukan permission sesuai metode. Lihat [IFA login](../auth/login.md), [refresh token](../auth/refresh-token.md), dan [logout](../auth/logout.md).
 
 1. Hanya administrator terautentikasi dengan permission `game.delete` yang dapat menghapus game. Permission key mengikuti katalog Sprint 1.
-2. Penghapusan menggunakan soft delete: service mengisi `deleted_at` dengan timestamp UTC dan memperbarui `updated_at`. Soft delete adalah kebijakan yang berlaku: isi `deleted_at` dan perbarui `updated_at` secara atomik.
+2. Penghapusan menggunakan soft delete: secara atomik set `deleted_at`, `is_active=false`, `is_popular=false`, dan `updated_at` sesuai lifecycle game pada ERD. Perubahan flag merupakan efek otomatis delete, bukan perubahan status langsung oleh caller; izin endpoint tetap `game.delete`.
 3. Game dengan `deleted_at` terisi tidak dikembalikan pada daftar/detail admin, daftar publik, atau daftar game populer.
 4. Operasi tidak menghapus fisik record, layanan, transaksi, atau pesanan terkait. Tidak ada cascade delete.
 5. Jika game tombstone masih dalam retensi, delete berulang mengembalikan HTTP 200 dengan `data: null` tanpa mengubah data. ID yang tidak pernah ada atau sudah dipurge mengembalikan HTTP 404 `GAMB02004`.
 6. Sprint 1 tidak mencatat audit event sesuai keputusan BRD.
-7. Update `deleted_at` dan `updated_at` dilakukan atomik. Jika database gagal, status game tetap seperti semula.
+7. Perubahan `deleted_at`, `is_active`, `is_popular`, dan `updated_at` dilakukan atomik. Jika database gagal, tidak ada field yang berubah.
 8. Game terhapus tidak dapat dipulihkan melalui produk. Penghapusan berulang pada tombstone yang masih berada dalam retensi mengembalikan sukses yang sama; game yang tidak ada atau sudah dipurge mengembalikan HTTP 404.
-9. Kebijakan penghapusan ketika game memiliki layanan/riwayat aktif belum dapat divalidasi karena relasi tersebut belum tercakup pada ERD. Tidak ada hard-delete sampai kebijakan referensial disepakati.
+9. Relasi game dengan layanan, transaksi, dan pesanan berada di luar ERD dan cakupan Sprint 1. Penghapusan tidak mengubah atau menghapus data terkait; record katalog mengikuti retensi dua bulan pada BRD dan ERD.
 
 ## Request Headers
 

@@ -36,8 +36,8 @@ Sprint 1 does not record audit events per BRD; `created_at` and `updated_at` pro
 | `description` | String, max 500          | Yes  | —                                           | Optional game description shown in dashboard and storefront.                                 |
 | `image_url`   | String, max 2048         | No   | Required                                    | Absolute HTTPS URL for the game image. BRD permits any HTTPS host.                           |
 | `platform`    | String, max 30           | Yes  | Optional enum: `MOBILE`, `PC`, or `CONSOLE` | Platform classification used by public game discovery/filtering.                             |
-| `is_active`   | Boolean                  | No   | Default `false` (proposed)                  | Whether game is available in storefront.                                                     |
-| `is_popular`  | Boolean                  | No   | Default `false` (proposed)                  | Whether game may appear in popular-games list. Must be false when `is_active=false`.         |
+| `is_active`   | Boolean                  | No   | Default `false`                             | Whether game is available in storefront.                                                     |
+| `is_popular`  | Boolean                  | No   | Default `false`                             | Whether game may appear in popular-games list. Must be false when `is_active=false`.         |
 | `sort_order`  | Integer                  | No   | Unique; check `>= 0`                        | Service-managed unique display order; service allocates next available integer when omitted. |
 | `created_at`  | Timestamp with time zone | No   | Default current UTC timestamp               | Record creation time. Immutable after insert.                                                |
 | `updated_at`  | Timestamp with time zone | No   | Default current UTC timestamp               | Time of most recent record update.                                                           |
@@ -45,14 +45,14 @@ Sprint 1 does not record audit events per BRD; `created_at` and `updated_at` pro
 
 ## Indexes
 
-| Index                        | Columns                                                    | Type                                                 | Purpose                                                              |
-| ---------------------------- | ---------------------------------------------------------- | ---------------------------------------------------- | -------------------------------------------------------------------- |
-| `uq_game_catalog_slug`       | `slug`                                                     | Unique                                               | Enforce unique game route.                                           |
-| `uq_game_catalog_sort_order` | `sort_order`                                               | Unique                                               | Keep game display order unique across all games.                     |
-| `uq_game_catalog_name_ci`    | `name`, collation `{ locale: "en", strength: 2 }`          | Unique                                               | Prevent case-only duplicate names; application trims before storage. |
-| `ix_game_catalog_admin_list` | `is_active`, `is_popular`, `sort_order`, `name`, `game_id` | Non-unique                                           | Support admin list filters and deterministic ordering.               |
-| `ix_game_catalog_platform`   | `platform`, `is_active`, `sort_order`                      | Non-unique; partial where supported (proposed)       | Support public platform-filtered game discovery.                     |
-| `ix_game_catalog_popular`    | `is_active`, `is_popular`, `sort_order`                    | Non-unique; partial index where supported (proposed) | Support active popular-games lookup.                                 |
+| Index                        | Columns                                                    | Type                                      | Purpose                                                              |
+| ---------------------------- | ---------------------------------------------------------- | ----------------------------------------- | -------------------------------------------------------------------- |
+| `uq_game_catalog_slug`       | `slug`                                                     | Unique                                    | Enforce unique game route.                                           |
+| `uq_game_catalog_sort_order` | `sort_order`                                               | Unique                                    | Keep game display order unique across all games.                     |
+| `uq_game_catalog_name_ci`    | `name`, collation `{ locale: "en", strength: 2 }`          | Unique                                    | Prevent case-only duplicate names; application trims before storage. |
+| `ix_game_catalog_admin_list` | `is_active`, `is_popular`, `sort_order`, `name`, `game_id` | Non-unique                                | Support admin list filters and deterministic ordering.               |
+| `ix_game_catalog_platform`   | `platform`, `is_active`, `sort_order`                      | Non-unique; partial where supported       | Support public platform-filtered game discovery.                     |
+| `ix_game_catalog_popular`    | `is_active`, `is_popular`, `sort_order`                    | Non-unique; partial index where supported | Support active popular-games lookup.                                 |
 
 ## Relationships
 
@@ -82,6 +82,10 @@ Sprint 1 does not record audit events per BRD; `created_at` and `updated_at` pro
 - Soft-deleted documents are hidden immediately, retained for 2 months, then permanently purged. No restore API is supported.
 - Create does not use an `Idempotency-Key`; uniqueness constraints reject duplicate create retries. Repeated update/delete requests do not create additional effects.
 - Audit-event logging is outside Sprint 1 per BRD.
+
+## SLA Baseline
+
+ERD ini mengikuti SLA API game pada [BRD Sprint 1](../BRD.md): availability 99,9% per bulan; uji 50 VUser / 20 request per detik; baca p95 ≤ 500 ms, tulis p95 ≤ 1 detik, p99 ≤ 2 detik; kapasitas awal 2 vCPU / 4 GiB per instance dengan CPU ≤ 70% dan memori ≤ 75% saat beban target. SLA mengukur API, bukan operasi MongoDB secara terpisah.
 
 ## References
 

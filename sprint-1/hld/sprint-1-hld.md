@@ -30,6 +30,17 @@ flowchart TD
     GameRead --> ActiveGames[(Read active games)]
     ActiveGames --> PublicUI
 
+    AdminUI -->|Sign out with cookies and CSRF token| LogoutAPI[Go admin logout API]
+    LogoutAPI --> LogoutCheck{Dashboard origin and CSRF valid?}
+    LogoutCheck -->|No| LogoutRejected[Reject; session unchanged]
+    LogoutRejected --> AdminUI
+    LogoutCheck -->|Yes| RevokeSession[Revoke session family]
+    RevokeSession --> RevokeStored{Session store available?}
+    RevokeStored -->|Yes| LogoutComplete[Clear access and refresh cookies; return success]
+    LogoutComplete --> LoginForm
+    RevokeStored -->|No| LogoutFailure[Return error; do not report logout success]
+    LogoutFailure --> AdminUI
+
     AdminUI --> SessionCheck{Admin session valid?}
     SessionCheck -->|No session| LoginForm[Login form: username/email + password]
     SessionCheck -->|Access expired; refresh cookie present| RefreshAPI[Go admin refresh API]
@@ -74,7 +85,8 @@ flowchart TD
 
 - **Login admin:** Dashboard mengirim username/email dan password ke Go. Setelah akun ACTIVE, hash Argon2id, dan role aktif lolos pemeriksaan, backend membuat session di MongoDB lalu mengirim access/refresh cookie HttpOnly dan CSRF token.
 - **Refresh session:** Dashboard mengirim refresh cookie dan CSRF token. Go merotasi refresh token satu kali; replay mencabut session family dan menghapus cookie.
-- **Aksi admin:** Bootstrap menyiapkan satu role aktif `SUPER_ADMIN` yang tidak dapat diubah atau dihapus melalui API. Go memeriksa session family dan status akun pada setiap request. Akun INACTIVE atau terhapus langsung ditolak dan session family dicabut pada pemeriksaan berikutnya. Go lalu mengevaluasi role, permission, dan input sebelum membaca akun administrator atau mengelola role/game. Dashboard hanya menampilkan daftar dan detail akun admin. Permintaan tanpa akses atau input tidak valid ditolak tanpa mengubah data terlindungi.
+- **Logout admin:** Dashboard mengirim cookie, Origin, dan CSRF token. Go memvalidasi Origin/CSRF, mencabut session family, lalu menghapus cookie; kegagalan penyimpanan tidak dilaporkan sebagai logout berhasil.
+- **Aksi admin:** Bootstrap menyiapkan satu role aktif `SUPER_ADMIN` yang tidak dapat diubah atau dihapus melalui API. Go memeriksa session family dan status akun pada setiap request. Akun INACTIVE atau terhapus langsung ditolak dan session family dicabut pada pemeriksaan berikutnya. Go lalu mengevaluasi role, permission, dan input sebelum membaca akun administrator atau mengelola role/game. Hanya Super Admin yang dapat mengubah status aktif dan populer game secara langsung; soft delete otomatis menonaktifkan game dan membersihkan flag populer. Dashboard hanya menampilkan daftar dan detail akun admin. Permintaan tanpa akses atau input tidak valid ditolak tanpa mengubah data terlindungi.
 - **Game publik:** Pengunjung meminta daftar game melalui Next.js. Go mengambil game aktif dan mengembalikan hasil untuk ditampilkan.
 
 ## SLA Baseline
