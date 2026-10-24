@@ -79,20 +79,21 @@ sequenceDiagram
 
 ## Business Rules
 
-1. Only published and active games are eligible for the popular list.
-2. Only games explicitly marked popular by the catalog owner are returned. The popularity selection method and owner are TBD.
-3. Results use a deterministic order configured by the catalog owner; default ordering rule is TBD. `sortOrder` is the proposed stable ordering field.
-4. `limit` and `offset` paginate results. When omitted, default `limit` is 6 and `offset` is 0; maximum `limit` is 50.
-5. No matching popular games is a successful response with an empty `games` array.
-6. `serviceSummary`, `artworkKey`, and `mark` are presentation metadata. Artwork is a key/path reference, not an embedded image or untrusted executable URL.
-7. Example game names from current UI are illustrative until availability is confirmed in the catalog.
+1. Hanya game aktif, populer, dan belum dihapus secara lunak yang masuk daftar.
+2. Hanya game dengan `isActive=true`, `isPopular=true`, dan `deleted_at=null` yang dikembalikan. Super Admin mengatur kedua nilai tersebut.
+3. Game populer diurutkan berdasarkan sortOrder secara ascending; sortOrder unik antar game sehingga urutan deterministik.
+4. Pagination uses one-based `page` and `limit`. Defaults are `page=1` and `limit=6`; allowed `limit` range is 1–50.
+5. `total` counts all matching popular games before pagination; `totalPages` is the number of pages and is `0` when no games match.
+6. No matching popular games is a successful response with `data: []`, `pagination.total: 0`, and `pagination.totalPages: 0`.
+7. `description`, `imageUrl`, and `mark` are presentation metadata. `imageUrl` is an absolute HTTPS URL from any HTTPS host; it is not an embedded image.
+8. Example game names from current UI are illustrative until availability is confirmed in the catalog.
 
 ## Request Headers
 
-| Header            | E/N/T | Type   | M/O/C | Max Length | Description                                                 | Example            |
-| ----------------- | ----- | ------ | ----- | ---------: | ----------------------------------------------------------- | ------------------ |
-| `Accept`          | N     | String | O     |        100 | Response media type. Defaults to JSON.                      | `application/json` |
-| `Accept-Language` | N     | String | O     |         35 | Preferred localized display copy; fallback behavior is TBD. | `id-ID`            |
+| Header            | E/N/T | Type   | M/O/C | Max Length | Description                                              | Example            |
+| ----------------- | ----- | ------ | ----- | ---------: | -------------------------------------------------------- | ------------------ |
+| `Accept`          | N     | String | O     |        100 | Response media type. Defaults to JSON.                   | `application/json` |
+| `Accept-Language` | N     | String | O     |         35 | Diabaikan; konten Sprint 1 menggunakan bahasa Indonesia. | `id-ID`            |
 
 ## Request Parameters
 
@@ -100,10 +101,10 @@ None.
 
 ## Request Query Parameters
 
-| Parameter | E/N/T | Type    | M/O/C | Max Length | Description                                                        | Example |
-| --------- | ----- | ------- | ----- | ---------: | ------------------------------------------------------------------ | ------- |
-| `limit`   | N     | Integer | O     |   2 digits | Page size; default 6, range 1–50.                                  | `6`     |
-| `offset`  | N     | Integer | O     |   9 digits | Zero-based number of matching games to skip; default 0, minimum 0. | `0`     |
+| Parameter | E/N/T | Type    | M/O/C | Max Length | Description                                  | Example |
+| --------- | ----- | ------- | ----- | ---------: | -------------------------------------------- | ------- |
+| `page`    | N     | Integer | O     |   9 digits | One-based page number; default 1, minimum 1. | `1`     |
+| `limit`   | N     | Integer | O     |   2 digits | Page size; default 6, range 1–50.            | `6`     |
 
 ## Request Body
 
@@ -111,54 +112,52 @@ None. GET request has no body.
 
 ### Request Validation
 
-1. `limit`, when present, must be an integer from 1 through 50; otherwise return HTTP 400 with service code `GAMB02001`.
-2. `offset`, when present, must be a non-negative integer; otherwise return HTTP 400 with `GAMB02001`.
-3. Unknown query parameters are ignored for forward compatibility. This behavior requires API owner confirmation.
+1. `page`, when present, must be an integer greater than or equal to 1; otherwise return HTTP 400 with service code `GAMB02001`.
+2. `limit`, when present, must be an integer from 1 through 50; otherwise return HTTP 400 with `GAMB02001`.
+3. Unknown query parameters diabaikan. `Accept-Language` juga diabaikan karena Sprint 1 belum mendukung multi-bahasa; konten menggunakan bahasa Indonesia.
 
 ## Response Body
 
-| Attribute                     | E/N/T | Type        | M/O/C | Max Length | Description                                                | Example                   |
-| ----------------------------- | ----- | ----------- | ----- | ---------: | ---------------------------------------------------------- | ------------------------- |
-| `status`                      | N     | Object      | M     |          - | Response status.                                           | `{}`                      |
-| `status.code`                 | N     | String      | M     |         20 | Service status code.                                       | `GAMS00000`               |
-| `status.message`              | N     | String      | O     |        200 | Human-readable result.                                     | `Popular games retrieved` |
-| `data`                        | N     | Object/null | M     |          - | Result payload; null on errors.                            | `{}`                      |
-| `data.games`                  | N     | Array       | M     |          - | Current page of popular games; empty when none match.      | `[]`                      |
-| `data.games[].id`             | N     | String      | M     |         64 | Stable catalog identifier.                                 | `mobile-legends`          |
-| `data.games[].name`           | N     | String      | M     |        100 | Display name.                                              | `Mobile Legends`          |
-| `data.games[].slug`           | N     | String      | M     |        100 | URL-safe game identifier used by storefront navigation.    | `mobile-legends`          |
-| `data.games[].serviceSummary` | N     | String      | O     |        160 | Short summary of available service categories.             | `Joki Rank / Top Up`      |
-| `data.games[].artworkKey`     | N     | String      | O     |        160 | Approved local/CDN asset key; frontend resolves the asset. | `mobile-legends`          |
-| `data.games[].sortOrder`      | N     | Integer     | M     |  10 digits | Stable ordering value, ascending.                          | `2`                       |
-| `data.pagination`             | N     | Object      | M     |          - | Pagination metadata.                                       | `{}`                      |
-| `data.pagination.limit`       | N     | Integer     | M     |   2 digits | Applied page size.                                         | `6`                       |
-| `data.pagination.offset`      | N     | Integer     | M     |   9 digits | Applied offset.                                            | `0`                       |
-| `data.pagination.total`       | N     | Integer     | M     |  10 digits | Total matching active popular games before pagination.     | `8`                       |
+| Attribute               | E/N/T | Type    | M/O/C | Max Length | Description                                             | Example                                                     |
+| ----------------------- | ----- | ------- | ----- | ---------: | ------------------------------------------------------- | ----------------------------------------------------------- |
+| `code`                  | N     | String  | M     |         20 | Service status code.                                    | `GAMS00000`                                                 |
+| `message`               | N     | String  | O     |        200 | Human-readable result.                                  | `Popular games retrieved`                                   |
+| `data`                  | N     | Array   | M     |          - | Current page of popular games; empty when none match.   | `[]`                                                        |
+| `data[].id`             | N     | String  | M     |         64 | ID game dengan prefix `game_`.                          | `game_01ARZ3NDEKTSV4RRFFQ69G5FAV`                           |
+| `data[].name`           | N     | String  | M     |        100 | Display name.                                           | `Mobile Legends`                                            |
+| `data[].slug`           | N     | String  | M     |        100 | URL-safe game identifier used by storefront navigation. | `mobile-legends`                                            |
+| `data[].description`    | N     | String  | O     |        500 | Deskripsi game untuk katalog publik.                    | `Permainan strategi untuk perangkat seluler`                |
+| `data[].imageUrl`       | N     | String  | M     |       2048 | Absolute HTTPS image URL; any HTTPS host is permitted.  | `https://cdn.example.test/images/games/mobile-legends.webp` |
+| `data[].platform`       | N     | String  | O     |         30 | Platform classification from the game catalog.          | `MOBILE`                                                    |
+| `data[].sortOrder`      | N     | Integer | M     |  10 digits | Stable ordering value, ascending.                       | `2`                                                         |
+| `pagination`            | N     | Object  | M     |          - | Pagination metadata.                                    | `{}`                                                        |
+| `pagination.page`       | N     | Integer | M     |   9 digits | Applied one-based page number.                          | `1`                                                         |
+| `pagination.limit`      | N     | Integer | M     |   2 digits | Applied page size.                                      | `6`                                                         |
+| `pagination.total`      | N     | Integer | M     |  10 digits | Total matching active popular games before pagination.  | `1`                                                         |
+| `pagination.totalPages` | N     | Integer | M     |   9 digits | Number of pages; `0` when no games match.               | `1`                                                         |
 
 ### Success Example
 
 ```json
 {
-  "status": {
-    "code": "GAMS00000",
-    "message": "Popular games retrieved"
-  },
-  "data": {
-    "games": [
-      {
-        "id": "mobile-legends",
-        "name": "Mobile Legends",
-        "slug": "mobile-legends",
-        "serviceSummary": "Joki Rank / Top Up",
-        "artworkKey": "mobile-legends",
-        "sortOrder": 2
-      }
-    ],
-    "pagination": {
-      "limit": 6,
-      "offset": 0,
-      "total": 1
+  "code": "GAMS00000",
+  "message": "Popular games retrieved",
+  "data": [
+    {
+      "id": "game_01ARZ3NDEKTSV4RRFFQ69G5FAV",
+      "name": "Mobile Legends",
+      "slug": "mobile-legends",
+      "description": "Permainan strategi untuk perangkat seluler",
+      "imageUrl": "https://cdn.example.test/images/games/mobile-legends.webp",
+      "platform": "MOBILE",
+      "sortOrder": 2
     }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 6,
+    "total": 1,
+    "totalPages": 1
   }
 }
 ```
@@ -167,10 +166,8 @@ None. GET request has no body.
 
 ```json
 {
-  "status": {
-    "code": "GAMB02001",
-    "message": "Invalid pagination parameter"
-  },
+  "code": "GAMB02001",
+  "message": "Invalid pagination parameter",
   "data": null
 }
 ```
@@ -179,21 +176,20 @@ None. GET request has no body.
 
 ```json
 {
-  "status": {
-    "code": "GAMT03001",
-    "message": "Game catalog is temporarily unavailable"
-  },
+  "code": "GAMT03001",
+  "message": "Game catalog is temporarily unavailable",
   "data": null
 }
 ```
 
 ## HTTP Status Codes
 
-| HTTP Status | Usage                                                       |
-| ----------- | ----------------------------------------------------------- |
-| `200`       | Request valid; results may contain games or an empty array. |
-| `400`       | Invalid `limit` or `offset`.                                |
-| `500`       | Unexpected service or catalog database failure.             |
+| HTTP Status | Usage                                                             |
+| ----------- | ----------------------------------------------------------------- |
+| `200`       | Request valid; results may contain games or an empty array.       |
+| `400`       | Invalid `page` or `limit`.                                        |
+| `500`       | Unexpected service or catalog database failure.                   |
+| `429`       | Rate limit terlampaui; response menyertakan header `Retry-After`. |
 
 ## Service Status Codes
 
@@ -221,7 +217,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 ## Assumptions
 
 - Endpoint prefix `/api`, service name, service codes, response envelope, pagination, and response field names are proposed contract decisions pending API owner review.
-- Catalog source, popular designation workflow, ordering owner, localized text behavior, cache policy, authentication/rate-limit policy, traffic targets, and approved game inventory are TBD.
+- `Accept-Language` diabaikan dan konten menggunakan bahasa Indonesia. Rate limit katalog publik adalah 1.200 request/IP/menit; SLA mengikuti BRD. Urutan populer mengikuti `sortOrder ASC`; host gambar HTTPS tidak dibatasi. Super Admin mengatur status aktif dan populer game.
 - Current static list in HomeV2 contains Roblox, Mobile Legends, Free Fire, PUBG Mobile, Valorant, and Genshin Impact as illustrative UI data only.
 
 ## References

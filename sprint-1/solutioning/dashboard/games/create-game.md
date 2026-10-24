@@ -21,7 +21,7 @@ sequenceDiagram
     UI->>API: POST /api/admin/games/v1/create + kredensial admin + payload
     API->>API: Autentikasi dan otorisasi izin katalog
     alt Tidak terautentikasi / tidak berizin
-        API-->>UI: 400 GAMB01001 / GAMB01002, data null
+        API-->>UI: 401 GAMB01001 atau 403 GAMB01002, data null
         UI-->>Admin: Tampilkan pesan akses
     else Berizin
         API->>API: Validasi field dan normalisasi name/slug
@@ -31,11 +31,11 @@ sequenceDiagram
         else Payload valid
             API->>DB: Cek keunikan name dan slug
             alt Duplikat ditemukan
-                DB-->>API: Konflik name/slug
-                API-->>UI: 400 GAMB02002, data null
+                DB-->>API: Konflik name/slug/sortOrder
+                API-->>UI: 409 GAMB02002, data null
                 UI-->>Admin: Tampilkan konflik data
             else Tidak duplikat
-                API->>DB: Simpan game dan metadata audit
+                API->>DB: Simpan game
                 alt Penyimpanan berhasil
                     DB-->>API: Record game tersimpan
                     API-->>UI: 200 GAMS00000, data null
@@ -58,15 +58,15 @@ sequenceDiagram
 
 ## General Information
 
-| Component          | Value                                                                                                                                           |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Description        | Membuat record game baru pada katalog JokiHub.                                                                                                  |
-| Resource URL       | `https://{host}/api/admin/games/v1/create`                                                                                                      |
-| Transport Protocol | HTTPS, REST                                                                                                                                     |
-| Request Verb       | POST                                                                                                                                            |
-| Content Type       | `application/json`                                                                                                                              |
-| Interaction Type   | Synchronous                                                                                                                                     |
-| Security Policy    | Admin authentication and game-catalog create permission. Identity provider and permission name TBD. Apply rate limiting and audit actor/action. |
+| Component          | Value                                                                                                                                                                           |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Description        | Membuat record game baru pada katalog JokiHub.                                                                                                                                  |
+| Resource URL       | `https://{host}/api/admin/games/v1/create`                                                                                                                                      |
+| Transport Protocol | HTTPS, REST                                                                                                                                                                     |
+| Request Verb       | POST                                                                                                                                                                            |
+| Content Type       | `application/json`                                                                                                                                                              |
+| Interaction Type   | Synchronous                                                                                                                                                                     |
+| Security Policy    | cookie access admin valid, akun ACTIVE, dan session family belum dicabut dan permission `game.create` dari katalog Sprint 1. Terapkan rate limiting dan pemantauan operasional. |
 
 ### Path / Endpoint
 
@@ -88,24 +88,31 @@ sequenceDiagram
 
 ## Business Rules
 
-1. Only an authenticated administrator with game-catalog create permission may create a game. Role and permission mapping are TBD.
+**Rate limit:** 1.200 request/IP/menit dan 60 request/admin/menit. Pelampauan mengembalikan HTTP 429 dengan `Retry-After`.
+
+**Autentikasi bersama:** Setiap request dashboard wajib memakai cookie access admin dari backend, Origin yang exact-match dengan allowlist, dan X-CSRF-Token. Backend memeriksa session family aktif serta status akun ACTIVE/non-deleted pada setiap autentikasi. Jika akun INACTIVE, request ditolak pada pemeriksaan berikutnya dan session family aktif dicabut. Setiap endpoint tetap memerlukan permission sesuai metode. Lihat [IFA login](../auth/login.md), [refresh token](../auth/refresh-token.md), dan [logout](../auth/logout.md).
+
+1. Only an authenticated administrator with permission `game.create` may create a game. Permission keys follow the Sprint 1 catalog.
 2. `id`, `createdAt`, and `updatedAt` are generated by the service and are not accepted in the request.
 3. `name` and `slug` are required. Name is trimmed; slug must be lowercase and URL-safe.
 4. Normalized `name` and `slug` must be unique. Duplicate name or slug is rejected; existing data is not overwritten.
-5. `isActive` determines whether the game can be offered in the storefront. Proposed default is `false`; product owner must confirm.
-6. `isPopular` determines eligibility for the popular-game list. Proposed default is `false`; inactive games cannot be created with `isPopular=true`.
-7. `sortOrder` is non-negative; lower values precede higher values. Proposed default is `0`.
-8. `serviceSummary` and `artworkKey` are optional presentation metadata inferred from existing game cards. An artwork key must reference an approved asset; asset catalog integration is TBD.
-9. Successful creation is auditable with administrator identity and timestamp. Audit storage/retention are TBD.
+5. `isActive` adalah satu-satunya gerbang visibilitas publik. Nilai default `false`; Super Admin dapat mengaktifkan game.
+6. `isPopular` menentukan apakah game tampil di daftar populer. Nilai default `false`; game nonaktif tidak dapat dibuat dengan `isPopular=true`. Super Admin mengatur status ini.
+7. sortOrder adalah bilangan bulat non-negatif dan unik di antara seluruh game tersimpan. Bila tidak dikirim, service menetapkan nilai berikutnya setelah nilai terbesar; game pertama mendapat nilai 0. Konflik nilai yang dikirim mengembalikan GAMB02002.
+8. `imageUrl` wajib berupa URL HTTPS absolut. BRD mengizinkan host gambar HTTPS mana pun.
+9. Sprint 1 tidak mencatat audit event sesuai keputusan BRD.
 
 ## Request Headers
 
-| Header          | E/N/T | Type   | M/O/C | Max Length | Description                                                           | Example                 |
-| --------------- | ----- | ------ | ----- | ---------: | --------------------------------------------------------------------- | ----------------------- |
-| `Authorization` | N     | String | M     |       4096 | Admin credential; authentication scheme depends on identity provider. | `Bearer {access-token}` |
-| `Content-Type`  | N     | String | M     |        100 | Request media type.                                                   | `application/json`      |
-| `Accept`        | N     | String | O     |        100 | Desired response media type; defaults to JSON.                        | `application/json`      |
-| `X-Request-Id`  | N     | String | O     |        100 | Correlation identifier for audit/support.                             | `req-8f41d2`            |
+| Header   | E/N/T | Type   | M/O/C | Max Length | Description                                                                                                | Example                             |
+| -------- | ----- | ------ | ----- | ---------: | ---------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `Cookie` | N     | String | M     |       4096 | Browser mengirim cookie access admin secara otomatis; token tidak dikirim melalui Authorization atau body. | `__Host-jokihub-admin-access={JWT}` |
+
+| `Origin` | N | String | M | 2048 | Origin dashboard harus exact-match dengan allowlist API. | `https://dashboard.example.test` |
+| `X-CSRF-Token` | N | String | M | 128 | CSRF token sinkronisasi untuk request cookie-authenticated. | `{csrf-token}` |
+| `Content-Type` | N | String | M | 100 | Request media type. | `application/json` |
+| `Accept` | N | String | O | 100 | Desired response media type; defaults to JSON. | `application/json` |
+| `X-Request-Id` | N | String | O | 100 | Correlation identifier for request tracing/support. | `req-8f41d2` |
 
 ## Request Parameters
 
@@ -117,15 +124,16 @@ None.
 
 ## Request Body
 
-| Attribute        | E/N/T | Type    | M/O/C | Max Length | Description                                                                    | Example              |
-| ---------------- | ----- | ------- | ----- | ---------: | ------------------------------------------------------------------------------ | -------------------- |
-| `name`           | N     | String  | M     |        100 | Display name; trimmed, non-empty.                                              | `Mobile Legends`     |
-| `slug`           | N     | String  | M     |        100 | Unique route identifier; lowercase alphanumeric segments separated by hyphens. | `mobile-legends`     |
-| `serviceSummary` | N     | String  | O     |        160 | Short summary shown on game card.                                              | `Joki Rank / Top Up` |
-| `artworkKey`     | N     | String  | O     |        160 | Approved asset catalog key; not an arbitrary executable URL.                   | `mobile-legends`     |
-| `isActive`       | N     | Boolean | O     |          - | Storefront availability flag. Proposed default `false`; requires confirmation. | `true`               |
-| `isPopular`      | N     | Boolean | O     |          - | Popular-list eligibility. Proposed default `false`; requires confirmation.     | `true`               |
-| `sortOrder`      | N     | Integer | O     |  10 digits | Non-negative ordering value. Proposed default `0`.                             | `2`                  |
+| Attribute     | E/N/T | Type    | M/O/C | Max Length | Description                                                                                | Example                                                     |
+| ------------- | ----- | ------- | ----- | ---------: | ------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
+| `name`        | N     | String  | M     |        100 | Display name; trimmed, non-empty.                                                          | `Mobile Legends`                                            |
+| `slug`        | N     | String  | M     |        100 | Unique route identifier; lowercase alphanumeric segments separated by hyphens.             | `mobile-legends`                                            |
+| `description` | N     | String  | O     |        500 | Deskripsi game yang ditampilkan pada kartu game.                                           | `Permainan strategi untuk perangkat seluler`                |
+| `imageUrl`    | N     | String  | M     |       2048 | Absolute HTTPS image URL; any HTTPS host is permitted.                                     | `https://cdn.example.test/images/games/mobile-legends.webp` |
+| `platform`    | N     | String  | O     |         30 | Platform opsional; nilai yang diterima `MOBILE`, `PC`, atau `CONSOLE`.                     | `MOBILE`                                                    |
+| `isActive`    | N     | Boolean | O     |          - | Storefront availability flag. Default `false`; Super Admin mengatur visibilitas publik.    | `true`                                                      |
+| `isPopular`   | N     | Boolean | O     |          - | Popular-list eligibility. Default `false`; Super Admin mengatur visibilitas publik.        | `true`                                                      |
+| `sortOrder`   | N     | Integer | O     |  10 digits | Optional unique non-negative value; service allocates next available integer when omitted. | `2`                                                         |
 
 ### Example Request Body
 
@@ -133,8 +141,9 @@ None.
 {
   "name": "Mobile Legends",
   "slug": "mobile-legends",
-  "serviceSummary": "Joki Rank / Top Up",
-  "artworkKey": "mobile-legends",
+  "description": "Permainan strategi untuk perangkat seluler",
+  "imageUrl": "https://cdn.example.test/images/games/mobile-legends.webp",
+  "platform": "MOBILE",
   "isActive": true,
   "isPopular": true,
   "sortOrder": 2
@@ -143,33 +152,30 @@ None.
 
 ### Request Validation
 
-1. `Authorization` must identify an authenticated administrator with game-catalog create permission. Return `GAMB01001` when unauthenticated and `GAMB01002` when permission is missing.
+1. Request harus membawa cookie access admin valid, Origin dashboard yang diizinkan, CSRF token valid, akun ACTIVE/non-deleted, session family aktif, dan permission `game.create`. Return `GAMB01001` when unauthenticated and `GAMB01002` when permission is missing.
 2. `name` and `slug` are mandatory, non-empty after trimming, and must fit their maximum lengths.
 3. `slug` must match `^[a-z0-9]+(?:-[a-z0-9]+)*$`.
-4. Normalized `name` or `slug` matching an existing game returns `GAMB02002`.
-5. `serviceSummary` and `artworkKey`, when present, must fit maximum lengths. `artworkKey` must resolve to an approved asset; exact validation dependency is TBD.
+4. Normalized name or slug duplicate, atau sortOrder yang diminta sudah digunakan game lain, mengembalikan HTTP 409 `GAMB02002`.
+5. `description`, bila dikirim, maksimal 500 karakter. `imageUrl` wajib berupa URL HTTPS absolut; host tidak dibatasi.
 6. `isActive` and `isPopular`, when present, must be booleans. `isActive=false` with `isPopular=true` returns `GAMB02003`.
-7. `sortOrder`, when present, must be a non-negative integer.
+7. sortOrder adalah bilangan bulat non-negatif dan unik di antara seluruh game tersimpan. Bila tidak dikirim, service menetapkan nilai berikutnya setelah nilai terbesar; game pertama mendapat nilai 0. Konflik nilai yang dikirim mengembalikan GAMB02002.
 8. Unknown request fields, including `id`, `createdAt`, and `updatedAt`, are rejected with `GAMB02001`.
-9. Validation failures return HTTP 400 and `data: null`. Database failures return HTTP 500 and do not expose internal details.
+9. Validasi gagal mengembalikan HTTP 400; duplicate key mengembalikan HTTP 409; kegagalan database mengembalikan HTTP 500. Semua error memakai `data: null` tanpa detail internal. Tidak ada `Idempotency-Key`; retry setelah create sukses dapat menghasilkan HTTP 409 karena unique business key.
 
 ## Response Body
 
-| Attribute        | E/N/T | Type        | M/O/C | Max Length | Description                                              | Example        |
-| ---------------- | ----- | ----------- | ----- | ---------: | -------------------------------------------------------- | -------------- |
-| `status`         | N     | Object      | M     |          - | Response status object.                                  | `{}`           |
-| `status.code`    | N     | String      | M     |         20 | Service status code.                                     | `GAMS00000`    |
-| `status.message` | N     | String      | O     |        200 | Human-readable result.                                   | `Game created` |
-| `data`           | N     | Object/null | M     |          - | Selalu `null`; endpoint tidak mengembalikan record game. | `null`         |
+| Attribute | E/N/T | Type   | M/O/C | Max Length | Description                                              | Example        |
+| --------- | ----- | ------ | ----- | ---------: | -------------------------------------------------------- | -------------- |
+| `code`    | N     | String | M     |         20 | Service status code.                                     | `GAMS00000`    |
+| `message` | N     | String | O     |        200 | Human-readable result.                                   | `Game created` |
+| `data`    | N     | null   | M     |          - | Selalu `null`; endpoint tidak mengembalikan record game. | `null`         |
 
 ### Success Example
 
 ```json
 {
-  "status": {
-    "code": "GAMS00000",
-    "message": "Game created"
-  },
+  "code": "GAMS00000",
+  "message": "Game created",
   "data": null
 }
 ```
@@ -178,10 +184,8 @@ None.
 
 ```json
 {
-  "status": {
-    "code": "GAMB02002",
-    "message": "Game name or slug already exists"
-  },
+  "code": "GAMB02002",
+  "message": "Name, slug, or sortOrder is already in use",
   "data": null
 }
 ```
@@ -190,21 +194,23 @@ None.
 
 ```json
 {
-  "status": {
-    "code": "GAMT03001",
-    "message": "Game catalog is temporarily unavailable"
-  },
+  "code": "GAMT03001",
+  "message": "Game catalog is temporarily unavailable",
   "data": null
 }
 ```
 
 ## HTTP Status Codes
 
-| HTTP Status | Usage                                                                                                                                                                         |
-| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `200`       | Game created successfully, following project IFA baseline. Confirm whether create should use `201` in the API standard.                                                       |
-| `400`       | Invalid request, missing/invalid admin access, insufficient permission, or duplicate game according to current project response baseline. Confirm auth-specific HTTP mapping. |
-| `500`       | Unexpected service or catalog database failure.                                                                                                                               |
+| HTTP Status | Usage                                                                                         |
+| ----------- | --------------------------------------------------------------------------------------------- |
+| `200`       | Game berhasil dibuat sesuai envelope Sprint 1; `data` bernilai `null`.                        |
+| `400`       | Request tidak valid.                                                                          |
+| `401`       | Admin belum terautentikasi atau session tidak valid.                                          |
+| `403`       | Admin tidak memiliki permission `game.create`, Origin tidak diizinkan, atau CSRF tidak valid. |
+| `409`       | Nama/slug atau sortOrder sudah digunakan.                                                     |
+| `500`       | Unexpected service or catalog database failure.                                               |
+| `429`       | Rate limit terlampaui; response menyertakan header `Retry-After`.                             |
 
 ## Service Status Codes
 
@@ -216,30 +222,30 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 | `GAMB01001` | Business  | Authentication  | Administrator is not authenticated.                            |
 | `GAMB01002` | Business  | Authentication  | Administrator lacks create permission.                         |
 | `GAMB02001` | Business  | User validation | Required field, format, length, or state validation failed.    |
-| `GAMB02002` | Business  | User validation | Game name or slug already exists.                              |
+| `GAMB02002` | Business  | User validation | Game name, slug, or sortOrder already exists.                  |
 | `GAMB02003` | Business  | User validation | Popular flag conflicts with inactive state.                    |
 | `GAMT03001` | Technical | Database        | Catalog record could not be stored or database is unavailable. |
 
 ## API Exposure Classification
 
-| Classification                 | Rationale                                                                                                                              |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| Enterprise Intranet (proposed) | Administrative write operation. Confirm network boundary; if internet-accessible, classify as Public and apply public API protections. |
+| Classification | Rationale                                                                                                         |
+| -------------- | ----------------------------------------------------------------------------------------------------------------- |
+| Public         | Route dashboard dapat diakses dari internet dan dilindungi session admin, permission, CORS allowlist, serta CSRF. |
 
 ## Testing & Documentation Scope
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                          |
-| ---------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | New admin write API. Test valid creation, peak concurrent admin load, duplicate checks, and persistence. VUser, CPU/memory, and target TPS are TBD pending traffic forecast. |
-| VA/Pentest | Yes      | Admin write API. Verify authentication and authorization, privilege boundaries, payload validation, injection resistance, and audit attribution.                             |
+| Scope      | Required | Rationale / Handoff                                                                                                                         |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFT        | Yes      | Uji pembuatan sukses, validasi, duplikasi, dan persistensi pada 50 VUser / 20 request per detik; bandingkan CPU/memori dengan baseline BRD. |
+| VA/Pentest | Yes      | Admin write API. Verify authentication and authorization, privilege boundaries, payload validation, injection resistance.                   |
 
 ## Assumptions
 
-- Endpoint, response envelope, `GAM` service prefix/codes, field names, and defaults are proposals pending API owner approval.
+- Kontrak mengikuti endpoint create game Sprint 1, envelope `{code,message,data}`, dan kebijakan katalog di BRD.
 - Scope covers creating a game catalog record only; listing, detail, update, delete, game services, pricing, and order management are excluded.
-- Current UI model has `name`, `service`, `art`, and `mark`; `serviceSummary` and `artworkKey` are proposed API mappings for `service` and `art`. `mark` is excluded from this catalog contract because it has no confirmed product need.
-- `id` generation strategy, database technology, identity provider, permission name, audit storage, asset registry, and API exposure boundary are TBD.
-- `isActive=false`, `isPopular=false`, and `sortOrder=0` are proposed defaults. Confirm before implementation.
+- Current UI model has `name`, `service`, `art`, and `mark`; `description` and `imageUrl` are proposed API mappings for `service` and `art`. `mark` is excluded from this catalog contract because it has no confirmed product need.
+- ID game memakai `game_` + ULID kanonis 26 karakter. Data disimpan di MongoDB. Route dashboard bersifat Public dengan session admin, permission, CORS allowlist, dan CSRF. Asset host menerima URL HTTPS absolut tanpa allowlist host.
+  Default isActive=false dan isPopular=false mengikuti dokumen ini. Service mengalokasikan sortOrder unik sesuai aturan di atas.
 
 ## References
 

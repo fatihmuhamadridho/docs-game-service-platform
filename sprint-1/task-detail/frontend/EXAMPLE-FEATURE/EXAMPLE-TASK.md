@@ -2,7 +2,7 @@
 
 > **Document Type:** Frontend Task Detail  
 > **Status:** Example  
-> **Story / AC:** [View Service Request Status](../../acceptance-criteria/EXAMPLE-FEATURE/EXAMPLE-ACCEPTANCE_CRITERIA.md)  
+> **Story / AC:** Acceptance Criteria feature (belum tersedia pada contoh)  
 > **Design:** TBD
 
 ## Task Overview
@@ -31,7 +31,7 @@ Illustrative estimates only. Confirm scope and effort with the delivery team.
 ## Dependencies and Open Questions
 
 - **Dependencies:** Request list and detail responses that enforce customer ownership and omit internal-only notes; approved UI design.
-- **Open questions:** Which request statuses are customer-visible, and what target browsers are supported? See [BRD open questions](../../EXAMPLE-BRD.md#7-open-questions).
+- **Open questions:** Which request statuses are customer-visible, and what target browsers are supported? See Pertanyaan terbuka BRD (belum tersedia pada contoh).
 
 ## Estimation Notes
 

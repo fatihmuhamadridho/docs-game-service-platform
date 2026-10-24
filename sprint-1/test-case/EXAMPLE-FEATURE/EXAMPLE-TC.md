@@ -2,8 +2,8 @@
 
 > **Document Type:** Test Case  
 > **Status:** Example  
-> **Story Link:** [Example BRD](../../EXAMPLE-BRD.md)  
-> **Acceptance Criteria Link:** [View Service Request Status](../../acceptance-criteria/EXAMPLE-FEATURE/EXAMPLE-ACCEPTANCE_CRITERIA.md)
+> **Story Link:** BRD contoh (belum tersedia pada contoh)  
+> **Acceptance Criteria Link:** Acceptance Criteria feature (belum tersedia pada contoh)
 
 ## Story
 

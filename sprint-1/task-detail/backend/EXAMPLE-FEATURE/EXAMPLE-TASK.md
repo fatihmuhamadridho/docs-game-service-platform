@@ -2,7 +2,7 @@
 
 > **Document Type:** Backend Task Detail  
 > **Status:** Example  
-> **Story / AC:** [View Service Request Status](../../acceptance-criteria/EXAMPLE-FEATURE/EXAMPLE-ACCEPTANCE_CRITERIA.md)  
+> **Story / AC:** Acceptance Criteria feature (belum tersedia pada contoh)  
 > **Solutioning:** TBD for this feature
 
 ## Task Overview
@@ -31,7 +31,7 @@ Illustrative estimates only. Confirm scope and effort with the delivery team.
 ## Dependencies and Open Questions
 
 - **Dependencies:** Existing request data, caller identity from the authenticated session, and confirmed response fields.
-- **Open questions:** Which statuses and updates are customer-visible? See [BRD open questions](../../EXAMPLE-BRD.md#7-open-questions). API contract remains TBD.
+- **Open questions:** Which statuses and updates are customer-visible? See Pertanyaan terbuka BRD (belum tersedia pada contoh). API contract remains TBD.
 
 ## Estimation Notes
 

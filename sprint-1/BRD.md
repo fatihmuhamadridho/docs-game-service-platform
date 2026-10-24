@@ -1,73 +1,79 @@
-# JokiHub — Sprint 1 Business Requirements: Admin Access and Games
+# JokiHub — Dokumen Kebutuhan Bisnis Sprint 1: Akses Admin dan Game
 
-> **Status:** Proposed priority sequence; not a delivery commitment or scope approval.  
+> **Status:** Usulan cakupan dan prioritas; bukan komitmen pelaksanaan atau persetujuan atas kebijakan yang belum diputuskan.  
 > **Sprint:** 1  
-> **Source:** Requirement IDs remain portfolio identifiers. See [portfolio sequence](../SPRINT-PLAN.md). Acceptance criteria are not being maintained for this planning revision.
+> **ID kebutuhan:** ID portofolio yang sudah ada dipertahankan untuk pelacakan.
 
-## 1. Project Overview
+## 1. Gambaran Proyek
 
-Sprint 1 focuses on administrator access, roles, administrator accounts, and games.
+Sprint 1 menghadirkan login dan session administrator, pengelolaan role dan permission, direktori administrator yang hanya-baca, serta pengelolaan dan penemuan game publik. BRD ini menjelaskan kebutuhan bisnis; payload permintaan dan perilaku teknis dijelaskan dalam dokumen solutioning tiap fitur.
 
-## 2. Objectives
+## 2. Tujuan
 
-- Establish approved admin access and role foundations before protected administration.
-- Make approved games manageable and discoverable.
-- Preserve administrator identity and permission boundaries.
+- Melindungi akses dashboard melalui role Super Admin dan role kustom dengan permission yang sesuai.
+- Memungkinkan administrator berwenang meninjau akun administrator tanpa mengubahnya melalui dashboard.
+- Memungkinkan administrator berwenang mengelola katalog game serta membantu pengunjung menemukan game aktif.
 
-Estimates, owners, policy, targets, and dates remain **TBD**.
+## 3. Cakupan dan Urutan
 
-## 3. Scope and sequence
+### Prasyarat
 
-### Prerequisite
+Dashboard menggunakan login administrator Sprint 1 dengan username atau email dan password. SMTP, login pelanggan, registrasi pelanggan, dan reset password melalui email tidak termasuk Sprint 1.
 
-Verify current admin login/session and authorization behavior. BR-023 requires protected admin actions to reject invalid input or missing permission without changing or disclosing protected data; this criterion is included in each affected admin feature AC. If a new admin identity or RBAC implementation is required, protected work is gated pending explicit scope and policy approval.
+### Urutan Pelaksanaan Usulan
 
-### Proposed delivery order
+1. Menghadirkan login administrator dan pengelolaan session aman. Provisioning akun/credential tetap dilakukan melalui proses backend, basis data, atau skrip terkendali.
+2. Menghadirkan pengelolaan role dan permission. Bootstrap membuat tepat satu role aktif `SUPER_ADMIN`, menugaskannya kepada akun Super Admin, dan memberinya akses ke seluruh fungsi admin. Role sistem ini tidak dapat diubah, dinonaktifkan, atau dihapus melalui API dashboard. Role kustom dibuat secara eksplisit setelah bootstrap.
+3. Menghadirkan halaman daftar dan detail akun administrator. Akses dashboard hanya-baca; penyiapan akun dilakukan melalui proses backend, basis data, atau skrip yang terkendali. Setiap administrator memiliki satu role aktif.
+4. Menghadirkan operasi buat, daftar, detail, ubah, dan hapus game di dashboard.
+5. Menghadirkan daftar game aktif dan game populer untuk publik. `isActive` menentukan apakah game terlihat publik.
 
-1. Verify current admin login/session and authorization behavior.
-2. Roles and permissions — BR-018. Seed awal hanya memiliki satu role, Super Admin, dengan akses ke seluruh fungsi admin. Role ini dilindungi dari update/delete; role khusus tambahan hanya dibuat secara eksplisit setelah bootstrap.
-3. Read-only administrator account directory — BR-017; see [admin account solutioning](./solutioning/dashboard/admin-accounts/). Super Admin is provisioned by a controlled backend/database/script bootstrap; dashboard exposes list and detail only.
-4. Admin game management — game slice of BR-019.
-5. Public game discovery — BR-001/002, after active-game data and publication rules are approved.
+### Di Luar Cakupan Sprint 1
 
-### Out of Scope / Later
+- Login pelanggan, registrasi anggota/pelanggan, reset password melalui email, undangan email, dan integrasi SMTP.
+- Membuat, mengubah, atau menghapus akun administrator melalui dashboard; undangan email dan integrasi penyedia email.
+- Pengelolaan data anggota/pelanggan dan login pelanggan.
+- Pengelolaan kategori dan layanan, harga layanan, serta penemuan kategori/layanan publik.
+- Data rating dan jumlah ulasan game, integrasi penyedia rating, serta pengurutan berdasarkan rating.
+- Proses pemesanan, pembayaran, pesanan, pemenuhan pesanan, pengembalian dana, pencairan dana, dan fitur operasional dashboard.
 
-Category/service management slices of BR-019 and public category/service discovery (BR-003/004/005) are assigned to Sprint 2. Checkout, payment, order status, evidence, admin operational mutations, and dashboard/read views are assigned later or remain separately gated. No additional admin-login behavior is implied.
+## 4. Kebutuhan Bisnis
 
-## 4. Business Requirements
+| ID     | Kebutuhan                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| BR-001 | Sebagai pengunjung, saya ingin melihat game aktif yang disetujui untuk dipublikasikan, termasuk kumpulan game populer, agar dapat menemukan game yang ditawarkan JokiHub. Respons publik menyediakan identitas dan data tampilan game, termasuk URL gambar dan platform jika tersedia.                                                                                                                                                                     |
+| BR-002 | Sebagai pengunjung, saya ingin mencari dan memfilter katalog game publik serta berpindah antarhalaman agar dapat menemukan game yang relevan. Sprint 1 mendukung pencarian nama/alias, filter platform `MOBILE`, `PC`, atau `CONSOLE`, pengurutan default `SORT_ORDER_ASC`, pilihan `POPULAR` dan `NAME_ASC`, serta paginasi. Endpoint game populer menampilkan game berflag populer dalam urutan `sortOrder` ascending. Pengurutan rating tidak termasuk. |
+| BR-003 | Sebagai administrator berwenang, saya ingin melihat akun administrator beserta satu role yang ditugaskan pada setiap akun agar akses istimewa dapat ditinjau. Dashboard hanya menyediakan daftar dan detail; penyiapan Super Admin dilakukan melalui bootstrap backend, basis data, atau skrip yang terkendali.                                                                                                                                            |
+| BR-004 | Sebagai administrator berwenang, saya memerlukan kontrol role dan permission agar akses diterapkan secara konsisten. Bootstrap membuat satu role aktif `SUPER_ADMIN` yang immutable dan berakses penuh. Role kustom memakai status `ACTIVE` atau `INACTIVE`, default `ACTIVE`; perubahan permission berlaku pada request berikutnya. Super Admin dapat memilih permission yang tersedia di katalog sistem.                                                 |
+| BR-005 | Sebagai administrator berwenang, saya ingin membuat, melihat daftar, melihat detail, mengubah, dan menghapus game agar katalog publik mencerminkan penawaran yang disetujui. Sprint 1 hanya mencakup game; kategori dan layanan berada di luar sprint ini.                                                                                                                                                                                                 |
+| BR-006 | Sebagai pemilik bisnis, saya ingin operasi publik dan administratif memvalidasi input serta menerapkan aturan akses yang sesuai agar permintaan tidak valid atau tanpa izin tidak mengubah data terlindungi maupun membuka informasi privat.                                                                                                                                                                                                               |
+| BR-007 | Sebagai administrator, saya ingin masuk ke dashboard dengan username atau email dan password agar hanya akun admin aktif yang dapat mengakses fungsi Sprint 1. Backend menerbitkan dan memperbarui session melalui cookie aman; SMTP dan login pelanggan tidak dibutuhkan.                                                                                                                                                                                 |
 
-| ID     | Requirement                                                                                                                                                                                                                                                                                                           |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| BR-001 | As a visitor, I need to view active public games so that I can find a game with available services.                                                                                                                                                                                                                   |
-| BR-002 | As a visitor, I need to search, filter, sort, and paginate the game catalog so that I can find relevant games efficiently.                                                                                                                                                                                            |
-| BR-017 | As an authorized administrator, I need to view administrator accounts and their assigned roles so that privileged access is transparent and auditable. Super Admin provisioning is handled through a controlled backend/database/script bootstrap; dashboard account operations are read-only.                        |
-| BR-018 | As an authorized administrator, I need role and permission controls so that access is enforced consistently. Sprint 1 starts with only one active Super Admin role with access to all admin functions; this system role cannot be updated or deleted. Additional roles are created explicitly, not seeded by default. |
-| BR-019 | As an authorized administrator, I need to manage games, service categories, and services so that the public catalog reflects approved offerings. This sprint covers game management; category and service slices continue in Sprint 2.                                                                                |
-| BR-023 | As the business, I need public and administrative operations to validate inputs and enforce caller authorization so invalid or unauthorized actions do not change protected data.                                                                                                                                     |
+## 5. Aturan Bisnis dan Dependensi
 
-## 5. Assumptions and Dependencies
+- **Autentikasi admin:** Operasi dashboard memerlukan admin terautentikasi dan berwenang. Login menerima username/email dan password; backend mengatur access JWT 15 menit dan refresh token opaque 7 hari melalui cookie `HttpOnly; Secure; Path=/; SameSite=None`. Refresh token dirotasi setiap pemakaian. CORS memakai allowlist origin dashboard dengan credentials; request berbasis cookie memakai CSRF token. Login/refresh dibatasi 20 request per IP per 15 menit; login juga dibatasi 5 kegagalan per identifier setelah trim + lowercase per 15 menit.
+- **Role:** Hanya status `ACTIVE` dan `INACTIVE` yang berlaku. Role kustom default `ACTIVE`; `SUPER_ADMIN` immutable. Role kustom tidak dapat dinonaktifkan selama masih ditugaskan ke akun aktif. Perubahan role/permission langsung berlaku pada request berikutnya; API membaca state otorisasi terkini dan tidak menggunakan cache permission yang stale.
+- **Daftar role:** Pencarian mencocokkan `name` dan `code` tanpa membedakan kapitalisasi. `page` default 1; `limit` adalah jumlah record per halaman (bukan batas panjang teks pencarian), default 10 dan maksimum 100. Panjang teks pencarian role maksimum 100 karakter. Sort `sortBy` mendukung `name`, `createdAt`, dan `updatedAt`; `sortOrder` mendukung `ASC`/`DESC`. Default `createdAt DESC`, lalu `id ASC` sebagai tie-break.
+- **Permission:** Super Admin dapat memilih permission aktif apa pun dalam katalog sistem untuk role kustom. Definisi permission dikelola sistem, bukan melalui CRUD role.
+- **Akun admin:** Daftar/detail admin bersifat read-only di dashboard. Akun `INACTIVE` tidak dapat login dan session aktifnya dicabut; tiap admin memiliki satu role aktif. Hash Argon2id disimpan di `ADMIN_CREDENTIAL`; session dan digest refresh disimpan di `ADMIN_SESSION`.
+- **ID:** ID entitas memakai prefix `admin_`, `role_`, `game_`, dan `permission_`. ID game memakai `game_` diikuti ULID kanonis 26 karakter Crockford Base32 huruf kapital; contoh `game_01ARZ3NDEKTSV4RRFFQ69G5FAV`.
+- **Katalog game:** Dokumen game berisi `name`, `slug`, `description`, `imageUrl`, `platform`, `isActive`, `isPopular`, `sortOrder`, dan timestamp. `description` adalah deskripsi game yang dikelola Super Admin melalui API game dashboard, opsional, maksimum 500 karakter. `platform` opsional: `MOBILE`, `PC`, atau `CONSOLE`. `imageUrl` wajib URL HTTPS absolut; Sprint 1 tidak membatasi host.
+- **Visibilitas dan urutan publik:** Hanya game `isActive=true` dan belum dihapus yang terlihat publik; endpoint populer juga memerlukan `isPopular=true`. Default katalog publik dan endpoint populer diurutkan berdasarkan `sortOrder ASC`. Sort `NAME_ASC` mengurutkan nama ascending. Rating dan review count tidak dikembalikan. Belum ada dukungan multi-bahasa; `Accept-Language` diabaikan dan konten memakai bahasa Indonesia. Query parameter yang tidak dikenal diabaikan.
+- **Penghapusan:** Endpoint DELETE role/game tidak memerlukan body; body kosong diterima dan body nonkosong ditolak dengan HTTP 400. Penghapusan role/game memakai soft delete dengan `deleted_at`; item terhapus langsung dikecualikan dari pembacaan dan tidak memiliki API pemulihan. Data dan relasi terkait dipertahankan 2 bulan, lalu dihapus permanen oleh proses retensi. Penghapusan role ditolak selama masih ada assignment akun aktif. `SUPER_ADMIN` tidak dapat dihapus atau dinonaktifkan.
+- **Retry mutasi:** Sprint 1 tidak memakai `Idempotency-Key`. Create dengan key bisnis duplikat menghasilkan HTTP 409 dan tidak membuat record kedua. Update dengan payload yang sama tidak menimbulkan efek tambahan. Delete berulang pada tombstone dalam masa retensi mengembalikan sukses yang sama; ID yang tidak ada atau sudah dipurge mengembalikan HTTP 404.
+- **Exposure dan HTTP:** Route dashboard dapat dijangkau dari internet, tetapi wajib session admin, permission, CORS allowlist, dan CSRF; route katalog publik tidak memerlukan autentikasi. HTTP mapping: 400 input invalid, 401 belum terautentikasi, 403 tidak berwenang, 404 resource tidak ditemukan/terhapus, 409 konflik state/unik, 429 rate limit, 500 kegagalan teknis. Create tetap 200 sesuai envelope Sprint 1 dan `data: null`.
+- **Rate limit API selain autentikasi:** Jendela bergulir 1 menit. Route baca admin: maksimum 1.200 request/IP dan 600 request/admin. Mutasi role/game: maksimum 1.200 request/IP dan 60 request/admin. Katalog publik: maksimum 1.200 request/IP. Pelampauan mengembalikan HTTP 429 dengan `Retry-After` dalam detik.
+- **Teknologi:** Next.js untuk web, Go untuk API, MongoDB untuk penyimpanan, Vercel untuk deployment web dan API, sesuai [HLD Sprint 1](./hld/sprint-1-hld.md).
 
-- Current route/UI evidence does not approve target identity policy or prove production readiness.
-- Admin login verification is a prerequisite only. If current baseline fails target policy, scope an admin identity/login implementation explicitly before protected admin delivery.
-- Super Admin bootstrap and protection are defined in Sprint 1; permission-to-role mapping for any additional role requires Security/Product sign-off. Admin bootstrap is an operational backend/database/script process, not an invitation flow. Game lifecycle/publication rules remain unresolved.
-- Category/service data and pricing rules are prerequisites for public service discovery in Sprint 2.
-- No estimates, sprint duration, owners, or dates are approved; all remain TBD.
+## 6. SLA Awal
 
-## 6. Open Questions
+Target awal untuk operasi API dashboard, autentikasi admin, dan katalog publik Sprint 1. Target beban dan kapasitas berikut merupakan asumsi, bukan hasil benchmark; validasi melalui uji beban sebelum rilis.
 
-- Does the existing admin login/session and authorization baseline meet target policy, or is new admin-auth work required? — Owner not identified; before protected admin work.
-- Which permission-to-role matrix and delegation restrictions apply to additional roles? — Security/Product owner; before those roles are introduced.
-- What game activation, publication, filtering, and production catalog rules are approved? — Owner not identified; before catalog release.
-
-## 7. SLA Baseline
-
-SLA baseline berlaku untuk operasi API dashboard dan katalog publik Sprint 1. Angka beban serta kapasitas berikut adalah asumsi target awal, bukan hasil pengukuran; validasi melalui NFT sebelum rilis.
-
-| Metrik                      | Target                                                                                                             |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------ |
-| Availability bulanan        | 99,9%                                                                                                              |
-| Beban NFT                   | 50 VUser dan 20 request/detik dengan campuran route representatif                                                  |
-| Latency baca                | p95 ≤ 500 ms; p99 ≤ 2 detik                                                                                        |
-| Latency tulis               | p95 ≤ 1 detik; p99 ≤ 2 detik                                                                                       |
-| Kapasitas awal per instance | 2 vCPU, 4 GiB RAM; CPU ≤ 70% dan memori ≤ 75% pada beban target                                                    |
-| Error server                | ≤ 0,1% request valid per bulan; timeout dan HTTP 5xx dihitung, 4xx validasi/otorisasi yang diharapkan dikecualikan |
+| Metrik                      | Target                                                                                                                          |
+| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------- |
+| Ketersediaan bulanan        | 99,9%                                                                                                                           |
+| Beban uji beban             | 50 VUser dan 20 permintaan/detik dengan campuran endpoint yang representatif                                                    |
+| Latensi baca                | p95 ≤ 500 ms; p99 ≤ 2 detik                                                                                                     |
+| Latensi tulis               | p95 ≤ 1 detik; p99 ≤ 2 detik                                                                                                    |
+| Kapasitas awal per instance | 2 vCPU, RAM 4 GiB; CPU ≤ 70% dan memori ≤ 75% pada beban target                                                                 |
+| Kesalahan server            | ≤ 0,1% permintaan valid per bulan; timeout dan HTTP 5xx dihitung, sedangkan 4xx validasi/otorisasi yang diharapkan dikecualikan |
