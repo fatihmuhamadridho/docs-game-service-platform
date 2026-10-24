@@ -7,7 +7,7 @@
 
 ## Design
 
-![Design reference](./__assets__/[design-file])
+![Sprint 1 dashboard design](../../../design/dashboard.png)
 
 ## Sequence Diagram
 
@@ -55,15 +55,16 @@ sequenceDiagram
 
 ## General Information
 
-| Component          | Value                                                                                                                                           |
-| ------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| Description        | Mengambil satu role beserta metadata dan permission yang dapat dilihat pemanggil.                                                               |
-| Resource URL       | `https://{host}/api/admin/roles/v1/detail/{roleId}`                                                                                             |
-| Transport Protocol | HTTPS, REST                                                                                                                                     |
-| Request Verb       | GET                                                                                                                                             |
-| Content Type       | Tidak ada request body                                                                                                                          |
-| Interaction Type   | Synchronous                                                                                                                                     |
-| Security Policy    | Admin authentication dan izin role-read. Identity provider serta nama permission TBD. Batasi visibility permission sesuai kewenangan pemanggil. |
+| Component          | Value                                                                             |
+| ------------------ | --------------------------------------------------------------------------------- |
+| Description        | Mengambil satu role beserta metadata dan permission yang dapat dilihat pemanggil. |
+| Resource URL       | `https://{host}/api/admin/roles/v1/detail/{roleId}`                               |
+| Transport Protocol | HTTPS, REST                                                                       |
+| Request Verb       | GET                                                                               |
+| Content Type       | Tidak ada request body                                                            |
+| Interaction Type   | Synchronous                                                                       |
+
+    | Security Policy    | Admin authentication dan permission `role-read` sesuai [katalog permission Sprint 1](./permission-model.md). Identity provider TBD. Batasi visibility permission sesuai kewenangan pemanggil. |
 
 ### Path / Endpoint
 
@@ -85,7 +86,7 @@ sequenceDiagram
 
 ## Business Rules
 
-1. Hanya administrator terautentikasi dengan izin role-read yang dapat mengakses endpoint. Pemetaan role/permission dan identity provider TBD.
+1. Hanya administrator terautentikasi dengan permission `role-read` yang dapat mengakses endpoint. Identifier target mengacu pada [katalog permission Sprint 1](./permission-model.md); identity provider TBD.
 2. `roleId` mengidentifikasi satu definisi role dan tidak dapat diubah.
 3. Response memuat `id`, `name`, `code`, `description`, `status`, `permissions`, `createdAt`, dan `updatedAt` sesuai usulan kontrak daftar role.
 4. Permission yang dikembalikan dibatasi pada permission yang berhak dilihat pemanggil. Permission sensitif tidak boleh bocor melalui response; aturan delegasi dan redaksi TBD.
@@ -118,7 +119,7 @@ Tidak ada request body.
 
 ### Request Validation
 
-1. `Authorization` harus mengidentifikasi administrator terautentikasi dengan izin role-read. Kembalikan `ROLB01001` bila belum terautentikasi dan `ROLB01002` bila izin tidak tersedia.
+1. `Authorization` harus mengidentifikasi administrator terautentikasi dengan permission `role-read`. Kembalikan `ROLB01001` bila belum terautentikasi dan `ROLB01002` bila permission tidak tersedia.
 2. `roleId` wajib tersedia, tidak kosong, dan maksimal 64 karakter. Format ID mengikuti strategi pembuatan ID yang TBD; nilai tidak valid mengembalikan `ROLB02001`.
 3. Role harus ditemukan dan dapat diakses oleh administrator pemanggil. Jika tidak ditemukan atau tidak tersedia, kembalikan `ROLB02004`.
 4. Permission pada response hanya boleh memuat permission yang diizinkan untuk dilihat pemanggil. Bila pemanggil tidak boleh melihat detail role, tolak request tanpa mengembalikan data parsial yang membocorkan permission.
@@ -126,22 +127,22 @@ Tidak ada request body.
 
 ## Response Body
 
-| Attribute               | E/N/T | Type               | M/O/C | Max Length | Description                                        | Example                           |
-| ----------------------- | ----- | ------------------ | ----- | ---------: | -------------------------------------------------- | --------------------------------- |
-| `status`                | N     | Object             | M     |          — | Object status response.                            | `{}`                              |
-| `status.code`           | N     | String             | M     |         20 | Service status code.                               | `ROLS00000`                       |
-| `status.message`        | N     | String             | O     |        200 | Pesan hasil untuk consumer.                        | `Role detail retrieved`           |
-| `data`                  | N     | Object/null        | M     |          — | Payload hasil; `null` ketika error.                | `{}`                              |
-| `data.role`             | N     | Object             | C     |          — | Snapshot role.                                     | `{}`                              |
-| `data.role.id`          | N     | String             | C     |         64 | ID role immutable.                                 | `role_01JXYZ`                     |
-| `data.role.name`        | N     | String             | C     |        100 | Nama tampilan role.                                | `Support Agent`                   |
-| `data.role.code`        | N     | String             | C     |         50 | Kode role unik.                                    | `SUPPORT_AGENT`                   |
-| `data.role.description` | N     | String/null        | O     |        500 | Deskripsi role.                                    | `Menangani pertanyaan pelanggan.` |
-| `data.role.status`      | N     | String             | C     |         20 | Status role (`ACTIVE`/`INACTIVE`); Super Admin selalu `ACTIVE`. | `ACTIVE`                          |
-| `data.role.isSystem`    | N     | Boolean            | M     |          — | `true` untuk seeded `SUPER_ADMIN`; role immutable.               | `true`                            |
-| `data.role.permissions` | N     | Array of String    | C     |  100 items | ID permission yang dapat dilihat pemanggil.        | `["admin.orders.read"]`           |
-| `data.role.createdAt`   | N     | String (date-time) | C     |         35 | Waktu pembuatan ISO 8601 UTC.                      | `2026-10-11T09:45:00Z`            |
-| `data.role.updatedAt`   | N     | String (date-time) | C     |         35 | Waktu perubahan terakhir ISO 8601 UTC.             | `2026-10-11T10:00:00Z`            |
+| Attribute               | E/N/T | Type               | M/O/C | Max Length | Description                                                                                                            | Example                           |
+| ----------------------- | ----- | ------------------ | ----- | ---------: | ---------------------------------------------------------------------------------------------------------------------- | --------------------------------- |
+| `status`                | N     | Object             | M     |          — | Object status response.                                                                                                | `{}`                              |
+| `status.code`           | N     | String             | M     |         20 | Service status code.                                                                                                   | `ROLS00000`                       |
+| `status.message`        | N     | String             | O     |        200 | Pesan hasil untuk consumer.                                                                                            | `Role detail retrieved`           |
+| `data`                  | N     | Object/null        | M     |          — | Payload hasil; `null` ketika error.                                                                                    | `{}`                              |
+| `data.role`             | N     | Object             | C     |          — | Snapshot role.                                                                                                         | `{}`                              |
+| `data.role.id`          | N     | String             | C     |         64 | ID role immutable.                                                                                                     | `role_01JXYZ`                     |
+| `data.role.name`        | N     | String             | C     |        100 | Nama tampilan role.                                                                                                    | `Support Agent`                   |
+| `data.role.code`        | N     | String             | C     |         50 | Kode role unik.                                                                                                        | `SUPPORT_AGENT`                   |
+| `data.role.description` | N     | String/null        | O     |        500 | Deskripsi role.                                                                                                        | `Menangani pertanyaan pelanggan.` |
+| `data.role.status`      | N     | String             | C     |         20 | Status role (`ACTIVE`/`INACTIVE`); Super Admin selalu `ACTIVE`.                                                        | `ACTIVE`                          |
+| `data.role.isSystem`    | N     | Boolean            | M     |          — | `true` untuk seeded `SUPER_ADMIN`; role immutable.                                                                     | `true`                            |
+| `data.role.permissions` | N     | Array of String    | C     |  100 items | ID grant eksplisit yang dapat dilihat pemanggil. `SUPER_ADMIN` tetap memiliki akses penuh berdasarkan `isSystem=true`. | `[]`                              |
+| `data.role.createdAt`   | N     | String (date-time) | C     |         35 | Waktu pembuatan ISO 8601 UTC.                                                                                          | `2026-10-11T09:45:00Z`            |
+| `data.role.updatedAt`   | N     | String (date-time) | C     |         35 | Waktu perubahan terakhir ISO 8601 UTC.                                                                                 | `2026-10-11T10:00:00Z`            |
 
 ### Success Example
 
@@ -159,7 +160,7 @@ Tidak ada request body.
       "description": "Role system dengan akses ke seluruh fungsi admin.",
       "status": "ACTIVE",
       "isSystem": true,
-      "permissions": ["catalog-manage", "users-manage", "settings-manage", "orders-manage", "finance-read", "dashboard-read"],
+      "permissions": [],
       "createdAt": "2026-10-11T09:45:00Z",
       "updatedAt": "2026-10-11T10:00:00Z"
     }
@@ -230,7 +231,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - Endpoint `/api/admin/roles/v1/detail/{roleId}`, nama field, response envelope, prefix `ROL`, dan kode status mengikuti usulan [Get List Roles](get-list-roles.md); perlu persetujuan API owner.
 - Route action-based `/detail/{roleId}` dipilih agar konsisten dengan pola solutioning admin project. Konfirmasi jika API standard memilih resource REST `GET /api/admin/roles/v1/{roleId}`.
 - Model role, field `status`, permission IDs, serta relasi akun-role belum disepakati atau dimodelkan pada ERD. Kontrak ini bersifat usulan sampai model RBAC disetujui.
-- Permission visibility untuk custom role, format ID, identity provider, permission name, strategi cache, SLA, audit policy, serta pemetaan HTTP untuk authentication/authorization/not-found masih TBD. Detail Super Admin dapat dibaca dan menampilkan `isSystem=true`; role tidak dapat diubah atau dihapus.
+- Permission visibility untuk custom role, format ID, identity provider, strategi cache, SLA, audit policy, serta pemetaan HTTP untuk authentication/authorization/not-found masih TBD. Permission target `role-read` dan katalog Sprint 1 mengacu pada [permission model](./permission-model.md). Detail Super Admin dapat dibaca dan menampilkan `isSystem=true`; akses penuhnya tidak bergantung pada grant eksplisit dan role tidak dapat diubah atau dihapus.
 - Cakupan hanya membaca detail role; create, list, update, delete, dan assignment role ke akun berada di endpoint terpisah.
 
 ## References

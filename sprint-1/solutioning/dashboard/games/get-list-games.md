@@ -7,7 +7,7 @@
 
 ## Design
 
-![Design reference](./__assets__/[design-file])
+![Sprint 1 dashboard design](../../../design/dashboard.png)
 
 ## Sequence Diagram
 
@@ -32,11 +32,11 @@ sequenceDiagram
             API->>DB: Cari dan filter katalog, urutkan, hitung total, ambil halaman
             alt Data ditemukan
                 DB-->>API: Daftar game dan total hasil
-                API-->>UI: 200 GAMS00000, data.games dan pagination
+                API-->>UI: 200 GAMS00000, data (array game) dan pagination
                 UI-->>Admin: Tampilkan daftar sesuai filter
             else Tidak ada hasil
                 DB-->>API: Hasil kosong
-                API-->>UI: 200 GAMS00000, games kosong
+                API-->>UI: 200 GAMS00000, data: [] dan pagination.total: 0
                 UI-->>Admin: Tampilkan empty state
             else Database gagal
                 DB-->>API: Kegagalan baca katalog
@@ -92,7 +92,7 @@ sequenceDiagram
 5. Results use deterministic ordering: `sortOrder` ascending, then `name` ascending, then `id` ascending. Confirm ordering with product owner.
 6. Pagination uses zero-based `offset` and `limit`. Default `limit` is 20; allowed range is 1–100. Default `offset` is 0.
 7. `total` represents records matching search and filters before pagination.
-8. No matching records is a successful result with an empty `games` array, not an error.
+8. No matching records is a successful result with `data: []` and `pagination.total: 0`, not an error.
 9. Response contains only catalog fields needed for admin list management; it must not expose internal audit data, credentials, or unrelated customer/order data.
 10. Current game fields and proposed admin fields follow [Create Game](create-game.md); final persisted schema remains subject to approval.
 
@@ -134,26 +134,26 @@ None. GET request has no body.
 
 ## Response Body
 
-| Attribute                     | E/N/T | Type               | M/O/C | Max Length | Description                               | Example                |
-| ----------------------------- | ----- | ------------------ | ----- | ---------: | ----------------------------------------- | ---------------------- |
-| `status`                      | N     | Object             | M     |          - | Response status object.                   | `{}`                   |
-| `status.code`                 | N     | String             | M     |         20 | Service status code.                      | `GAMS00000`            |
-| `status.message`              | N     | String             | O     |        200 | Human-readable result.                    | `Games retrieved`      |
-| `data`                        | N     | Object/null        | M     |          - | Result payload; null on errors.           | `{}`                   |
-| `data.games`                  | N     | Array              | M     |          - | Current page of matching games.           | `[]`                   |
-| `data.games[].id`             | N     | String             | M     |         64 | Stable catalog identifier.                | `gm_01JXYZ`            |
-| `data.games[].name`           | N     | String             | M     |        100 | Display name.                             | `Mobile Legends`       |
-| `data.games[].slug`           | N     | String             | M     |        100 | URL-safe route identifier.                | `mobile-legends`       |
-| `data.games[].serviceSummary` | N     | String/null        | O     |        160 | Storefront service summary.               | `Joki Rank / Top Up`   |
-| `data.games[].artworkKey`     | N     | String/null        | O     |        160 | Approved asset key.                       | `mobile-legends`       |
-| `data.games[].isActive`       | N     | Boolean            | M     |          - | Storefront availability.                  | `true`                 |
-| `data.games[].isPopular`      | N     | Boolean            | M     |          - | Popular-list eligibility.                 | `true`                 |
-| `data.games[].sortOrder`      | N     | Integer            | M     |  10 digits | Display order.                            | `2`                    |
-| `data.games[].createdAt`      | N     | String (date-time) | M     |         35 | Creation time in ISO 8601 UTC.            | `2026-10-11T08:30:00Z` |
-| `data.games[].updatedAt`      | N     | String (date-time) | M     |         35 | Last update time in ISO 8601 UTC.         | `2026-10-11T08:30:00Z` |
-| `data.pagination.limit`       | N     | Integer            | M     |   3 digits | Applied page size.                        | `20`                   |
-| `data.pagination.offset`      | N     | Integer            | M     |   9 digits | Applied offset.                           | `0`                    |
-| `data.pagination.total`       | N     | Integer            | M     |  10 digits | Total matching records before pagination. | `2`                    |
+| Attribute               | E/N/T | Type               | M/O/C | Max Length | Description                                                  | Example                |
+| ----------------------- | ----- | ------------------ | ----- | ---------: | ------------------------------------------------------------ | ---------------------- |
+| `status`                | N     | Object             | M     |          - | Response status object.                                      | `{}`                   |
+| `status.code`           | N     | String             | M     |         20 | Service status code.                                         | `GAMS00000`            |
+| `status.message`        | N     | String             | O     |        200 | Human-readable result.                                       | `Games retrieved`      |
+| `data`                  | N     | Array of Object    | M     |          - | Current page of matching games; empty array when none match. | `[]`                   |
+| `data[].id`             | N     | String             | M     |         64 | Stable catalog identifier.                                   | `gm_01JXYZ`            |
+| `data[].name`           | N     | String             | M     |        100 | Display name.                                                | `Mobile Legends`       |
+| `data[].slug`           | N     | String             | M     |        100 | URL-safe route identifier.                                   | `mobile-legends`       |
+| `data[].serviceSummary` | N     | String/null        | O     |        160 | Storefront service summary.                                  | `Joki Rank / Top Up`   |
+| `data[].artworkKey`     | N     | String/null        | O     |        160 | Approved asset key.                                          | `mobile-legends`       |
+| `data[].isActive`       | N     | Boolean            | M     |          - | Storefront availability.                                     | `true`                 |
+| `data[].isPopular`      | N     | Boolean            | M     |          - | Popular-list eligibility.                                    | `true`                 |
+| `data[].sortOrder`      | N     | Integer            | M     |  10 digits | Display order.                                               | `2`                    |
+| `data[].createdAt`      | N     | String (date-time) | M     |         35 | Creation time in ISO 8601 UTC.                               | `2026-10-11T08:30:00Z` |
+| `data[].updatedAt`      | N     | String (date-time) | M     |         35 | Last update time in ISO 8601 UTC.                            | `2026-10-11T08:30:00Z` |
+| `pagination`            | N     | Object             | M     |          - | Pagination metadata, sejajar dengan `data`.                  | `{}`                   |
+| `pagination.limit`      | N     | Integer            | M     |   3 digits | Applied page size.                                           | `20`                   |
+| `pagination.offset`     | N     | Integer            | M     |   9 digits | Applied offset.                                              | `0`                    |
+| `pagination.total`      | N     | Integer            | M     |  10 digits | Total matching records before pagination.                    | `2`                    |
 
 ### Success Example
 
@@ -163,26 +163,24 @@ None. GET request has no body.
     "code": "GAMS00000",
     "message": "Games retrieved"
   },
-  "data": {
-    "games": [
-      {
-        "id": "gm_01JXYZ",
-        "name": "Mobile Legends",
-        "slug": "mobile-legends",
-        "serviceSummary": "Joki Rank / Top Up",
-        "artworkKey": "mobile-legends",
-        "isActive": true,
-        "isPopular": true,
-        "sortOrder": 2,
-        "createdAt": "2026-10-11T08:30:00Z",
-        "updatedAt": "2026-10-11T08:30:00Z"
-      }
-    ],
-    "pagination": {
-      "limit": 20,
-      "offset": 0,
-      "total": 1
+  "data": [
+    {
+      "id": "gm_01JXYZ",
+      "name": "Mobile Legends",
+      "slug": "mobile-legends",
+      "serviceSummary": "Joki Rank / Top Up",
+      "artworkKey": "mobile-legends",
+      "isActive": true,
+      "isPopular": true,
+      "sortOrder": 2,
+      "createdAt": "2026-10-11T08:30:00Z",
+      "updatedAt": "2026-10-11T08:30:00Z"
     }
+  ],
+  "pagination": {
+    "limit": 20,
+    "offset": 0,
+    "total": 1
   }
 }
 ```

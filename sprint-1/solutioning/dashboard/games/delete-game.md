@@ -7,7 +7,7 @@
 
 ## Design
 
-![Design reference](./__assets__/[design-file])
+![Sprint 1 dashboard design](../../../design/dashboard.png)
 
 ## Sequence Diagram
 
@@ -38,7 +38,7 @@ sequenceDiagram
                 API->>DB: Set deleted_at dan updated_at secara atomik
                 alt Penyimpanan berhasil
                     DB-->>API: Waktu penghapusan tersimpan
-                    API-->>UI: 200 GAMS00000, data.gameId dan data.deletedAt
+                    API-->>UI: 200 GAMS00000, data null
                     UI-->>Admin: Hapus game dari daftar dashboard
                 else Database gagal
                     DB-->>API: Kegagalan update
@@ -126,14 +126,12 @@ Tidak ada request body.
 
 ## Response Body
 
-| Attribute        | E/N/T | Type               | M/O/C | Max Length | Description                             | Example                |
-| ---------------- | ----- | ------------------ | ----- | ---------: | --------------------------------------- | ---------------------- |
-| `status`         | N     | Object             | M     |          — | Object status response.                 | `{}`                   |
-| `status.code`    | N     | String             | M     |         20 | Service status code.                    | `GAMS00000`            |
-| `status.message` | N     | String             | O     |        200 | Pesan hasil untuk consumer.             | `Game deleted`         |
-| `data`           | N     | Object/null        | M     |          — | Hasil penghapusan; `null` ketika error. | `{}`                   |
-| `data.gameId`    | N     | String             | C     |         64 | ID game yang ditandai terhapus.         | `gm_01JXYZ`            |
-| `data.deletedAt` | N     | String (date-time) | C     |         35 | Waktu soft delete ISO 8601 UTC.         | `2026-10-11T09:30:00Z` |
+| Attribute        | E/N/T | Type        | M/O/C | Max Length | Description                                             | Example        |
+| ---------------- | ----- | ----------- | ----- | ---------: | ------------------------------------------------------- | -------------- |
+| `status`         | N     | Object      | M     |          — | Object status response.                                 | `{}`           |
+| `status.code`    | N     | String      | M     |         20 | Service status code.                                    | `GAMS00000`    |
+| `status.message` | N     | String      | O     |        200 | Pesan hasil untuk consumer.                             | `Game deleted` |
+| `data`           | N     | Object/null | M     |          — | Selalu `null`; metadata penghapusan tidak dikembalikan. | `null`         |
 
 ### Success Example
 
@@ -143,10 +141,7 @@ Tidak ada request body.
     "code": "GAMS00000",
     "message": "Game deleted"
   },
-  "data": {
-    "gameId": "gm_01JXYZ",
-    "deletedAt": "2026-10-11T09:30:00Z"
-  }
+  "data": null
 }
 ```
 
@@ -178,7 +173,7 @@ Tidak ada request body.
 
 | HTTP Status | Usage                                                                                                                                                                                     |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `200`       | Game berhasil ditandai terhapus dan metadata penghapusan dikembalikan.                                                                                                                    |
+| `200`       | Game berhasil ditandai terhapus; `data` bernilai `null`.                                                                                                                                  |
 | `400`       | ID tidak valid, akses admin tidak lolos, atau game tidak ditemukan/sudah terhapus sesuai baseline response project. Konfirmasi apakah API standard mengharuskan `401`, `403`, atau `404`. |
 | `500`       | Kegagalan service atau database katalog yang tidak terduga.                                                                                                                               |
 

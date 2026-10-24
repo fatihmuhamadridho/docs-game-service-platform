@@ -1,8 +1,5 @@
 # Game Catalog Service - Get List Games Interface Agreement
 
-> Current Go wire behavior: [catalog source audit](../../../../sprint_2/solutioning/public/catalog/source-audit-2026-10-23.md). Proposed target below remains separate.
-> Open decisions: [catalog questions](../../../../sprint_2/solutioning/public/catalog/QUESTION.md).
-
 > **Document Type:** API Contract  
 > **Status:** Draft  
 > **Service / Domain:** Game Catalog  
@@ -10,7 +7,9 @@
 
 ## Design
 
-API ini mengambil katalog game aktif untuk halaman `/games`, dengan pencarian nama, filter platform/kategori layanan, pengurutan, dan pagination. Hanya game yang dipublikasikan dan aktif ditampilkan. Kontrak menggunakan field katalog inti (`id`, `name`, `slug`, `serviceSummary`, `artworkKey`) dan metadata listing yang saat ini dipakai UI. ERD `GAME_CATALOG` belum memiliki platform, rating/review, atau relasi kategori layanan; sumber metadata tambahan itu perlu diputuskan sebelum implementasi.
+![Sprint 1 homepage design](../../../design/homepage.png)
+
+![Sprint 1 game list design](../../../design/game-list.png)
 
 ## Sequence Diagram
 
@@ -138,8 +137,6 @@ None. GET request has no body.
 10. Kegagalan database mengembalikan HTTP 500 `GAMT03001` tanpa detail internal.
 
 ## Response Body
-
-Success responses always use `status` and `data`. `data.games` may be empty. Results contain public catalog/listing fields only.
 
 | Attribute                          | E/N/T | Type         | M/O/C |          Max Length | Description                                                    | Example              |
 | ---------------------------------- | ----- | ------------ | ----- | ------------------: | -------------------------------------------------------------- | -------------------- |
@@ -290,4 +287,3 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - `src/features/Games/views/pages/Games.page.tsx` — current catalog UI mock data, search/filter/sort/pagination state.
 - `src/features/Games/views/interfaces/game.interface.ts` — current game card display fields.
 - `src/features/Games/views/atoms/SortSelect.atom.tsx` — visible sort choices.
-- `DESIGN.md` — storefront language, responsive catalog direction, and illustrative catalog guidance.

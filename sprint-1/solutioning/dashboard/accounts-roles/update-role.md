@@ -7,7 +7,7 @@
 
 ## Design
 
-![Design reference](./__assets__/[design-file])
+![Sprint 1 dashboard design](../../../design/dashboard.png)
 
 ## Sequence Diagram
 
@@ -73,15 +73,16 @@ sequenceDiagram
 
 ## General Information
 
-| Component          | Value                                                                                                                                                                                                        |
-| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Description        | Memperbarui metadata dan/atau permission pada satu role Admin Dashboard.                                                                                                                                     |
-| Resource URL       | `https://{host}/api/admin/roles/v1/update/{roleId}`                                                                                                                                                          |
-| Transport Protocol | HTTPS, REST                                                                                                                                                                                                  |
-| Request Verb       | PUT                                                                                                                                                                                                          |
-| Content Type       | `application/json`                                                                                                                                                                                           |
-| Interaction Type   | Synchronous                                                                                                                                                                                                  |
-| Security Policy    | Hanya Super Admin terautentikasi dapat mengubah custom role. `SUPER_ADMIN` adalah role sistem immutable; semua perubahan ditolak. Terapkan rate limiting dan audit aktor/aksi. |
+| Component          | Value                                                                    |
+| ------------------ | ------------------------------------------------------------------------ |
+| Description        | Memperbarui metadata dan/atau permission pada satu role Admin Dashboard. |
+| Resource URL       | `https://{host}/api/admin/roles/v1/update/{roleId}`                      |
+| Transport Protocol | HTTPS, REST                                                              |
+| Request Verb       | PUT                                                                      |
+| Content Type       | `application/json`                                                       |
+| Interaction Type   | Synchronous                                                              |
+
+    | Security Policy    | Hanya Super Admin terautentikasi dengan permission `role-update` yang dapat mengubah custom role. `SUPER_ADMIN` adalah role sistem immutable; semua perubahan ditolak. Identifier target mengacu pada [permission model Sprint 1](./permission-model.md). Terapkan rate limiting dan audit aktor/aksi. |
 
 ### Path / Endpoint
 
@@ -104,7 +105,7 @@ sequenceDiagram
 
 ## Business Rules
 
-1. Hanya administrator terautentikasi dengan izin role-update yang dapat mengubah role. Pemetaan role/permission dan identity provider TBD.
+1. Hanya Super Admin terautentikasi dengan permission `role-update` yang dapat mengubah custom role. `SUPER_ADMIN` sendiri selalu ditolak sebagai target perubahan. Identifier target mengacu pada [katalog permission Sprint 1](./permission-model.md); identity provider TBD.
 2. `roleId` mengidentifikasi role yang dituju dan tidak dapat diubah.
 3. Request bersifat parsial: field yang tidak dikirim mempertahankan nilai tersimpan. Field yang dikirim sebagai `null` hanya boleh mengosongkan `description`; `name`, `code`, `status`, dan `permissions` tidak menerima `null`.
 4. Minimal satu field mutable wajib dikirim. Field immutable seperti `id`, `createdAt`, dan `updatedAt` tidak boleh dikirim.
@@ -138,13 +139,13 @@ None.
 
 ## Request Body
 
-| Attribute     | E/N/T | Type            | M/O/C | Max Length | Description                                                            | Example                         |
-| ------------- | ----- | --------------- | ----- | ---------: | ---------------------------------------------------------------------- | ------------------------------- |
-| `name`        | N     | String          | O     |        100 | Nama tampilan role; trim sebelum disimpan.                             | `Senior Support Agent`          |
-| `code`        | N     | String          | O     |         50 | Kode role unik uppercase; format usulan `^[A-Z][A-Z0-9_]*$`.           | `SENIOR_SUPPORT_AGENT`          |
-| `description` | N     | String/null     | O     |        500 | Deskripsi role; `null` menghapus deskripsi.                            | `Menangani eskalasi pelanggan.` |
-| `status`      | N     | String          | O     |         20 | Status role. Usulan `ACTIVE` atau `INACTIVE`; status model TBD.        | `ACTIVE`                        |
-| `permissions` | N     | Array of String | O     |  100 items | Daftar permission IDs pengganti; bila dikirim minimal satu permission. | `["admin.orders.read"]`         |
+| Attribute     | E/N/T | Type            | M/O/C | Max Length | Description                                                                            | Example                         |
+| ------------- | ----- | --------------- | ----- | ---------: | -------------------------------------------------------------------------------------- | ------------------------------- |
+| `name`        | N     | String          | O     |        100 | Nama tampilan role; trim sebelum disimpan.                                             | `Senior Support Agent`          |
+| `code`        | N     | String          | O     |         50 | Kode role unik uppercase; format usulan `^[A-Z][A-Z0-9_]*$`.                           | `SENIOR_SUPPORT_AGENT`          |
+| `description` | N     | String/null     | O     |        500 | Deskripsi role; `null` menghapus deskripsi.                                            | `Menangani eskalasi pelanggan.` |
+| `status`      | N     | String          | O     |         20 | Status role. Usulan `ACTIVE` atau `INACTIVE`; status model TBD.                        | `ACTIVE`                        |
+| `permissions` | N     | Array of String | O     |  100 items | Daftar identifier permission Sprint 1 pengganti; bila dikirim minimal satu permission. | `["role-read", "game-read"]`    |
 
 ### Example Request Body
 
@@ -152,20 +153,20 @@ None.
 {
   "name": "Senior Support Agent",
   "description": "Menangani eskalasi pelanggan.",
-  "permissions": ["admin.orders.read", "admin.complaints.read", "admin.complaints.update"]
+  "permissions": ["role-read", "game-read"]
 }
 ```
 
 ### Request Validation
 
-1. `Authorization` harus mengidentifikasi administrator terautentikasi dengan izin role-update. Kembalikan `ROLB01001` bila belum terautentikasi dan `ROLB01002` bila izin tidak tersedia.
+1. `Authorization` harus mengidentifikasi Super Admin terautentikasi dengan permission `role-update`. Kembalikan `ROLB01001` bila belum terautentikasi dan `ROLB01002` bila permission tidak tersedia.
 2. `roleId` wajib, tidak kosong, dan maksimal 64 karakter. Format ID mengikuti strategi pembuatan ID yang TBD; nilai tidak valid mengembalikan `ROLB02001`.
 3. Body harus object dan memuat minimal satu dari `name`, `code`, `description`, `status`, atau `permissions`. Body kosong mengembalikan `ROLB02001`.
 4. `name`, bila dikirim, harus string non-empty setelah trim dan maksimal 100 karakter.
 5. `code`, bila dikirim, harus string non-empty, maksimal 50 karakter, dinormalisasi uppercase, dan mengikuti `^[A-Z][A-Z0-9_]*$`.
 6. `description`, bila dikirim, harus string atau `null` dan maksimal 500 karakter.
 7. `status`, bila dikirim, harus salah satu nilai yang disepakati. Usulan saat ini `ACTIVE` atau `INACTIVE`; nilai lainnya mengembalikan `ROLB02001`.
-8. `permissions`, bila dikirim, harus array berisi 1 sampai 100 ID string unik. ID tidak dikenal mengembalikan `ROLB02003`; ID yang pemanggil tidak berwenang delegasikan mengembalikan `ROLB01002`.
+8. `permissions`, bila dikirim, harus array berisi 1 sampai 100 identifier permission string unik dari katalog Sprint 1. Permission di luar katalog atau tidak aktif mengembalikan `ROLB02003`; permission yang pemanggil tidak berwenang delegasikan mengembalikan `ROLB01002`. Matriks grant custom role tetap menunggu persetujuan Security/Product.
 9. Field tak dikenal atau immutable seperti `id`, `createdAt`, `updatedAt`, dan atribut protected ditolak dengan `ROLB02001`.
 10. Jika `roleId` tidak ditemukan atau sudah dihapus, kembalikan `ROLB02004`. Role protected/system yang tidak dapat diubah mengembalikan `ROLB02005`.
 11. Nama/kode duplikat mengembalikan `ROLB02002`. Kombinasi status/assignment yang tidak valid mengembalikan `ROLB02006`.
@@ -173,22 +174,22 @@ None.
 
 ## Response Body
 
-| Attribute               | E/N/T | Type               | M/O/C | Max Length | Description                                           | Example                         |
-| ----------------------- | ----- | ------------------ | ----- | ---------: | ----------------------------------------------------- | ------------------------------- |
-| `status`                | N     | Object             | M     |          — | Object status response.                               | `{}`                            |
-| `status.code`           | N     | String             | M     |         20 | Service status code.                                  | `ROLS00000`                     |
-| `status.message`        | N     | String             | O     |        200 | Pesan hasil untuk consumer.                           | `Role updated`                  |
-| `data`                  | N     | Object/null        | M     |          — | Payload hasil; `null` ketika error.                   | `{}`                            |
-| `data.role`             | N     | Object             | C     |          — | Snapshot role setelah perubahan.                      | `{}`                            |
-| `data.role.id`          | N     | String             | C     |         64 | ID role immutable.                                    | `role_01JXYZ`                   |
-| `data.role.name`        | N     | String             | C     |        100 | Nama tampilan role tersimpan.                         | `Senior Support Agent`          |
-| `data.role.code`        | N     | String             | C     |         50 | Kode role tersimpan.                                  | `SENIOR_SUPPORT_AGENT`          |
-| `data.role.description` | N     | String/null        | O     |        500 | Deskripsi role tersimpan.                             | `Menangani eskalasi pelanggan.` |
-| `data.role.status`      | N     | String             | C     |         20 | Status role tersimpan.                                | `ACTIVE`                        |
-| `data.role.isSystem`    | N     | Boolean            | M     |          — | `false` untuk custom role yang dapat diubah melalui endpoint ini. | `false`                  |
-| `data.role.permissions` | N     | Array of String    | C     |  100 items | Permission IDs tersimpan dan dapat dilihat pemanggil. | `["admin.orders.read"]`         |
-| `data.role.createdAt`   | N     | String (date-time) | C     |         35 | Waktu pembuatan ISO 8601 UTC; tidak berubah.          | `2026-10-11T09:45:00Z`          |
-| `data.role.updatedAt`   | N     | String (date-time) | C     |         35 | Waktu update terbaru ISO 8601 UTC.                    | `2026-10-11T10:15:00Z`          |
+| Attribute               | E/N/T | Type               | M/O/C | Max Length | Description                                                       | Example                         |
+| ----------------------- | ----- | ------------------ | ----- | ---------: | ----------------------------------------------------------------- | ------------------------------- |
+| `status`                | N     | Object             | M     |          — | Object status response.                                           | `{}`                            |
+| `status.code`           | N     | String             | M     |         20 | Service status code.                                              | `ROLS00000`                     |
+| `status.message`        | N     | String             | O     |        200 | Pesan hasil untuk consumer.                                       | `Role updated`                  |
+| `data`                  | N     | Object/null        | M     |          — | Payload hasil; `null` ketika error.                               | `{}`                            |
+| `data.role`             | N     | Object             | C     |          — | Snapshot role setelah perubahan.                                  | `{}`                            |
+| `data.role.id`          | N     | String             | C     |         64 | ID role immutable.                                                | `role_01JXYZ`                   |
+| `data.role.name`        | N     | String             | C     |        100 | Nama tampilan role tersimpan.                                     | `Senior Support Agent`          |
+| `data.role.code`        | N     | String             | C     |         50 | Kode role tersimpan.                                              | `SENIOR_SUPPORT_AGENT`          |
+| `data.role.description` | N     | String/null        | O     |        500 | Deskripsi role tersimpan.                                         | `Menangani eskalasi pelanggan.` |
+| `data.role.status`      | N     | String             | C     |         20 | Status role tersimpan.                                            | `ACTIVE`                        |
+| `data.role.isSystem`    | N     | Boolean            | M     |          — | `false` untuk custom role yang dapat diubah melalui endpoint ini. | `false`                         |
+| `data.role.permissions` | N     | Array of String    | C     |  100 items | Permission IDs tersimpan dan dapat dilihat pemanggil.             | `["role-read", "game-read"]`    |
+| `data.role.createdAt`   | N     | String (date-time) | C     |         35 | Waktu pembuatan ISO 8601 UTC; tidak berubah.                      | `2026-10-11T09:45:00Z`          |
+| `data.role.updatedAt`   | N     | String (date-time) | C     |         35 | Waktu update terbaru ISO 8601 UTC.                                | `2026-10-11T10:15:00Z`          |
 
 ### Success Example
 
@@ -206,7 +207,7 @@ None.
       "description": "Menangani eskalasi pelanggan.",
       "status": "ACTIVE",
       "isSystem": false,
-      "permissions": ["admin.orders.read", "admin.complaints.read", "admin.complaints.update"],
+      "permissions": ["role-read", "game-read"],
       "createdAt": "2026-10-11T09:45:00Z",
       "updatedAt": "2026-10-11T10:15:00Z"
     }
@@ -278,7 +279,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Current Go behavior vs proposed target
 
-- **Current Go:** `PUT /api/admin/roles/v1/update/{roleId}`; JSON body accepts only `name`, `code`, `description`, `status`, `permissions`; update requires at least one recognized field. `permissions` is a string-ID array and replaces the supplied assignment set. Handler returns Go envelope `{code,message,data?}`. Admin session plus `settings-manage`; authorization errors use HTTP 401/403; validation uses HTTP 400; success uses HTTP 200. Exact service validation and state errors come from `AdminAccessController` and remain source-defined.
+- **Current Go:** `PUT /api/admin/roles/v1/update/{roleId}`; JSON body accepts only `name`, `code`, `description`, `status`, `permissions`; update requires at least one recognized field. `permissions` is a string-ID array and replaces the supplied assignment set. Handler returns Go envelope `{code,message,data?}`. Current handler checks admin session plus `settings-manage`; authorization errors use HTTP 401/403; validation uses HTTP 400; success uses HTTP 200. This is existing implementation behavior, not Sprint 1's target permission catalog.
 - **FE evidence:** `AdminAccountsRolesPage` sends PUT to this exact path with `name`, `code`, `description`, `status`, and permission IDs.
 - **Proposed IFA:** nested `status` response examples remain target-format documentation; they are not the current Go wire envelope. Align envelope only by explicit API owner decision.
 
@@ -288,7 +289,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - Custom role `status` dan `permissions` mengikuti model role; `SUPER_ADMIN` immutable sesuai ERD dan tidak dapat diubah.
 - Field `permissions` mengganti seluruh permission role saat dikirim; perilaku merge/incremental update tidak didukung oleh kontrak ini.
 - Penolakan perubahan role aktif yang masih memiliki assignment, cache invalidation, delegated-permission rules, dan optimistic locking bergantung keputusan IAM/security owner. Perlindungan `SUPER_ADMIN` sudah menjadi aturan target.
-- Identity provider, ID generation, permission catalog, audit storage/retention, SLA, dan HTTP status mapping masih TBD.
+- Identity provider, ID generation, custom-role grant/delegation matrix, audit storage/retention, SLA, dan HTTP status mapping masih TBD. Target permission identifiers follow [permission model Sprint 1](./permission-model.md); current Go middleware mapping requires separate implementation alignment.
 - Cakupan hanya memperbarui definisi role; assignment akun, create/list/detail/delete, dan CRUD permission catalog berada di luar API ini.
 
 ## References

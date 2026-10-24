@@ -7,7 +7,7 @@
 
 ## Design
 
-![Design reference](./__assets__/[design-file])
+![Sprint 1 dashboard design](../../../design/dashboard.png)
 
 ## Sequence Diagram
 
@@ -37,9 +37,9 @@ sequenceDiagram
             else Tidak duplikat
                 API->>DB: Simpan game dan metadata audit
                 alt Penyimpanan berhasil
-                    DB-->>API: Game baru beserta id dan timestamp
-                    API-->>UI: 200 GAMS00000, data.game
-                    UI-->>Admin: Tampilkan konfirmasi dan game baru pada daftar dashboard
+                    DB-->>API: Record game tersimpan
+                    API-->>UI: 200 GAMS00000, data null
+                    UI-->>Admin: Tampilkan konfirmasi berhasil dan muat ulang daftar game
                 else Database gagal
                     DB-->>API: Kegagalan penyimpanan
                     API-->>UI: 500 GAMT03001, data null
@@ -155,23 +155,12 @@ None.
 
 ## Response Body
 
-| Attribute                  | E/N/T | Type               | M/O/C | Max Length | Description                                                       | Example                |
-| -------------------------- | ----- | ------------------ | ----- | ---------: | ----------------------------------------------------------------- | ---------------------- |
-| `status`                   | N     | Object             | M     |          - | Response status object.                                           | `{}`                   |
-| `status.code`              | N     | String             | M     |         20 | Service status code.                                              | `GAMS00000`            |
-| `status.message`           | N     | String             | O     |        200 | Human-readable result.                                            | `Game created`         |
-| `data`                     | N     | Object/null        | M     |          - | Created game data; null on error.                                 | `{}`                   |
-| `data.game`                | N     | Object             | C     |          - | Persisted game record.                                            | `{}`                   |
-| `data.game.id`             | N     | String             | C     |         64 | Immutable generated identifier.                                   | `gm_01JXYZ`            |
-| `data.game.name`           | N     | String             | C     |        100 | Normalized display name.                                          | `Mobile Legends`       |
-| `data.game.slug`           | N     | String             | C     |        100 | Unique URL identifier.                                            | `mobile-legends`       |
-| `data.game.serviceSummary` | N     | String/null        | O     |        160 | Storefront summary.                                               | `Joki Rank / Top Up`   |
-| `data.game.artworkKey`     | N     | String/null        | O     |        160 | Approved asset key.                                               | `mobile-legends`       |
-| `data.game.isActive`       | N     | Boolean            | M     |          - | Storefront availability.                                          | `true`                 |
-| `data.game.isPopular`      | N     | Boolean            | M     |          - | Popular-list eligibility.                                         | `true`                 |
-| `data.game.sortOrder`      | N     | Integer            | M     |  10 digits | Display ordering value.                                           | `2`                    |
-| `data.game.createdAt`      | N     | String (date-time) | M     |         35 | Creation time in ISO 8601 UTC.                                    | `2026-10-11T08:30:00Z` |
-| `data.game.updatedAt`      | N     | String (date-time) | M     |         35 | Last update time in ISO 8601 UTC; equals `createdAt` on creation. | `2026-10-11T08:30:00Z` |
+| Attribute        | E/N/T | Type        | M/O/C | Max Length | Description                                              | Example        |
+| ---------------- | ----- | ----------- | ----- | ---------: | -------------------------------------------------------- | -------------- |
+| `status`         | N     | Object      | M     |          - | Response status object.                                  | `{}`           |
+| `status.code`    | N     | String      | M     |         20 | Service status code.                                     | `GAMS00000`    |
+| `status.message` | N     | String      | O     |        200 | Human-readable result.                                   | `Game created` |
+| `data`           | N     | Object/null | M     |          - | Selalu `null`; endpoint tidak mengembalikan record game. | `null`         |
 
 ### Success Example
 
@@ -181,20 +170,7 @@ None.
     "code": "GAMS00000",
     "message": "Game created"
   },
-  "data": {
-    "game": {
-      "id": "gm_01JXYZ",
-      "name": "Mobile Legends",
-      "slug": "mobile-legends",
-      "serviceSummary": "Joki Rank / Top Up",
-      "artworkKey": "mobile-legends",
-      "isActive": true,
-      "isPopular": true,
-      "sortOrder": 2,
-      "createdAt": "2026-10-11T08:30:00Z",
-      "updatedAt": "2026-10-11T08:30:00Z"
-    }
-  }
+  "data": null
 }
 ```
 

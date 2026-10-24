@@ -7,7 +7,7 @@
 
 ## Design
 
-![Design reference](./__assets__/[design-file])
+![Sprint 1 dashboard design](../../../design/dashboard.png)
 
 ## Sequence Diagram
 
@@ -49,8 +49,8 @@ sequenceDiagram
                         API->>DB: Update field yang berubah dan updated_at
                         alt Penyimpanan berhasil
                             DB-->>API: Game terbarui
-                            API-->>UI: 200 GAMS00000, data.game
-                            UI-->>Admin: Tampilkan data terbaru pada daftar/detail
+                            API-->>UI: 200 GAMS00000, data null
+                            UI-->>Admin: Tampilkan konfirmasi berhasil dan muat ulang detail game
                         else Database gagal
                             DB-->>API: Kegagalan update
                             API-->>UI: 500 GAMT03001, data null
@@ -111,7 +111,7 @@ sequenceDiagram
 8. `artworkKey` harus menunjuk asset yang disetujui. Integrasi registry asset TBD.
 9. `updatedAt` dibuat oleh service dalam UTC pada setiap update sukses. `createdAt` tidak berubah.
 10. Perubahan sukses dicatat dengan identitas administrator dan waktu. Penyimpanan serta retensi audit TBD.
-11. API mengembalikan snapshot game hasil update. Bila satu validasi gagal, tidak ada field yang disimpan; operasi bersifat atomik.
+11. API mengembalikan `data: null` setelah update berhasil. UI memuat ulang detail game untuk mengambil nilai terbaru. Bila satu validasi gagal, tidak ada field yang disimpan; operasi bersifat atomik.
 12. Kebijakan optimistic locking untuk dua admin yang mengubah game bersamaan belum ditetapkan; putuskan penggunaan ETag/`If-Match` atau versi record sebelum implementasi.
 
 ## Request Headers
@@ -171,23 +171,12 @@ sequenceDiagram
 
 ## Response Body
 
-| Attribute                  | E/N/T | Type               | M/O/C | Max Length | Description                                              | Example                     |
-| -------------------------- | ----- | ------------------ | ----- | ---------: | -------------------------------------------------------- | --------------------------- |
-| `status`                   | N     | Object             | M     |          — | Object status response.                                  | `{}`                        |
-| `status.code`              | N     | String             | M     |         20 | Service status code.                                     | `GAMS00000`                 |
-| `status.message`           | N     | String             | O     |        200 | Pesan hasil untuk consumer.                              | `Game updated`              |
-| `data`                     | N     | Object/null        | M     |          — | Payload hasil; `null` ketika error.                      | `{}`                        |
-| `data.game`                | N     | Object             | C     |          — | Snapshot record game setelah update.                     | `{}`                        |
-| `data.game.id`             | N     | String             | C     |         64 | ID immutable katalog.                                    | `gm_01JXYZ`                 |
-| `data.game.name`           | N     | String             | C     |        100 | Nama tampilan tersimpan.                                 | `Mobile Legends: Bang Bang` |
-| `data.game.slug`           | N     | String             | C     |        100 | Slug unik tersimpan.                                     | `mobile-legends-bang-bang`  |
-| `data.game.serviceSummary` | N     | String/null        | O     |        160 | Ringkasan layanan storefront.                            | `Joki Rank dan Top Up`      |
-| `data.game.artworkKey`     | N     | String/null        | O     |        160 | Key asset tersimpan.                                     | `mobile-legends-bang-bang`  |
-| `data.game.isActive`       | N     | Boolean            | M     |          — | Status ketersediaan storefront.                          | `true`                      |
-| `data.game.isPopular`      | N     | Boolean            | M     |          — | Kelayakan daftar populer.                                | `false`                     |
-| `data.game.sortOrder`      | N     | Integer            | M     |  10 digits | Urutan tampilan.                                         | `3`                         |
-| `data.game.createdAt`      | N     | String (date-time) | M     |         35 | Waktu pembuatan ISO 8601 UTC; tidak berubah saat update. | `2026-10-11T08:30:00Z`      |
-| `data.game.updatedAt`      | N     | String (date-time) | M     |         35 | Waktu update terbaru ISO 8601 UTC.                       | `2026-10-11T09:15:00Z`      |
+| Attribute        | E/N/T | Type        | M/O/C | Max Length | Description                                                   | Example        |
+| ---------------- | ----- | ----------- | ----- | ---------: | ------------------------------------------------------------- | -------------- |
+| `status`         | N     | Object      | M     |          — | Object status response.                                       | `{}`           |
+| `status.code`    | N     | String      | M     |         20 | Service status code.                                          | `GAMS00000`    |
+| `status.message` | N     | String      | O     |        200 | Pesan hasil untuk consumer.                                   | `Game updated` |
+| `data`           | N     | Object/null | M     |          — | Selalu `null`; record terbaru dibaca melalui endpoint detail. | `null`         |
 
 ### Success Example
 
@@ -197,20 +186,7 @@ sequenceDiagram
     "code": "GAMS00000",
     "message": "Game updated"
   },
-  "data": {
-    "game": {
-      "id": "gm_01JXYZ",
-      "name": "Mobile Legends: Bang Bang",
-      "slug": "mobile-legends-bang-bang",
-      "serviceSummary": "Joki Rank dan Top Up",
-      "artworkKey": "mobile-legends-bang-bang",
-      "isActive": true,
-      "isPopular": false,
-      "sortOrder": 3,
-      "createdAt": "2026-10-11T08:30:00Z",
-      "updatedAt": "2026-10-11T09:15:00Z"
-    }
-  }
+  "data": null
 }
 ```
 
@@ -242,7 +218,7 @@ sequenceDiagram
 
 | HTTP Status | Usage                                                                                                                                                                                                                                 |
 | ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `200`       | Game berhasil diperbarui dan snapshot terkini dikembalikan.                                                                                                                                                                           |
+| `200`       | Game berhasil diperbarui; `data` bernilai `null`.                                                                                                                                                                                     |
 | `400`       | Request tidak valid, autentikasi/otorisasi tidak lolos, game tidak ditemukan, konflik unik, atau state bisnis tidak konsisten sesuai baseline response project. Konfirmasi apakah API standard mengharuskan `401`, `403`, atau `404`. |
 | `500`       | Kegagalan service atau database katalog yang tidak terduga.                                                                                                                                                                           |
 

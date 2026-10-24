@@ -7,7 +7,7 @@
 
 ## Design
 
-![Design reference](./__assets__/[design-file])
+![Sprint 1 dashboard design](../../../design/dashboard.png)
 
 ## Sequence Diagram
 
@@ -32,7 +32,7 @@ sequenceDiagram
             API->>DB: Ambil game berdasarkan gameId
             alt Game ditemukan
                 DB-->>API: Satu record game
-                API-->>UI: 200 GAMS00000, data.game
+                API-->>UI: 200 GAMS00000, data (object game langsung)
                 UI-->>Admin: Tampilkan detail game
             else Game tidak ditemukan
                 DB-->>API: Record tidak ada
@@ -126,23 +126,22 @@ Tidak ada request body.
 
 ## Response Body
 
-| Attribute                  | E/N/T | Type               | M/O/C | Max Length | Description                                                  | Example                 |
-| -------------------------- | ----- | ------------------ | ----- | ---------: | ------------------------------------------------------------ | ----------------------- |
-| `status`                   | N     | Object             | M     |          — | Object status response.                                      | `{}`                    |
-| `status.code`              | N     | String             | M     |         20 | Service status code.                                         | `GAMS00000`             |
-| `status.message`           | N     | String             | O     |        200 | Pesan hasil untuk consumer.                                  | `Game detail retrieved` |
-| `data`                     | N     | Object/null        | M     |          — | Payload hasil; `null` ketika error.                          | `{}`                    |
-| `data.game`                | N     | Object             | C     |          — | Record detail game katalog.                                  | `{}`                    |
-| `data.game.id`             | N     | String             | C     |         64 | ID immutable katalog.                                        | `gm_01JXYZ`             |
-| `data.game.name`           | N     | String             | C     |        100 | Nama tampilan.                                               | `Mobile Legends`        |
-| `data.game.slug`           | N     | String             | C     |        100 | Slug unik untuk route.                                       | `mobile-legends`        |
-| `data.game.serviceSummary` | N     | String/null        | O     |        160 | Ringkasan layanan pada kartu game.                           | `Joki Rank / Top Up`    |
-| `data.game.artworkKey`     | N     | String/null        | O     |        160 | Key asset artwork yang disetujui.                            | `mobile-legends`        |
-| `data.game.isActive`       | N     | Boolean            | C     |          — | Status ketersediaan storefront.                              | `true`                  |
-| `data.game.isPopular`      | N     | Boolean            | C     |          — | Kelayakan game pada daftar populer.                          | `true`                  |
-| `data.game.sortOrder`      | N     | Integer            | C     |  10 digits | Urutan tampilan; nilai lebih kecil ditampilkan lebih dahulu. | `2`                     |
-| `data.game.createdAt`      | N     | String (date-time) | C     |         35 | Waktu pembuatan ISO 8601 UTC.                                | `2026-10-11T08:30:00Z`  |
-| `data.game.updatedAt`      | N     | String (date-time) | C     |         35 | Waktu perubahan terakhir ISO 8601 UTC.                       | `2026-10-11T09:15:00Z`  |
+| Attribute             | E/N/T | Type               | M/O/C | Max Length | Description                                                  | Example                 |
+| --------------------- | ----- | ------------------ | ----- | ---------: | ------------------------------------------------------------ | ----------------------- |
+| `status`              | N     | Object             | M     |          — | Object status response.                                      | `{}`                    |
+| `status.code`         | N     | String             | M     |         20 | Service status code.                                         | `GAMS00000`             |
+| `status.message`      | N     | String             | O     |        200 | Pesan hasil untuk consumer.                                  | `Game detail retrieved` |
+| `data`                | N     | Object/null        | M     |          — | Object game langsung pada sukses; `null` pada error.         | `{}`                    |
+| `data.id`             | N     | String             | C     |         64 | ID immutable katalog.                                        | `gm_01JXYZ`             |
+| `data.name`           | N     | String             | C     |        100 | Nama tampilan.                                               | `Mobile Legends`        |
+| `data.slug`           | N     | String             | C     |        100 | Slug unik untuk route.                                       | `mobile-legends`        |
+| `data.serviceSummary` | N     | String/null        | O     |        160 | Ringkasan layanan pada kartu game.                           | `Joki Rank / Top Up`    |
+| `data.artworkKey`     | N     | String/null        | O     |        160 | Key asset artwork yang disetujui.                            | `mobile-legends`        |
+| `data.isActive`       | N     | Boolean            | C     |          — | Status ketersediaan storefront.                              | `true`                  |
+| `data.isPopular`      | N     | Boolean            | C     |          — | Kelayakan game pada daftar populer.                          | `true`                  |
+| `data.sortOrder`      | N     | Integer            | C     |  10 digits | Urutan tampilan; nilai lebih kecil ditampilkan lebih dahulu. | `2`                     |
+| `data.createdAt`      | N     | String (date-time) | C     |         35 | Waktu pembuatan ISO 8601 UTC.                                | `2026-10-11T08:30:00Z`  |
+| `data.updatedAt`      | N     | String (date-time) | C     |         35 | Waktu perubahan terakhir ISO 8601 UTC.                       | `2026-10-11T09:15:00Z`  |
 
 ### Success Example
 
@@ -153,18 +152,16 @@ Tidak ada request body.
     "message": "Game detail retrieved"
   },
   "data": {
-    "game": {
-      "id": "gm_01JXYZ",
-      "name": "Mobile Legends",
-      "slug": "mobile-legends",
-      "serviceSummary": "Joki Rank / Top Up",
-      "artworkKey": "mobile-legends",
-      "isActive": true,
-      "isPopular": true,
-      "sortOrder": 2,
-      "createdAt": "2026-10-11T08:30:00Z",
-      "updatedAt": "2026-10-11T09:15:00Z"
-    }
+    "id": "gm_01JXYZ",
+    "name": "Mobile Legends",
+    "slug": "mobile-legends",
+    "serviceSummary": "Joki Rank / Top Up",
+    "artworkKey": "mobile-legends",
+    "isActive": true,
+    "isPopular": true,
+    "sortOrder": 2,
+    "createdAt": "2026-10-11T08:30:00Z",
+    "updatedAt": "2026-10-11T09:15:00Z"
   }
 }
 ```

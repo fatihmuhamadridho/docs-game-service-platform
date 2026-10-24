@@ -1,8 +1,5 @@
 # Game Catalog Service - Get Popular Games Interface Agreement
 
-> Current Go wire behavior: [catalog source audit](../../../../sprint_2/solutioning/public/catalog/source-audit-2026-10-23.md). Proposed target below remains separate.
-> Open decisions: [catalog questions](../../../../sprint_2/solutioning/public/catalog/QUESTION.md).
-
 > **Document Type:** API Contract  
 > **Status:** Draft  
 > **Service / Domain:** Game Catalog  
@@ -10,7 +7,7 @@
 
 ## Design
 
-The HomeV2 storefront displays popular games as cards with a game name, service summary, and artwork. Current UI reference: `src/features/HomeV2/views/organisms/PopularGames.organism.tsx` and `src/features/HomeV2/views/molecules/GameCard.molecule.tsx`. Current six-game content is illustrative and must be replaced or confirmed by catalog data.
+![Sprint 1 homepage design](../../../design/homepage.png)
 
 ## Sequence Diagram
 
@@ -119,8 +116,6 @@ None. GET request has no body.
 3. Unknown query parameters are ignored for forward compatibility. This behavior requires API owner confirmation.
 
 ## Response Body
-
-Success responses always use `status` and `data`. `data.games` may be empty. Game records are ordered and contain only public catalog presentation fields.
 
 | Attribute                     | E/N/T | Type        | M/O/C | Max Length | Description                                                | Example                   |
 | ----------------------------- | ----- | ----------- | ----- | ---------: | ---------------------------------------------------------- | ------------------------- |
@@ -231,7 +226,6 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## References
 
-- `DESIGN.md`, section 5.1 B — popular game cards and illustrative catalog.
 - `src/features/HomeV2/views/organisms/PopularGames.organism.tsx` — current section display and list consumer.
 - `src/features/HomeV2/views/molecules/GameCard.molecule.tsx` — current card fields and order link behavior.
 - `src/features/HomeV2/views/interfaces/homeV2.interface.ts` — current UI model (`name`, `service`, `art`, `mark`).

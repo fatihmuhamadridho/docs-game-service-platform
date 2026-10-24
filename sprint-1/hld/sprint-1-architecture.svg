@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1440" height="760" viewBox="0 0 1440 760" role="img" aria-labelledby="title desc">
+  <title id="title">Arsitektur Sprint 1 Game Service Platform</title>
+  <desc id="desc">Vercel menjadi platform deployment untuk Next.js dan Go API. Next.js berkomunikasi dengan Go API melalui HTTPS REST API, dan Go API membaca atau menulis data ke MongoDB.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="12" markerHeight="12" refX="10" refY="6" orient="auto"><path d="M1 1L11 6L1 11Z" fill="#64748b"/></marker>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="8" stdDeviation="10" flood-color="#0f172a" flood-opacity=".08"/></filter>
+  </defs>
+  <rect width="1440" height="760" fill="#f8fafc"/>
+  <text x="720" y="66" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="34" font-weight="700" fill="#0f172a">Arsitektur Sprint 1</text>
+  <text x="720" y="104" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="18" fill="#64748b">Vercel men-deploy aplikasi Next.js dan backend Go</text>
+
+  <!-- Shared Vercel deployment boundary -->
+  <g filter="url(#shadow)"><rect x="70" y="150" width="930" height="490" rx="28" fill="#fff" stroke="#111827" stroke-width="2"/></g>
+  <rect x="70" y="150" width="930" height="72" rx="28" fill="#111827"/>
+  <path d="M70 194h930v28H70z" fill="#111827"/>
+  <path d="M112 170l18 32h-36z" fill="#fff"/>
+  <text x="150" y="198" font-family="Inter,Arial,sans-serif" font-size="25" font-weight="700" fill="#fff">Vercel</text>
+  <text x="961" y="195" text-anchor="end" font-family="Inter,Arial,sans-serif" font-size="15" font-weight="600" letter-spacing="1.3" fill="#cbd5e1">PLATFORM DEPLOYMENT</text>
+
+  <!-- Next.js app -->
+  <g filter="url(#shadow)"><rect x="125" y="280" width="330" height="235" rx="22" fill="#fff" stroke="#dbe3ee" stroke-width="2"/></g>
+  <circle cx="220" cy="365" r="35" fill="#111827"/>
+  <text x="220" y="376" text-anchor="middle" font-family="Arial,sans-serif" font-size="33" font-weight="700" fill="#fff">N</text>
+  <text x="275" y="360" font-family="Inter,Arial,sans-serif" font-size="29" font-weight="700" fill="#111827">Next.js</text>
+  <text x="275" y="389" font-family="Inter,Arial,sans-serif" font-size="14" fill="#64748b">Aplikasi web</text>
+  <line x1="160" y1="425" x2="420" y2="425" stroke="#e2e8f0" stroke-width="2"/>
+  <text x="290" y="463" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="16" fill="#334155">Halaman publik dan</text>
+  <text x="290" y="488" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="16" fill="#334155">dashboard administrator</text>
+
+  <!-- Go API -->
+  <g filter="url(#shadow)"><rect x="610" y="280" width="330" height="235" rx="22" fill="#fff" stroke="#dbe3ee" stroke-width="2"/></g>
+  <rect x="610" y="280" width="330" height="48" rx="22" fill="#087cba"/>
+  <path d="M610 306h330v22H610z" fill="#087cba"/>
+  <text x="775" y="311" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="1.2" fill="#fff">BACKEND API</text>
+  <ellipse cx="704" cy="383" rx="31" ry="27" fill="#00add8"/>
+  <ellipse cx="694" cy="375" rx="7" ry="9" fill="#fff"/><ellipse cx="714" cy="375" rx="7" ry="9" fill="#fff"/>
+  <circle cx="695" cy="376" r="3" fill="#17324d"/><circle cx="713" cy="376" r="3" fill="#17324d"/>
+  <text x="753" y="394" font-family="Inter,Arial,sans-serif" font-size="30" font-weight="700" fill="#087cba">Go</text>
+  <text x="775" y="445" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="16" fill="#334155">REST API · aturan bisnis</text>
+  <text x="775" y="474" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="16" fill="#334155">Autentikasi, otorisasi, dan data</text>
+
+  <!-- App to API request and response -->
+  <line x1="455" y1="370" x2="598" y2="370" stroke="#64748b" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="526" y="347" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="14" fill="#475569">HTTPS request</text>
+  <line x1="598" y1="420" x2="455" y2="420" stroke="#94a3b8" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="526" y="449" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="14" fill="#64748b">API response</text>
+
+  <text x="535" y="585" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="15" fill="#475569">Kedua aplikasi berjalan sebagai deployment di platform Vercel</text>
+
+  <!-- MongoDB service -->
+  <g filter="url(#shadow)"><rect x="1080" y="280" width="290" height="235" rx="22" fill="#fff" stroke="#13aa52" stroke-width="2"/></g>
+  <rect x="1080" y="280" width="290" height="48" rx="22" fill="#13aa52"/>
+  <path d="M1080 306h290v22h-290z" fill="#13aa52"/>
+  <text x="1225" y="311" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="14" font-weight="700" letter-spacing="1.2" fill="#fff">DATABASE</text>
+  <path d="M1150 414c-2-39 6-62 21-82 7 21 18 39 16 62-2 16-12 28-26 36-6-4-10-9-11-16z" fill="#13aa52"/>
+  <path d="M1171 341c-1 29-3 56-8 84" fill="none" stroke="#087a3c" stroke-width="3" stroke-linecap="round"/>
+  <text x="1196" y="395" font-family="Inter,Arial,sans-serif" font-size="25" font-weight="700" fill="#116149">MongoDB</text>
+  <text x="1225" y="461" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="15" fill="#334155">Penyimpanan data aplikasi</text>
+
+  <!-- API and database request/response -->
+  <line x1="1000" y1="370" x2="1068" y2="370" stroke="#64748b" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="1034" y="347" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="13" fill="#475569">Query</text>
+  <line x1="1068" y1="420" x2="1000" y2="420" stroke="#94a3b8" stroke-width="3" marker-end="url(#arrow)"/>
+  <text x="1034" y="449" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="13" fill="#64748b">Data</text>
+
+  <text x="720" y="705" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-size="15" fill="#64748b">Next.js → Go API → MongoDB · Vercel menjadi platform deployment untuk Next.js dan Go API</text>
+</svg>

@@ -7,7 +7,9 @@
 
 ## Design
 
-UI design reference belum tersedia. Dokumen ini memetakan endpoint Go yang berjalan.
+![Sprint 1 dashboard design](../../../design/dashboard.png)
+
+Dokumen ini memetakan endpoint Go yang berjalan.
 
 ## Sequence Diagram
 
@@ -91,8 +93,6 @@ sequenceDiagram
 
 ## Response Body
 
-Current Go wire envelope `{code,message,data?}`; field berikut adalah source projection.
-
 | Attribute             | Type     | M/O/C | Max Length | Description                               | Example                          |
 | --------------------- | -------- | ----- | ---------: | ----------------------------------------- | -------------------------------- |
 | `code`                | String   | M     |         10 | Kode hasil Go service.                    | `USRS00000`                      |
@@ -129,13 +129,21 @@ Current Go wire envelope `{code,message,data?}`; field berikut adalah source pro
 ### Business Error Example
 
 ```json
-{ "code": "USRB02004", "message": "Akun admin tidak ditemukan.", "data": null }
+{
+  "code": "USRB02004",
+  "message": "Akun admin tidak ditemukan.",
+  "data": null
+}
 ```
 
 ### Technical Error Example
 
 ```json
-{ "code": "USRT03001", "message": "Layanan admin tidak tersedia.", "data": null }
+{
+  "code": "USRT03001",
+  "message": "Layanan admin tidak tersedia.",
+  "data": null
+}
 ```
 
 ## HTTP Status Codes

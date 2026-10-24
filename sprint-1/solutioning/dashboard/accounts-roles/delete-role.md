@@ -7,7 +7,7 @@
 
 ## Design
 
-![Design reference](./__assets__/[design-file])
+![Sprint 1 dashboard design](../../../design/dashboard.png)
 
 ## Sequence Diagram
 
@@ -66,15 +66,16 @@ sequenceDiagram
 
 ## General Information
 
-| Component          | Value                                                                                                                                                      |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Description        | Menandai satu role sebagai terhapus setelah memastikan role tidak protected dan tidak memiliki assignment aktif.                                           |
-| Resource URL       | `https://{host}/api/admin/roles/v1/delete/{roleId}`                                                                                                        |
-| Transport Protocol | HTTPS, REST                                                                                                                                                |
-| Request Verb       | DELETE                                                                                                                                                     |
-| Content Type       | Tidak ada request body                                                                                                                                     |
-| Interaction Type   | Synchronous                                                                                                                                                |
-| Security Policy    | Admin authentication dan izin role-delete. Identity provider dan permission name TBD. Wajib audit aktor/aksi; lindungi role system dan hak akses sensitif. |
+| Component          | Value                                                                                                            |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Description        | Menandai satu role sebagai terhapus setelah memastikan role tidak protected dan tidak memiliki assignment aktif. |
+| Resource URL       | `https://{host}/api/admin/roles/v1/delete/{roleId}`                                                              |
+| Transport Protocol | HTTPS, REST                                                                                                      |
+| Request Verb       | DELETE                                                                                                           |
+| Content Type       | Tidak ada request body                                                                                           |
+| Interaction Type   | Synchronous                                                                                                      |
+
+    | Security Policy    | Admin authentication dan permission `role-delete` sesuai [katalog permission Sprint 1](./permission-model.md). Identity provider TBD. Wajib audit aktor/aksi; lindungi role system dan hak akses sensitif. |
 
 ### Path / Endpoint
 
@@ -96,7 +97,7 @@ sequenceDiagram
 
 ## Business Rules
 
-1. Hanya administrator terautentikasi dengan izin role-delete yang dapat menghapus role. Pemetaan role/permission dan identity provider TBD.
+1. Hanya Super Admin terautentikasi dengan permission `role-delete` yang dapat menghapus custom role. Identifier target mengacu pada [katalog permission Sprint 1](./permission-model.md); identity provider TBD.
 2. Operasi yang diusulkan adalah soft delete. Service mengisi `deleted_at` dan memperbarui `updated_at` dalam satu transaksi; field `deleted_at` belum ada pada model/ERD dan harus disetujui sebelum implementasi.
 3. `SUPER_ADMIN` (`Super Admin`) adalah satu-satunya role hasil seed Sprint 1, ditandai `is_system=true`, dan tidak dapat dihapus oleh endpoint ini. Setiap upaya menghapusnya ditolak dengan `ROLB02005`. Role lain yang dibuat secara eksplisit setelah bootstrap mengikuti aturan delete custom role.
 4. Role dengan assignment akun aktif tidak dapat dihapus. Admin harus terlebih dahulu mencabut assignment atau memindahkan akun ke role lain melalui proses yang disetujui. Kebijakan ini mencegah hilangnya otorisasi tanpa pengganti.
@@ -131,7 +132,7 @@ Tidak ada request body.
 
 ### Request Validation
 
-1. `Authorization` harus mengidentifikasi administrator terautentikasi dengan izin role-delete. Kembalikan `ROLB01001` bila belum terautentikasi dan `ROLB01002` bila izin tidak tersedia.
+1. `Authorization` harus mengidentifikasi Super Admin terautentikasi dengan permission `role-delete`. Kembalikan `ROLB01001` bila belum terautentikasi dan `ROLB01002` bila permission tidak tersedia.
 2. `roleId` wajib tersedia, tidak kosong, dan maksimal 64 karakter. Format ID mengikuti strategi pembuatan ID yang TBD; nilai tidak valid mengembalikan `ROLB02001`.
 3. Role harus ditemukan dan belum soft-deleted; jika tidak, kembalikan `ROLB02004`.
 4. Role protected/system/built-in ditolak dengan `ROLB02005`.
@@ -231,7 +232,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - Path `/api/admin/roles/v1/delete/{roleId}`, HTTP `DELETE`, response envelope, prefix `ROL`, serta kode status mengikuti pola solutioning admin; API owner perlu menyetujui.
 - Model role dan role-account assignment belum tersedia di ERD. Pemeriksaan assignment aktif dan proteksi built-in merupakan syarat desain; relasi/tabel pendukung harus dirancang sebelum implementasi.
 - `ROLB02005` dan `ROLB02006` adalah kode usulan untuk kasus protected role dan assignment aktif.
-- Format `roleId`, identity provider, permission name, audit storage/retention, restore policy, SLA, dan HTTP status mapping masih TBD. Identitas `SUPER_ADMIN` dan perlindungan delete-nya sudah ditetapkan.
+- Format `roleId`, identity provider, audit storage/retention, restore policy, SLA, dan HTTP status mapping masih TBD. Identifier target `role-delete` mengikuti [permission model Sprint 1](./permission-model.md). Identitas `SUPER_ADMIN` dan perlindungan delete-nya sudah ditetapkan.
 - Cakupan hanya menghapus definisi role; penghapusan permission catalog, pencabutan assignment akun otomatis, hard delete, dan pemindahan akun ke role pengganti tidak termasuk.
 
 ## References

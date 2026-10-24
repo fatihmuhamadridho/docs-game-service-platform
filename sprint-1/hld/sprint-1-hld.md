@@ -1,8 +1,23 @@
 # Sprint 1 — High-Level Design
 
-> **Scope:** Admin access verification, roles, administrator accounts, and game management/discovery. Admin authentication is a prerequisite check; it does not add a new login feature.
+## Stack Teknologi
 
-## Flowchart
+| Komponen            | Teknologi | Tanggung jawab                                                                                      |
+| ------------------- | --------- | --------------------------------------------------------------------------------------------------- |
+| Platform deployment | Vercel    | Men-deploy dan menyajikan aplikasi Next.js serta backend API Golang.                                |
+| Aplikasi web        | Next.js   | Menyediakan halaman publik dan dashboard administrator, lalu memanggil Go service melalui REST API. |
+| Backend API         | Golang    | Menjalankan aturan bisnis, autentikasi/otorisasi request, dan akses data aplikasi.                  |
+| Database            | MongoDB   | Menyimpan data yang dibutuhkan fitur Sprint 1.                                                      |
+
+## Arsitektur Tingkat Tinggi
+
+![Diagram arsitektur Sprint 1](./sprint-1-architecture.svg)
+
+## Penjelasan Arsitektur
+
+Pengunjung atau administrator membuka aplikasi Next.js yang di-deploy melalui Vercel. Aplikasi web mengirim request HTTPS ke backend Golang yang juga di-deploy melalui Vercel. Backend memvalidasi autentikasi dan otorisasi, menjalankan aturan bisnis, lalu membaca atau menyimpan data di MongoDB. Response dikembalikan melalui jalur yang sama ke aplikasi web.
+
+## Flowchart Proses Request
 
 ```mermaid
 flowchart TD
@@ -27,10 +42,9 @@ flowchart TD
     Validate -->|No| ValidationError[Reject; no protected data change]
     Validate -->|Yes| AdminData[(Read admin accounts; manage roles and games)]
     AdminData --> AdminUI
-
 ```
 
-## Penjelasan flow
+## Penjelasan Flow
 
 - **Game publik:** Pengunjung meminta daftar game melalui Next.js. Go mengambil game aktif dan mengembalikan hasil untuk ditampilkan.
 - **Aksi admin:** Bootstrap menyiapkan satu role aktif `SUPER_ADMIN` dengan akses ke seluruh fungsi admin dan menugaskannya ke akun Super Admin. Role system ini tidak dapat diubah atau dihapus melalui API. Go memeriksa sesi, permission, dan input sebelum membaca akun administrator atau mengelola role/game. Dashboard hanya menampilkan daftar dan detail akun admin. Permintaan tanpa akses atau input tidak valid ditolak tanpa mengubah data terlindungi.

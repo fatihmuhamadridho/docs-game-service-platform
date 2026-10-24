@@ -1,55 +1,72 @@
-# Katalog Permission Game Service Platform
+# Katalog Permission Dashboard — Sprint 1
 
-> **Jenis Dokumen:** Penjelasan model permission  
-> **Cakupan:** Permission untuk fungsi dashboard administrator di game-service-platform  
-> **Sumber implementasi:** [IFA source route Go dashboard](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md)
+> **Jenis dokumen:** Katalog permission dan kebijakan otorisasi
+> **Cakupan:** Role, akun administrator, dan game dalam Sprint 1
+> **Status:** Katalog fungsional untuk scope Sprint 1; matriks grant custom role menunggu persetujuan Security/Product.
 
 ## Tujuan
 
-Dokumen ini menjelaskan permission yang digunakan game-service-platform, cakupan fungsi yang dilindungi, dan hubungan permission dengan role. Ini adalah katalog permission, bukan kontrak endpoint. Nama permission ditulis persis seperti string yang diperiksa oleh handler Go.
+Dokumen ini mendefinisikan kemampuan admin yang dilindungi permission pada Sprint 1. Dokumen ini bukan IFA dan tidak menetapkan kontrak endpoint. Nama permission di bawah adalah identifier usulan untuk menyamakan solutioning; implementasi harus memakai identifier yang disepakati bersama pemilik API sebelum rilis.
 
-## Daftar Permission
+## Katalog Permission Sprint 1
 
-| Permission        | Cakupan fungsi                                                                                                                              | Contoh fitur/route                                                               | Status sumber                                                                                                         |
-| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `catalog-manage`  | Mengelola katalog game: game, kategori layanan, dan layanan. Mencakup baca serta perubahan katalog.                                         | `/api/admin/games/*`, `/api/admin/service-categories/*`, `/api/admin/services/*` | Diperiksa handler Go.                                                                                                 |
-| `users-manage`    | Mengelola akun member/customer: daftar, detail, pembuatan, perubahan, dan penghapusan akun.                                                 | `/api/admin/users/*`                                                             | Diperiksa handler Go. Endpoint create saat ini mengembalikan 503 karena provider undangan belum tersedia.             |
-| `settings-manage` | Mengelola konfigurasi dashboard, role/permission, dan operasi akun administrator yang tersedia di source Go.                                | `/api/admin/settings/*`, `/api/admin/roles/*`, `/api/admin/admin-users/*`        | Diperiksa handler Go. Untuk Sprint 1, akun administrator hanya boleh dibaca; create/update/delete bukan scope target. |
-| `orders-manage`   | Membaca dan menjalankan operasi admin pada order, termasuk review pembayaran, penyelesaian order, dan akses bukti pembayaran yang dibatasi. | `/api/admin/orders/*` dan route bukti pembayaran admin                           | Diperiksa handler Go.                                                                                                 |
-| `finance-read`    | Membaca daftar dan detail transaksi keuangan. Permission ini memberi akses baca, bukan eksekusi payout/refund.                              | `/api/admin/transactions/*`                                                      | Diperiksa handler Go.                                                                                                 |
-| `dashboard-read`  | Membaca ringkasan/overview dashboard dan aktivitas admin.                                                                                   | `/api/admin/dashboard/*`; `/api/admin/activity-logs/*`                           | Diperiksa handler Go. Activity log juga menerima `settings-manage`.                                                   |
+| Permission usulan    | Kemampuan yang diberikan                                                   | Batas Sprint 1                                                                              |
+| -------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| `role-read`          | Melihat daftar dan detail role beserta permission yang terkait.            | Mencakup pembacaan role; tidak memberi hak perubahan.                                       |
+| `role-create`        | Membuat custom role dan memberikan permission yang boleh didelegasikan.    | Role tambahan dibuat eksplisit setelah bootstrap; tidak dibuat otomatis.                    |
+| `role-update`        | Mengubah metadata atau permission custom role.                             | Tidak dapat mengubah atau menonaktifkan `SUPER_ADMIN`.                                      |
+| `role-delete`        | Menghapus custom role sesuai aturan assignment dan lifecycle role.         | Tidak dapat menghapus `SUPER_ADMIN`.                                                        |
+| `admin-account-read` | Melihat daftar dan detail akun administrator beserta role yang ditugaskan. | Read-only. Tidak mencakup pembuatan, perubahan, atau penghapusan akun.                      |
+| `game-read`          | Melihat daftar dan detail game di dashboard admin.                         | Permission untuk route admin; katalog publik membaca game aktif tanpa grant akun admin.     |
+| `game-create`        | Membuat data game.                                                         | Hanya pengelolaan game; kategori layanan dan layanan masuk Sprint 2.                        |
+| `game-update`        | Mengubah data game.                                                        | Mengikuti aturan lifecycle/publikasi game Sprint 1.                                         |
+| `game-delete`        | Menghapus atau menonaktifkan data game sesuai aturan lifecycle.            | Perilaku penghapusan mengikuti IFA game terkait; bukan hak untuk mengubah kategori/layanan. |
 
-Route di atas menunjukkan kelompok fungsi. Daftar method/path dan hasil implementasi lengkap ada di [IFA source route Go dashboard](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md).
+Identifier tersebut memisahkan hak baca dan perubahan agar role custom dapat menerima akses sesuai kebutuhan. Identifier ini bukan klaim bahwa seluruh string sudah diterapkan pada handler Go saat ini. IFA tiap operasi tetap menjadi sumber perilaku endpoint dan validasinya.
 
-## Aturan Akses
+## Kebijakan Role dan Grant
 
-1. Handler memeriksa sesi admin dan permission sebelum meneruskan request ke operasi fitur.
-2. Permission adalah string literal yang peka terhadap kesesuaian nama. Implementasi dan konfigurasi role harus memakai nama persis di tabel; jangan mengganti dengan label UI seperti `catalog-management` atau `settings-management`.
-3. Satu permission saat ini dapat mencakup beberapa jenis aksi. Contohnya `catalog-manage` melindungi operasi baca dan tulis katalog; belum ada permission terpisah untuk read/create/update/delete tiap domain.
-4. Endpoint daftar activity log menerima `dashboard-read` **atau** `settings-manage`; salah satu cukup menurut pemeriksaan Go saat ini.
-5. Super Admin adalah satu-satunya role yang dibuat pada bootstrap awal Sprint 1. Role ini memiliki akses ke seluruh fungsi admin dan bypass pemeriksaan grant permission, termasuk permission yang ditambahkan kemudian.
-6. Role `SUPER_ADMIN` immutable: tidak dapat diubah, dinonaktifkan, atau dihapus melalui API maupun workflow administrator.
-7. Role tambahan tidak dibuat saat bootstrap. Jika dibuat secara eksplisit kemudian, role tersebut hanya memperoleh permission yang diberikan kepadanya.
-8. Akun administrator bersifat read-only pada scope Sprint 1. Fakta bahwa source saat ini punya route admin-account CRUD di bawah `settings-manage` tidak menjadikannya operasi target Sprint 1.
-9. Permission yang hilang atau tidak dikenal harus ditolak. Kegagalan pemeriksaan authorization tidak boleh memberi akses (fail closed).
+1. Bootstrap awal membuat tepat satu role aktif, `SUPER_ADMIN`, dan menugaskannya ke akun Super Admin melalui proses backend/database/script yang terkontrol.
+2. `SUPER_ADMIN` memiliki akses ke seluruh fungsi admin Sprint 1 dan fungsi admin yang ditambahkan kemudian. Hak penuhnya tidak bergantung pada daftar grant permission.
+3. `SUPER_ADMIN` adalah role system yang immutable. API dashboard tidak dapat mengubah, menonaktifkan, atau menghapus role tersebut.
+4. Bootstrap tidak membuat role custom. Custom role hanya dibuat secara eksplisit setelah bootstrap melalui flow yang berwenang.
+5. Matriks permission untuk custom role, termasuk hak delegasi dan siapa yang boleh memberikan setiap permission, belum disetujui. Jangan menganggap custom role memiliki akses sampai grant disetujui dan diberikan.
+6. Permission tidak dikenal atau grant yang tidak tersedia ditolak secara default (fail closed). Validasi permission dan otorisasi dilakukan sebelum data terlindungi dibaca atau diubah.
+7. Permintaan tanpa sesi valid, tanpa permission, atau dengan input tidak valid ditolak tanpa mengubah data terlindungi.
 
-## Hubungan dengan Role
+## Batas Scope Sprint 1
 
-Permission adalah hak fungsi; role adalah kumpulan hak tersebut; akun administrator diberi role. Bootstrap Sprint 1 hanya membuat role `SUPER_ADMIN` dengan akses penuh. Penambahan role custom di kemudian hari tidak mengubah Super Admin dan tidak otomatis memberi akses penuh.
+- Akun administrator hanya dapat dibaca melalui dashboard. Provisioning Super Admin berlangsung lewat bootstrap terkontrol, bukan CRUD dashboard.
+- Permission member/customer, order, transaksi/finance, payout, refund, activity log, FAQ, banner, dan fitur operasional lain tidak termasuk katalog Sprint 1.
+- Permission pengelolaan kategori layanan dan layanan tidak termasuk; bagian tersebut dilanjutkan pada Sprint 2.
+- Permission untuk route katalog game publik tidak diberikan sebagai grant role admin. Endpoint publik hanya menyajikan game yang memenuhi aturan publikasi.
+- Katalog permission bukan antarmuka CRUD permission. Penambahan atau perubahan definisi permission memerlukan perubahan solutioning dan persetujuan pemilik akses.
 
-ERD untuk relasi `ADMIN_ROLE`, `PERMISSION`, `ROLE_PERMISSION`, dan `ACCOUNT_ROLE` ada di [Role ERD](../../../erd/role-erd.md). Detail alur akses setiap route ada di solutioning fitur dan IFA source.
+## Hubungan dengan Role dan Data
 
-## Batas Katalog Saat Ini
+Permission adalah hak untuk menjalankan kemampuan; role mengelompokkan permission; akun administrator menerima role. Model relasi `ADMIN_ROLE`, `PERMISSION`, `ROLE_PERMISSION`, dan `ACCOUNT_ROLE` dijelaskan di [Role ERD](../../../erd/role-erd.md). Kebijakan awal `SUPER_ADMIN` dan bootstrap-nya dijelaskan di [BRD Sprint 1](../../../BRD.md).
 
-- Keenam permission di atas adalah permission yang ditemukan pada pemeriksaan handler Go.
-- Belum ada granularitas khusus `game-read`, `game-write`, `role-manage`, `admin-account-read`, `admin-account-manage`, atau permission peraksi lainnya.
-- `finance-read` hanya untuk pembacaan transaksi; route finansial yang mengubah transaksi/payout/refund tidak boleh diasumsikan terlindungi oleh permission ini.
-- Matriks permission untuk role custom belum didefinisikan. Permission custom hanya boleh diberikan melalui alur role yang berwenang dan kebijakan least privilege.
-- Super Admin memiliki akses ke seluruh fungsi admin; tetap tunduk pada autentikasi, status akun aktif, validasi request, dan aturan bisnis.
+## Keputusan yang Masih Diperlukan
+
+- Persetujuan identifier final permission dan konsistensinya dengan pemeriksaan authorization pada Go API.
+- Matriks permission yang boleh diberikan ke custom role serta aturan delegasinya.
+- Apakah permission role dikelola sebagai katalog yang di-seed oleh backend atau sumber konfigurasi lain.
+- Aturan lifecycle game yang menentukan perilaku `game-delete`.
+
+Keputusan tersebut tidak mengubah aturan yang sudah ditetapkan: bootstrap hanya membuat `SUPER_ADMIN`, role itu memiliki akses penuh dan immutable, akun administrator dashboard bersifat read-only, dan scope admin katalog Sprint 1 berfokus pada game.
 
 ## Referensi
 
+- [BRD Sprint 1](../../../BRD.md)
 - [Role ERD](../../../erd/role-erd.md)
-- [Current Go dashboard route IFA](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md)
-- IFA role: `create-role.md`, `get-list-roles.md`, `get-detail-role.md`, `update-role.md`, `delete-role.md`
-
+- [Create Role IFA](./create-role.md)
+- [List Roles IFA](./get-list-roles.md)
+- [Role Detail IFA](./get-detail-role.md)
+- [Update Role IFA](./update-role.md)
+- [Delete Role IFA](./delete-role.md)
+- [List Admin Accounts IFA](../admin-accounts/get-list-admin-accounts.md)
+- [Admin Account Detail IFA](../admin-accounts/get-admin-account-detail.md)
+- [List Games IFA](../games/get-list-games.md)
+- [Create Game IFA](../games/create-game.md)
+- [Update Game IFA](../games/update-game.md)
+- [Delete Game IFA](../games/delete-game.md)

@@ -7,7 +7,7 @@
 
 ## Design
 
-UI design reference belum tersedia. Dokumen ini memetakan endpoint Go yang berjalan.
+![Sprint 1 dashboard design](../../../design/dashboard.png)
 
 ## Sequence Diagram
 
