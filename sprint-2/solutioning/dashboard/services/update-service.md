@@ -7,9 +7,7 @@
 
 ## Design
 
-IFA ini mengusulkan pembaruan satu layanan game dari modal edit Admin Services. UI mengirim seluruh field form: game, kategori, nama, harga fixed/custom, estimasi, dan status aktif. Target API memvalidasi ID serta relasi game/kategori, memastikan kombinasi harga valid, mempertahankan ID dan `createdAt`, serta memperbarui `updatedAt`. Perubahan katalog tidak menulis ulang snapshot layanan atau harga pada order historis.
-
-> **Status kontrak target:** Struktur response mengikuti baseline Sprint 1 `{code,message,data}`. Service code, HTTP mapping, dan permission per route masih perlu disepakati terhadap inventory; auth/HTTP compatibility dicatat di D-11 dan extension permission/grant role di D-18.
+![Sprint 2 dashboard design](../../../design/dashboard.png)
 
 ## Sequence Diagram
 
@@ -60,9 +58,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                                        | VUser                                   | CPU / Memory                             | Response Time                                                 |
-| --------------------------------------------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
-| TBD; konfirmasi criticality dan availability target | TBD; konfirmasi concurrent admin puncak | TBD; tetapkan dari capacity estimate/NFT | TBD; target belum ditetapkan; baseline opsional menunggu D-12 |
+| Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time              |
+| ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | -------------------------- |
+| 99.9% monthly availability; valid-request server error ≤ 0.1% | 50 VUser / 20 request/s NFT target | Initial 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75% at target load | Write p95 ≤ 1 s; p99 ≤ 2 s |
 
 ## General Information
 
@@ -115,15 +113,15 @@ sequenceDiagram
 
 ## Request Headers
 
-| Header         | E/N/T | Type   | M/O/C | Max Length | Description                                                                      | Example                      |
-| -------------- | ----- | ------ | ----- | ---------: | -------------------------------------------------------------------------------- | ---------------------------- |
-| `Cookie`       | E     | String | M     |        TBD | Session admin dikirim browser; nama dan atribut cookie mengikuti auth Sprint 1.  | `{admin session cookie}`     |
-| `Origin`       | N     | String | M     |        TBD | Origin dashboard harus cocok dengan allowlist.                                   | `https://admin.example.test` |
-| `X-CSRF-Token` | N     | String | M     |        TBD | Token CSRF untuk request admin cookie-authenticated.                             | `{csrf-token}`               |
-| `Content-Type` | N     | String | M     |        100 | Format payload.                                                                  | `application/json`           |
-| `Accept`       | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.                               | `application/json`           |
-| `X-Request-Id` | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.                              | `req-1f56a9`                 |
-| `If-Match`     | N     | String | O     |        100 | ETag/version untuk optimistic concurrency bila platform mendukung; dukungan TBD. | `W/"v4"`                     |
+| Header         | E/N/T | Type   | M/O/C | Max Length | Description                                                                                                | Example                             |
+| -------------- | ----- | ------ | ----- | ---------: | ---------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `Cookie`       | N     | String | M     |       4096 | Browser mengirim cookie access admin secara otomatis; token tidak dikirim melalui Authorization atau body. | `__Host-jokihub-admin-access={JWT}` |
+| `Origin`       | N     | String | M     |        TBD | Origin dashboard harus cocok dengan allowlist.                                                             | `https://admin.example.test`        |
+| `X-CSRF-Token` | N     | String | M     |        TBD | Token CSRF untuk request admin cookie-authenticated.                                                       | `{csrf-token}`                      |
+| `Content-Type` | N     | String | M     |        100 | Format payload.                                                                                            | `application/json`                  |
+| `Accept`       | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.                                                         | `application/json`                  |
+| `X-Request-Id` | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.                                                        | `req-1f56a9`                        |
+| `If-Match`     | N     | String | O     |        100 | ETag/version untuk optimistic concurrency bila platform mendukung; dukungan TBD.                           | `W/"v4"`                            |
 
 ## Request Parameters
 
@@ -173,8 +171,6 @@ sequenceDiagram
 
 ## Response Body
 
-Semua response target menggunakan envelope Sprint 1 `{code,message,data}`. Untuk detail, `data` langsung berisi object resource; untuk list, `data` adalah array dan `pagination` sibling di root. Error mengembalikan `data: null`.
-
 | Attribute            | E/N/T | Type               | M/O/C | Max Length | Description                           | Example                |
 | -------------------- | ----- | ------------------ | ----- | ---------: | ------------------------------------- | ---------------------- |
 | `code`               | N     | String             | M     |         20 | Service code.                         | `SRVS00000`            |
@@ -199,20 +195,7 @@ Semua response target menggunakan envelope Sprint 1 `{code,message,data}`. Untuk
 {
   "code": "SRVS00000",
   "message": "Service updated",
-  "data": {
-    "id": "svc_01JXYZ",
-    "gameId": "gm_01JXYZ",
-    "gameName": "Mobile Legends",
-    "categoryId": "cat_01JXYZ",
-    "categoryName": "Top Up",
-    "name": "Top Up 100 Diamonds",
-    "priceAmount": 30000.0,
-    "isCustomPrice": false,
-    "estimateText": "Instan",
-    "isActive": true,
-    "createdAt": "2026-10-10T08:00:00Z",
-    "updatedAt": "2026-10-11T10:20:00Z"
-  }
+  "data": null
 }
 ```
 
@@ -279,10 +262,6 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 | ---------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | NFT        | Yes      | Validasi target contract untuk route update admin yang sudah tercatat di inventory. Uji update setiap field, fixed/custom price, parent aktif/nonaktif/deleted, perubahan relasi, no-op, concurrency, serta persistence. VUser, CPU/memory, target TPS TBD menunggu forecast. |
 | VA/Pentest | Yes      | Uji authentication/authorization, IDOR, mass assignment, validasi referensi, race condition, audit attribution, dan pastikan snapshot order lama tidak berubah.                                                                                                               |
-
-## Current Implementation Alignment
-
-The local route inventory records `PUT /api/admin/services/v1/update/{serviceId}` under `catalog-manage`; it describes partial fields merged with the persisted service before validation. This IFA uses the same method/path, but permission, payload semantics, response envelope, and target status codes remain proposals not reconciled with that inventory. Resolve catalog lifecycle, price representation, auth, and audit decisions before implementation (D-02/D-03/D-04/D-11). See the [route-to-handler coverage](../../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage).
 
 ## Assumptions
 

@@ -97,7 +97,7 @@ No approved Sprint 2 settings SLA, propagation target, or measured baseline exis
 ## References
 
 - [Sprint 2 BRD](../../BRD.md) — BR-020/022 and public settings exposure gate.
-- [General settings admin IFA](../dashboard/settings/general-settings.md) — proposed fields and CRUD semantics.
+- [GET general settings IFA](../solutioning/dashboard/settings/get-general-settings.md) and [PUT general settings IFA](../solutioning/dashboard/settings/update-general-settings.md) — read and update contracts for the admin settings resource.
 - [Public catalog source audit](../public/catalog/source-audit-2026-10-23.md) — current Go public settings response and cache header.
 - [Go dashboard route source IFA](../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage) — current admin settings contract summary.
 - [Public catalog open decisions](../public/catalog/QUESTION.md) — public settings purpose and cache policy.

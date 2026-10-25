@@ -1,8 +1,5 @@
 # Service Catalog Service - Get List Services by Game Interface Agreement
 
-> Current Go wire behavior for both registered paths: [catalog source audit](../catalog/source-audit-2026-10-23.md). Proposed target below remains separate.
-> Open decisions: [catalog questions](../catalog/QUESTION.md).
-
 > **Document Type:** API Contract  
 > **Status:** Draft  
 > **Service / Domain:** Service Catalog — Public Game Services  
@@ -10,7 +7,9 @@
 
 ## Design
 
-API ini mendokumentasikan target katalog layanan publik untuk route `/order/{gameSlug}`. Target menampilkan service aktif yang dapat dipilih, menyertakan kategori sebagai metadata pada setiap service, dan membedakan fixed price dari quote/custom price. **Implementasi Go saat ini** memiliki canonical `GET /api/games/v1/{gameSlug}/services` dan alias `GET /api/services/v1/games/{gameSlug}` dengan wire response `{id,name,category,price,customPrice,estimate}`; Decimal128 price dikonversi ke JSON float64. Canonical route menormalisasi slug dan menolak query, sedangkan alias tidak memvalidasi slug format maupun menolak query. Target schema di bawah belum wire-compatible dan tidak menetapkan kedua route ekuivalen.
+![Sprint 1 homepage design](../../../design/homepage.png)
+
+![Sprint 1 game list design](../../../design/game-list.png)
 
 ## Sequence Diagram
 
@@ -48,9 +47,9 @@ API-->>Web: Source canonical returns 404 SVB02002; target HTTP mapping TBD
 
 ## Performance / SLA Targets
 
-| Success Rate                                | VUser                                 | CPU / Memory                            | Response Time                                      |
-| ------------------------------------------- | ------------------------------------- | --------------------------------------- | -------------------------------------------------- |
-| TBD; confirm service criticality and target | TBD; confirm peak concurrent visitors | TBD; define after capacity estimate/NFT | TBD; response-time target remains TBD pending D-12 |
+| Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time                |
+| ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------- |
+| 99.9% monthly availability; valid-request server error ≤ 0.1% | 50 VUser / 20 request/s NFT target | Initial 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75% at target load | Read p95 ≤ 500 ms; p99 ≤ 2 s |
 
 ## General Information
 
@@ -120,8 +119,6 @@ API-->>Web: Source canonical returns 404 SVB02002; target HTTP mapping TBD
 | `page`    | N     | Integer | O     |   9 digits | Target page number, one-based; default `1`, minimum `1`. | `1`     |
 | `limit`   | N     | Integer | O     |   3 digits | Target page size; default `20`, allowed range `1`–`100`. | `20`    |
 
-Query tersebut adalah target proposal. Canonical source saat ini menolak semua query; alias source memiliki acceptance berbeda.
-
 ## Request Body
 
 None. GET request has no body.
@@ -139,8 +136,6 @@ None. GET request has no body.
 9. Kegagalan database mengembalikan HTTP 500 `SVT03001` tanpa detail internal.
 
 ## Response Body
-
-Sprint 2 target success responses use the Sprint 1 root-level `{code,message,data}` envelope. `data` is a flat array of eligible service objects and `pagination` is a root sibling. This list response does not add a separate root-level `game` field; each service carries its associated category metadata, while the requested `gameSlug` identifies the route. The current source does not paginate this route; target pagination is a proposed compatibility change tracked in D-10/D-11.
 
 | Attribute               | E/N/T | Type         | M/O/C |    Max Length | Description                                                               | Example                        |
 | ----------------------- | ----- | ------------ | ----- | ------------: | ------------------------------------------------------------------------- | ------------------------------ |
@@ -294,7 +289,3 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - [service-erd.md](../../../erd/service-erd.md) — service-game, price, estimate, and active fields.
 - [service-category-erd.md](../../../erd/service-category-erd.md) — service category association and active behavior.
 - [get-list-games.md](../../../../sprint-1/solutioning/public/games/get-list-games.md) — public catalog API conventions.
-
-## Current Go Behavior vs Target
-
-See [catalog source audit](../catalog/source-audit-2026-10-23.md) and [open decisions](../catalog/QUESTION.md). Canonical route: trimmed/case-folded slug validation, no query parameters, active game/service/category data, service-name ordering, current nested fields `{id,name,category:{id,name,slug},price,customPrice,estimate}`, and source-specific `SV` envelope/status mapping. Alias route: raw slug, unknown/malformed query accepted/ignored, same basic projection, `SRV` status prefix. Mongo Decimal128 is serialized as float64. The target IFA introduces fields absent from wire (currency, pricingType, description/artwork, estimates, totals), changes names, proposes different query/status/ordering and pricing semantics, and is not backward-compatible as written. Resolve D-03/D-10/D-11/D-14 and coordinate Sprint 3 checkout before changing implementation or calling the target final.

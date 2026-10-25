@@ -7,7 +7,7 @@
 
 ## Design
 
-This IFA covers the existing public read `GET /api/settings/v1/public`. Current Go behavior is documented in the [source audit](../catalog/source-audit-2026-10-23.md): the route is unauthenticated, returns an allowlisted settings projection/defaults, uses the public Go status envelope, and sets `Cache-Control: no-store`. The Sprint 2 target follows the requester's Sprint 1 response convention `{code,message,data}` with the settings resource directly in `data`. Product purpose/exposure and consumer migration are not approved; preserve this as a target proposal, not a claim about current wire behavior.
+![Sprint 1 homepage design](../../../design/homepage.png)
 
 ## Sequence Diagram
 
@@ -36,9 +36,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                             | VUser                                            | CPU / Memory                      | Response Time                               |
-| ---------------------------------------- | ------------------------------------------------ | --------------------------------- | ------------------------------------------- |
-| TBD; availability target belum disetujui | TBD; forecast pengunjung konkuren belum tersedia | TBD; perlu estimasi kapasitas/NFT | TBD; belum ada target atau baseline terukur |
+| Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time                |
+| ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------- |
+| 99.9% monthly availability; valid-request server error ≤ 0.1% | 50 VUser / 20 request/s NFT target | Initial 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75% at target load | Read p95 ≤ 500 ms; p99 ≤ 2 s |
 
 ## General Information
 
@@ -100,8 +100,6 @@ None. GET request has no body.
 4. Kegagalan repository dipetakan ke HTTP `500` dan `SETT03001`; detail internal tidak dikembalikan.
 
 ## Response Body
-
-Target uses the Sprint 1 root-level `{code,message,data}` envelope. The currently deployed public Go envelope is nested and remains documented separately in the source audit.
 
 | Attribute                  | Type                          | M/O/C |     Max Length | Description                                                                                                                                     | Example                     |
 | -------------------------- | ----------------------------- | ----- | -------------: | ----------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------- |

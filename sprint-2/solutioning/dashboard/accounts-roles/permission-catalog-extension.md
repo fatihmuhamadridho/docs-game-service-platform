@@ -47,6 +47,6 @@ The choice affects least-privilege administration, role assignment, route middle
 
 - [Sprint 2 BRD](../../../BRD.md) — BR-019 and BR-020.
 - [Create service category IFA](../service-categories/create-service-category.md) and the other category/service IFAs — proposed route permissions.
-- [General settings IFA](../settings/general-settings.md) — `settings-manage` target.
+- [GET general settings IFA](../settings/get-general-settings.md) and [PUT general settings IFA](../settings/update-general-settings.md) — `settings-manage` target.
 - [Sprint 2 assessment and decision register](../../README.md#keputusan-yang-menghalangi-finalisasi) — D-05, D-11, and D-18.
 - [Sprint 1 role ERD](../../../../sprint-1/erd/role-erd.md) — existing permission and role-grant entities; assess physical changes only if the approved model requires them.

@@ -7,9 +7,7 @@
 
 ## Design
 
-API target mengusulkan soft delete kategori untuk mempertahankan referensi historis dan menolak penghapusan selama kategori masih direferensikan layanan. Ini adalah aturan referensi di level aplikasi, bukan foreign key yang ditegakkan MongoDB; kebijakan lifecycle dan referensi masih perlu disepakati bersama [Service Category ERD](../../../erd/service-category-erd.md). UI saat ini memakai konfirmasi delete, tetapi perilaku persistence dan aturan relasi belum terimplementasi.
-
-> **Status kontrak target:** Struktur response mengikuti baseline Sprint 1 `{code,message,data}`. Service code, HTTP mapping, dan permission per route masih perlu disepakati terhadap inventory; auth/HTTP compatibility dicatat di D-11 dan extension permission/grant role di D-18.
+![Sprint 2 dashboard design](../../../design/dashboard.png)
 
 ## Sequence Diagram
 
@@ -60,9 +58,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                                        | VUser                                   | CPU / Memory                             | Response Time                                                 |
-| --------------------------------------------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
-| TBD; konfirmasi criticality dan availability target | TBD; konfirmasi concurrent admin puncak | TBD; tetapkan dari capacity estimate/NFT | TBD; target belum ditetapkan; baseline opsional menunggu D-12 |
+| Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time              |
+| ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | -------------------------- |
+| 99.9% monthly availability; valid-request server error ≤ 0.1% | 50 VUser / 20 request/s NFT target | Initial 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75% at target load | Write p95 ≤ 1 s; p99 ≤ 2 s |
 
 ## General Information
 
@@ -112,13 +110,13 @@ sequenceDiagram
 
 ## Request Headers
 
-| Header         | E/N/T | Type   | M/O/C | Max Length | Description                                                                     | Example                      |
-| -------------- | ----- | ------ | ----- | ---------: | ------------------------------------------------------------------------------- | ---------------------------- |
-| `Cookie`       | E     | String | M     |        TBD | Session admin dikirim browser; nama dan atribut cookie mengikuti auth Sprint 1. | `{admin session cookie}`     |
-| `Origin`       | N     | String | M     |        TBD | Origin dashboard harus cocok dengan allowlist.                                  | `https://admin.example.test` |
-| `X-CSRF-Token` | N     | String | M     |        TBD | Token CSRF untuk request admin cookie-authenticated.                            | `{csrf-token}`               |
-| `Accept`       | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.                              | `application/json`           |
-| `X-Request-Id` | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.                             | `req-95b2ef`                 |
+| Header         | E/N/T | Type   | M/O/C | Max Length | Description                                                                                                | Example                             |
+| -------------- | ----- | ------ | ----- | ---------: | ---------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `Cookie`       | N     | String | M     |       4096 | Browser mengirim cookie access admin secara otomatis; token tidak dikirim melalui Authorization atau body. | `__Host-jokihub-admin-access={JWT}` |
+| `Origin`       | N     | String | M     |        TBD | Origin dashboard harus cocok dengan allowlist.                                                             | `https://admin.example.test`        |
+| `X-CSRF-Token` | N     | String | M     |        TBD | Token CSRF untuk request admin cookie-authenticated.                                                       | `{csrf-token}`                      |
+| `Accept`       | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.                                                         | `application/json`                  |
+| `X-Request-Id` | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.                                                        | `req-95b2ef`                        |
 
 ## Request Parameters
 
@@ -142,8 +140,6 @@ Tidak ada request body.
 
 ## Response Body
 
-Semua response target menggunakan envelope Sprint 1 `{code,message,data}`; metadata konflik, bila diputuskan, berada di `data`. Error tanpa payload mengembalikan `data: null`.
-
 | Attribute                 | E/N/T | Type               | M/O/C | Max Length | Description                                                            | Example                    |
 | ------------------------- | ----- | ------------------ | ----- | ---------: | ---------------------------------------------------------------------- | -------------------------- |
 | `code`                    | N     | String             | M     |         20 | Service code.                                                          | `SCAS00000`                |
@@ -159,10 +155,7 @@ Semua response target menggunakan envelope Sprint 1 `{code,message,data}`; metad
 {
   "code": "SCAS00000",
   "message": "Service category deleted",
-  "data": {
-    "categoryId": "cat_01JXYZ",
-    "deletedAt": "2026-10-11T10:00:00Z"
-  }
+  "data": null
 }
 ```
 
@@ -231,10 +224,6 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | NFT        | Yes      | Validasi target contract untuk route delete admin yang sudah tercatat di inventory. Uji kategori tanpa layanan, kategori dengan layanan aktif/nonaktif, kategori telah dihapus, race antara assignment service dan delete, dan retry. VUser, CPU/memory, serta target TPS TBD mengikuti forecast. |
 | VA/Pentest | Yes      | Verifikasi authentication/authorization, IDOR, privilege boundaries, referential integrity, race condition, audit attribution, serta tidak ada cascade/permanent data loss.                                                                                                                       |
-
-## Current Implementation Alignment
-
-The local route inventory records `DELETE /api/admin/service-categories/v1/delete/{categoryId}` under `catalog-manage`; a linked-service conflict is mapped to HTTP 409 with `linkedServiceCount`. This IFA uses the same method/path, but deletion semantics, permission, response envelope, and other target status codes remain proposals not reconciled with the inventory. Decide reassignment, deletion, and history rules before implementation (D-02/D-04/D-14). See the [route-to-handler coverage](../../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage).
 
 ## Assumptions
 

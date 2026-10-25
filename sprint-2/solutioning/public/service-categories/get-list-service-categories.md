@@ -1,8 +1,5 @@
 # Service Catalog Service - Get List Service Categories Interface Agreement
 
-> Current Go wire behavior: [catalog source audit](../catalog/source-audit-2026-10-23.md). Proposed target below remains separate.
-> Open decisions: [catalog questions](../catalog/QUESTION.md).
-
 > **Document Type:** API Contract  
 > **Status:** Draft  
 > **Service / Domain:** Service Catalog — Service Categories  
@@ -10,7 +7,9 @@
 
 ## Design
 
-API ini mendokumentasikan target kategori layanan untuk pengunjung storefront. Target memerlukan kategori aktif dengan minimal satu layanan aktif yang dapat ditampilkan/dipesan. Endpoint dapat dipakai untuk section kategori beranda dan filter katalog. Response hanya memuat metadata publik kategori dan count layanan; detail harga/layanan dimiliki API service listing. Icon/order target belum dimodelkan. **Implementasi Go saat ini** terdaftar pada `GET /api/service-categories/v1/list`, menolak query string apa pun, menghitung layanan aktif pada game aktif, menyembunyikan kategori dengan count nol, dan mengurutkan secara locale Indonesia; wire response saat ini berisi `id,name,slug,description,serviceCount`, tanpa `iconKey` atau `sortOrder`. Target di bawah tetap proposal dan belum menyatakan wire contract final.
+![Sprint 2 homepage design](../../../design/homepage.png)
+
+![Sprint 2 game list design](../../../design/game-list.png)
 
 ## Sequence Diagram
 
@@ -46,9 +45,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                                | VUser                                 | CPU / Memory                            | Response Time                                      |
-| ------------------------------------------- | ------------------------------------- | --------------------------------------- | -------------------------------------------------- |
-| TBD; confirm service criticality and target | TBD; confirm peak concurrent visitors | TBD; define after capacity estimate/NFT | TBD; response-time target remains TBD pending D-12 |
+| Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time                |
+| ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------- |
+| 99.9% monthly availability; valid-request server error ≤ 0.1% | 50 VUser / 20 request/s NFT target | Initial 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75% at target load | Read p95 ≤ 500 ms; p99 ≤ 2 s |
 
 ## General Information
 
@@ -113,8 +112,6 @@ None. Endpoint tidak menggunakan path parameter.
 | `page`    | N     | Integer | O     |   9 digits | Target page number, one-based; default `1`, minimum `1`. | `1`     |
 | `limit`   | N     | Integer | O     |   3 digits | Target page size; default `20`, allowed range `1`–`100`. | `20`    |
 
-Query tersebut adalah target proposal. Source saat ini menolak semua query; perubahan memerlukan keputusan D-10/D-11.
-
 ## Request Body
 
 None. GET request has no body.
@@ -130,8 +127,6 @@ None. GET request has no body.
 7. Kegagalan database mengembalikan HTTP 500 `SCAT03001` tanpa detail internal.
 
 ## Response Body
-
-Sprint 2 target success responses use the Sprint 1 root-level `{code,message,data}` envelope. `data` may be empty. Response berisi metadata kategori publik dan count layanan aktif; target `data` adalah array dan `pagination` berada pada root.
 
 | Attribute               | E/N/T | Type        | M/O/C |                                  Max Length | Description                                                                      | Example                        |
 | ----------------------- | ----- | ----------- | ----- | ------------------------------------------: | -------------------------------------------------------------------------------- | ------------------------------ |
@@ -260,7 +255,3 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - [service-category-erd.md](../../../erd/service-category-erd.md) — category attributes, active/deleted behavior, and service count notes.
 - [service-erd.md](../../../erd/service-erd.md) — active service and category relationship.
 - [get-list-games.md](../../../../sprint-1/solutioning/public/games/get-list-games.md) — public catalog endpoint conventions.
-
-## Current Go Behavior vs Target
-
-Source behavior dirinci di [catalog source audit](../catalog/source-audit-2026-10-23.md): every query string is rejected, active categories are grouped with active services on active games, empty categories are hidden, locale Indonesian sort is used, and the response has `id,name,slug,description,serviceCount` only. Target now explicitly proposes optional `page`/`limit` (defaults 1/20, maximum 100), root pagination, and potential `iconKey`/`sortOrder`; it also applies a not-yet-verified deleted/publishability predicate and leaves sorting, cache, and rate-limit rules open. Pagination/query change is subject to D-10/D-11; other field/predicate differences require product/API decisions before implementation or released-contract claims.

@@ -7,9 +7,7 @@
 
 ## Design
 
-API target mengambil daftar kategori layanan untuk pengelolaan Admin Dashboard. Daftar yang diusulkan mencakup kategori aktif dan nonaktif, pencarian nama/slug, filter status, pagination, serta jumlah layanan turunan. Field dan relasi bersumber dari [Service Category ERD](../../../erd/service-category-erd.md) dan tampilan Admin Service Categories. Route dengan method/path yang sama tercatat dalam inventory lokal; parameter, payload, permission, dan perilaku target di bawah belum disetujui atau direkonsiliasi dengan inventory tersebut.
-
-> **Status kontrak target:** Struktur response mengikuti baseline Sprint 1 `{code,message,data}`. Service code, HTTP mapping, dan permission per route masih perlu disepakati terhadap inventory; auth/HTTP compatibility dicatat di D-11 dan extension permission/grant role di D-18.
+![Sprint 2 dashboard design](../../../design/dashboard.png)
 
 ## Sequence Diagram
 
@@ -47,9 +45,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                                        | VUser                                   | CPU / Memory                             | Response Time                                                 |
-| --------------------------------------------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
-| TBD; konfirmasi criticality dan availability target | TBD; konfirmasi concurrent admin puncak | TBD; tetapkan dari capacity estimate/NFT | TBD; target belum ditetapkan; baseline opsional menunggu D-12 |
+| Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time                |
+| ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------- |
+| 99.9% monthly availability; valid-request server error ≤ 0.1% | 50 VUser / 20 request/s NFT target | Initial 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75% at target load | Read p95 ≤ 500 ms; p99 ≤ 2 s |
 
 ## General Information
 
@@ -97,13 +95,13 @@ sequenceDiagram
 
 ## Request Headers
 
-| Header         | E/N/T | Type   | M/O/C | Max Length | Description                                                                     | Example                      |
-| -------------- | ----- | ------ | ----- | ---------: | ------------------------------------------------------------------------------- | ---------------------------- |
-| `Cookie`       | E     | String | M     |        TBD | Session admin dikirim browser; nama dan atribut cookie mengikuti auth Sprint 1. | `{admin session cookie}`     |
-| `Origin`       | N     | String | M     |        TBD | Origin dashboard harus cocok dengan allowlist.                                  | `https://admin.example.test` |
-| `X-CSRF-Token` | N     | String | M     |        TBD | Token CSRF untuk request admin cookie-authenticated.                            | `{csrf-token}`               |
-| `Accept`       | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.                              | `application/json`           |
-| `X-Request-Id` | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.                             | `req-c71a2d`                 |
+| Header         | E/N/T | Type   | M/O/C | Max Length | Description                                                                                                | Example                             |
+| -------------- | ----- | ------ | ----- | ---------: | ---------------------------------------------------------------------------------------------------------- | ----------------------------------- |
+| `Cookie`       | N     | String | M     |       4096 | Browser mengirim cookie access admin secara otomatis; token tidak dikirim melalui Authorization atau body. | `__Host-jokihub-admin-access={JWT}` |
+| `Origin`       | N     | String | M     |        TBD | Origin dashboard harus cocok dengan allowlist.                                                             | `https://admin.example.test`        |
+| `X-CSRF-Token` | N     | String | M     |        TBD | Token CSRF untuk request admin cookie-authenticated.                                                       | `{csrf-token}`                      |
+| `Accept`       | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.                                                         | `application/json`                  |
+| `X-Request-Id` | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.                                                        | `req-c71a2d`                        |
 
 ## Request Parameters
 
@@ -134,8 +132,6 @@ Tidak ada request body.
 8. Kegagalan database mengembalikan HTTP 500 tanpa detail internal.
 
 ## Response Body
-
-Semua response target menggunakan envelope Sprint 1 `{code,message,data}`. Untuk detail, `data` langsung berisi object resource; untuk list, `data` adalah array dan `pagination` sibling di root. Error mengembalikan `data: null`.
 
 | Attribute               | E/N/T | Type               | M/O/C |    Max Length | Description                                                                          | Example                        |
 | ----------------------- | ----- | ------------------ | ----- | ------------: | ------------------------------------------------------------------------------------ | ------------------------------ |
@@ -257,7 +253,3 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - [Sprint 2 BRD](../../../BRD.md) — BR-019, pengelolaan kategori layanan.
 - `../../erd/service-category-erd.md` — field kategori, relasi layanan, indeks, dan aturan soft delete.
 - `../../erd/service-erd.md` — sumber relasi layanan yang dihitung pada `serviceCount`.
-
-## Current Go Implementation Alignment
-
-The local route inventory records `GET /api/admin/service-categories/v1/list` under `catalog-manage`, projecting categories with `serviceCount` and no pagination fields. This IFA uses the same method/path, but its permission, query/filter behavior, count semantics, pagination, response envelope, and target codes have not been reconciled with that inventory or approved. The UI table and form do not approve the contract. See [Sprint 2 decisions](../../README.md#keputusan-yang-menghalangi-finalisasi) and the [route-to-handler coverage](../../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage).
