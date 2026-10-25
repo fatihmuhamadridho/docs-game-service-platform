@@ -195,22 +195,23 @@ Tidak ada request body.
 | `404`       | Role ID tidak pernah ada atau sudah dipurge. Tombstone dalam retensi tetap mengembalikan sukses pada delete berulang. |
 | `409`       | Role masih ditugaskan ke akun aktif atau role merupakan `SUPER_ADMIN`.                                                |
 | `500`       | Kegagalan service atau database identity/authorization yang tidak terduga.                                            |
-| `429`       | Rate limit terlampaui; response menyertakan header `Retry-After`.                                                     |
+| `429`       | Rate limit terlampaui; response memakai `ROLB02007` dan menyertakan header `Retry-After` dalam detik.                 |
 
 ## Service Status Codes
 
 Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
-| Code        | Type      | Category        | Meaning                                                     |
-| ----------- | --------- | --------------- | ----------------------------------------------------------- |
-| `ROLS00000` | Success   | General         | Role berhasil ditandai terhapus.                            |
-| `ROLB01001` | Business  | Authentication  | Administrator belum terautentikasi.                         |
-| `ROLB01002` | Business  | Authentication  | Administrator tidak memiliki izin role.delete.              |
-| `ROLB02001` | Business  | User validation | `roleId` tidak tersedia atau format/panjangnya tidak valid. |
-| `ROLB02004` | Business  | User validation | Role ID tidak pernah ada atau sudah dipurge.                |
-| `ROLB02005` | Business  | User validation | Role system/built-in dilindungi dan tidak dapat dihapus.    |
-| `ROLB02006` | Business  | User validation | Role masih memiliki assignment akun aktif.                  |
-| `ROLT03001` | Technical | Database        | Role gagal diperbarui atau database tidak tersedia.         |
+| Code        | Type      | Category        | Meaning                                                                      |
+| ----------- | --------- | --------------- | ---------------------------------------------------------------------------- |
+| `ROLS00000` | Success   | General         | Role berhasil ditandai terhapus.                                             |
+| `ROLB01001` | Business  | Authentication  | Administrator belum terautentikasi.                                          |
+| `ROLB01002` | Business  | Authentication  | Administrator tidak memiliki izin role.delete.                               |
+| `ROLB02001` | Business  | User validation | `roleId` tidak tersedia atau format/panjangnya tidak valid.                  |
+| `ROLB02004` | Business  | User validation | Role ID tidak pernah ada atau sudah dipurge.                                 |
+| `ROLB02005` | Business  | User validation | Role system/built-in dilindungi dan tidak dapat dihapus.                     |
+| `ROLB02006` | Business  | User validation | Role masih memiliki assignment akun aktif.                                   |
+| `ROLB02007` | Business  | User validation | Batas request role tercapai; response menyertakan `Retry-After` dalam detik. |
+| `ROLT03001` | Technical | Database        | Role gagal diperbarui atau database tidak tersedia.                          |
 
 ## API Exposure Classification
 

@@ -78,6 +78,8 @@ sequenceDiagram
 4. Filter status menerima `ACTIVE` atau `INACTIVE`; filter role menggunakan `roleId`. Akun `INACTIVE` tidak dapat login dan session aktifnya dibatalkan.
 5. Pagination default `page=1`, `limit=20`, maksimum `limit=100`; `limit` adalah jumlah record per halaman.
 6. Response mengikuti envelope Sprint 1 `{code, message, data}`.
+7. `search` mencocokkan `username`, `name`, atau `email` tanpa peka huruf besar-kecil. Pencarian tidak mencakup credential, session, atau field privat lain.
+8. Daftar diurutkan secara stabil menurut `username ASC`, lalu `admin_account_id ASC` sebagai pemutus urutan bila username sama. Aturan ini berlaku setelah filter dan sebelum pagination.
 
 ## Request Headers
 
@@ -89,13 +91,13 @@ sequenceDiagram
 
 ## Request Parameters
 
-| Parameter | Type    | M/O/C |     Max Length | Description                                           | Example       |
-| --------- | ------- | ----- | -------------: | ----------------------------------------------------- | ------------- |
-| `page`    | Integer | O     |              — | Halaman positif; default `1`.                         | `1`           |
-| `limit`   | Integer | O     |            100 | Ukuran halaman positif; default `20`, maksimum `100`. | `20`          |
-| `search`  | String  | O     |            100 | Pencarian identitas admin.                            | `operator`    |
-| `status`  | String  | O     |              — | Filter `ACTIVE` atau `INACTIVE`.                      | `ACTIVE`      |
-| `roleId`  | String  | O     | Sesuai ID role | Filter berdasarkan role.                              | `role_01JXYZ` |
+| Parameter | Type    | M/O/C |     Max Length | Description                                                   | Example       |
+| --------- | ------- | ----- | -------------: | ------------------------------------------------------------- | ------------- |
+| `page`    | Integer | O     |              — | Halaman positif; default `1`.                                 | `1`           |
+| `limit`   | Integer | O     |            100 | Ukuran halaman positif; default `20`, maksimum `100`.         | `20`          |
+| `search`  | String  | O     |            100 | Cari username, name, atau email tanpa peka huruf besar-kecil. | `operator`    |
+| `status`  | String  | O     |              — | Filter `ACTIVE` atau `INACTIVE`.                              | `ACTIVE`      |
+| `roleId`  | String  | O     | Sesuai ID role | Filter berdasarkan role.                                      | `role_01JXYZ` |
 
 ### Request Validation
 

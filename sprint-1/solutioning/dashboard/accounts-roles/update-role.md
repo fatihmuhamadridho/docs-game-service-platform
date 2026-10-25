@@ -224,33 +224,34 @@ None.
 
 ## HTTP Status Codes
 
-| HTTP Status | Usage                                                                                           |
-| ----------- | ----------------------------------------------------------------------------------------------- |
-| `200`       | Role berhasil diperbarui; response memiliki `data: null`.                                       |
-| `400`       | Payload tidak valid atau permission key tidak dikenal/tidak aktif.                              |
-| `401`       | Admin belum terautentikasi atau session tidak valid.                                            |
-| `403`       | Admin tidak memiliki permission `role.update`, Origin tidak diizinkan, atau CSRF tidak valid.   |
-| `404`       | Role tidak ditemukan, sudah dihapus, atau sudah dipurge.                                        |
-| `409`       | Nama/kode sudah digunakan, `SUPER_ADMIN` diubah, atau role masih ditugaskan saat dinonaktifkan. |
-| `500`       | Kegagalan service atau database identity/authorization yang tidak terduga.                      |
-| `429`       | Rate limit terlampaui; response menyertakan header `Retry-After`.                               |
+| HTTP Status | Usage                                                                                                 |
+| ----------- | ----------------------------------------------------------------------------------------------------- |
+| `200`       | Role berhasil diperbarui; response memiliki `data: null`.                                             |
+| `400`       | Payload tidak valid atau permission key tidak dikenal/tidak aktif.                                    |
+| `401`       | Admin belum terautentikasi atau session tidak valid.                                                  |
+| `403`       | Admin tidak memiliki permission `role.update`, Origin tidak diizinkan, atau CSRF tidak valid.         |
+| `404`       | Role tidak ditemukan, sudah dihapus, atau sudah dipurge.                                              |
+| `409`       | Nama/kode sudah digunakan, `SUPER_ADMIN` diubah, atau role masih ditugaskan saat dinonaktifkan.       |
+| `500`       | Kegagalan service atau database identity/authorization yang tidak terduga.                            |
+| `429`       | Rate limit terlampaui; response memakai `ROLB02007` dan menyertakan header `Retry-After` dalam detik. |
 
 ## Service Status Codes
 
 Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
-| Code        | Type      | Category        | Meaning                                                               |
-| ----------- | --------- | --------------- | --------------------------------------------------------------------- |
-| `ROLS00000` | Success   | General         | Role berhasil diperbarui.                                             |
-| `ROLB01001` | Business  | Authentication  | Administrator belum terautentikasi.                                   |
-| `ROLB01002` | Business  | Authentication  | Administrator tidak memiliki permission `role.update`.                |
-| `ROLB02001` | Business  | User validation | ID/body/field wajib, format, panjang, atau state request tidak valid. |
-| `ROLB02002` | Business  | User validation | Nama atau kode role sudah digunakan role lain.                        |
-| `ROLB02003` | Business  | User validation | Satu atau lebih permission tidak dikenal/tidak tersedia.              |
-| `ROLB02004` | Business  | User validation | Role tidak ditemukan atau sudah dihapus.                              |
-| `ROLB02005` | Business  | User validation | Role system/built-in dilindungi dan tidak dapat diperbarui.           |
-| `ROLB02006` | Business  | User validation | Status `INACTIVE` ditolak selama role masih ditugaskan ke akun aktif. |
-| `ROLT03001` | Technical | Database        | Role, relasi permission gagal disimpan/database tidak tersedia.       |
+| Code        | Type      | Category        | Meaning                                                                      |
+| ----------- | --------- | --------------- | ---------------------------------------------------------------------------- |
+| `ROLS00000` | Success   | General         | Role berhasil diperbarui.                                                    |
+| `ROLB01001` | Business  | Authentication  | Administrator belum terautentikasi.                                          |
+| `ROLB01002` | Business  | Authentication  | Administrator tidak memiliki permission `role.update`.                       |
+| `ROLB02001` | Business  | User validation | ID/body/field wajib, format, panjang, atau state request tidak valid.        |
+| `ROLB02002` | Business  | User validation | Nama atau kode role sudah digunakan role lain.                               |
+| `ROLB02003` | Business  | User validation | Satu atau lebih permission tidak dikenal/tidak tersedia.                     |
+| `ROLB02004` | Business  | User validation | Role tidak ditemukan atau sudah dihapus.                                     |
+| `ROLB02005` | Business  | User validation | Role system/built-in dilindungi dan tidak dapat diperbarui.                  |
+| `ROLB02006` | Business  | User validation | Status `INACTIVE` ditolak selama role masih ditugaskan ke akun aktif.        |
+| `ROLB02007` | Business  | User validation | Batas request role tercapai; response menyertakan `Retry-After` dalam detik. |
+| `ROLT03001` | Technical | Database        | Role, relasi permission gagal disimpan/database tidak tersedia.              |
 
 ## API Exposure Classification
 

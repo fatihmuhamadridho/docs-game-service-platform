@@ -205,29 +205,30 @@ None.
 
 ## HTTP Status Codes
 
-| HTTP Status | Usage                                                                                         |
-| ----------- | --------------------------------------------------------------------------------------------- |
-| `200`       | Role berhasil dibuat; sesuai pemetaan mutasi sukses pada BRD, response memakai `data: null`.  |
-| `400`       | Payload tidak valid atau permission key tidak dikenal/tidak aktif.                            |
-| `401`       | Admin belum terautentikasi atau session tidak valid.                                          |
-| `403`       | Admin tidak memiliki permission `role.create`, Origin tidak diizinkan, atau CSRF tidak valid. |
-| `409`       | Nama/kode role sudah digunakan.                                                               |
-| `500`       | Kegagalan service atau database identity/authorization yang tidak terduga.                    |
-| `429`       | Rate limit terlampaui; response menyertakan header `Retry-After`.                             |
+| HTTP Status | Usage                                                                                                 |
+| ----------- | ----------------------------------------------------------------------------------------------------- |
+| `200`       | Role berhasil dibuat; sesuai pemetaan mutasi sukses pada BRD, response memakai `data: null`.          |
+| `400`       | Payload tidak valid atau permission key tidak dikenal/tidak aktif.                                    |
+| `401`       | Admin belum terautentikasi atau session tidak valid.                                                  |
+| `403`       | Admin tidak memiliki permission `role.create`, Origin tidak diizinkan, atau CSRF tidak valid.         |
+| `409`       | Nama/kode role sudah digunakan.                                                                       |
+| `500`       | Kegagalan service atau database identity/authorization yang tidak terduga.                            |
+| `429`       | Rate limit terlampaui; response memakai `ROLB02007` dan menyertakan header `Retry-After` dalam detik. |
 
 ## Service Status Codes
 
 Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
-| Code        | Type      | Category        | Meaning                                                            |
-| ----------- | --------- | --------------- | ------------------------------------------------------------------ |
-| `ROLS00000` | Success   | General         | Role berhasil dibuat.                                              |
-| `ROLB01001` | Business  | Authentication  | Administrator belum terautentikasi.                                |
-| `ROLB01002` | Business  | Authentication  | Administrator tidak memiliki permission `role.create`.             |
-| `ROLB02001` | Business  | User validation | Body/field wajib, format, panjang, atau state request tidak valid. |
-| `ROLB02002` | Business  | User validation | Nama atau kode role sudah digunakan role lain.                     |
-| `ROLB02003` | Business  | User validation | Satu atau lebih permission tidak dikenal/tidak tersedia.           |
-| `ROLT03001` | Technical | Database        | Role, relasi permission gagal disimpan/database tidak tersedia.    |
+| Code        | Type      | Category        | Meaning                                                                      |
+| ----------- | --------- | --------------- | ---------------------------------------------------------------------------- |
+| `ROLS00000` | Success   | General         | Role berhasil dibuat.                                                        |
+| `ROLB01001` | Business  | Authentication  | Administrator belum terautentikasi.                                          |
+| `ROLB01002` | Business  | Authentication  | Administrator tidak memiliki permission `role.create`.                       |
+| `ROLB02001` | Business  | User validation | Body/field wajib, format, panjang, atau state request tidak valid.           |
+| `ROLB02002` | Business  | User validation | Nama atau kode role sudah digunakan role lain.                               |
+| `ROLB02003` | Business  | User validation | Satu atau lebih permission tidak dikenal/tidak tersedia.                     |
+| `ROLB02007` | Business  | User validation | Batas request role tercapai; response menyertakan `Retry-After` dalam detik. |
+| `ROLT03001` | Technical | Database        | Role, relasi permission gagal disimpan/database tidak tersedia.              |
 
 ## API Exposure Classification
 
