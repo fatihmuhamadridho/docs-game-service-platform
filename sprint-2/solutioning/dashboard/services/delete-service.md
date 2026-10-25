@@ -7,7 +7,9 @@
 
 ## Design
 
-API menghapus layanan dari katalog admin menggunakan soft delete. Record `game_service` tetap tersimpan dengan `deleted_at` agar referensi historis tidak rusak; order yang sudah dibuat mempertahankan snapshot layanan/harganya. Operasi tidak menghapus game, kategori, order, atau data pembayaran. Soft delete mengikuti proposal pada [Service ERD](../../erd/service-erd.md); kebijakan restore dan retensi masih perlu disetujui.
+API menghapus layanan dari katalog admin menggunakan soft delete. Record `game_service` tetap tersimpan dengan `deleted_at` agar referensi historis tidak rusak; order yang sudah dibuat mempertahankan snapshot layanan/harganya. Operasi tidak menghapus game, kategori, order, atau data pembayaran. Soft delete mengikuti proposal pada [Service ERD](../../../erd/service-erd.md); kebijakan restore dan retensi masih perlu disetujui.
+
+> **Status kontrak target:** Struktur response mengikuti baseline Sprint 1 `{code,message,data}`. Service code, HTTP mapping, dan permission per route masih perlu disepakati terhadap inventory; auth/HTTP compatibility dicatat di D-11 dan extension permission/grant role di D-18.
 
 ## Sequence Diagram
 
@@ -17,7 +19,7 @@ sequenceDiagram
     participant UI as Admin Dashboard UI
     participant API as Game Service Management API
     participant DB as Catalog Database
-    participant Audit as Platform Audit Service
+    participant Audit as Audit policy (TBD)
     Admin->>UI: Konfirmasi hapus layanan
     UI->>API: DELETE /api/admin/services/v1/delete/{serviceId} dengan kredensial admin
     API->>API: Autentikasi dan otorisasi izin service-delete
@@ -39,9 +41,8 @@ sequenceDiagram
                 API->>DB: Set deleted_at dan updated_at secara atomik
                 alt Soft delete berhasil
                     DB-->>API: Service ditandai terhapus
-                    API->>Audit: Catat actor, action, serviceId, dan timestamp
-                    Audit-->>API: Audit tercatat atau diterima sesuai kontrak audit
-                    API-->>UI: 200 SRVS00000, data.serviceId dan deletedAt
+                    Note over API,Audit: BR-022 mewajibkan audit event, tetapi delivery dan failure policy belum diputuskan
+                    API-->>UI: 200 SRVS00000, data.serviceId dan data.deletedAt
                     UI-->>Admin: Tampilkan konfirmasi penghapusan
                 else Database gagal
                     DB-->>API: Kegagalan update
@@ -55,9 +56,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                                        | VUser                                   | CPU / Memory                             | Response Time                                                                        |
-| --------------------------------------------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------ |
-| TBD; konfirmasi criticality dan availability target | TBD; konfirmasi concurrent admin puncak | TBD; tetapkan dari capacity estimate/NFT | TBD; usulan baseline web non-kritis: ideal 200 ms, acceptable 1 s, max tolerable 2 s |
+| Success Rate                                        | VUser                                   | CPU / Memory                             | Response Time                                                 |
+| --------------------------------------------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
+| TBD; konfirmasi criticality dan availability target | TBD; konfirmasi concurrent admin puncak | TBD; tetapkan dari capacity estimate/NFT | TBD; target belum ditetapkan; baseline opsional menunggu D-12 |
 
 ## General Information
 
@@ -73,20 +74,21 @@ sequenceDiagram
 
 ### Path / Endpoint
 
-| Section        | Value                                              |
-| -------------- | -------------------------------------------------- |
-| Host / Domain  | `{host}` (environment-specific)                    |
-| Service Name   | Game Service Management                            |
-| Version        | `v1`                                               |
-| Resource       | `/admin/services/v1/delete/{serviceId}`            |
-| Final Endpoint | `DELETE /api/admin/services/v1/delete/{serviceId}` |
+| Section                  | Value                                              |
+| ------------------------ | -------------------------------------------------- |
+| Host / Domain            | `{host}` (environment-specific)                    |
+| Service Name             | Game Service Management                            |
+| Version                  | `v1`                                               |
+| Resource                 | `/admin/services/v1/delete/{serviceId}`            |
+| Proposed target endpoint | `DELETE /api/admin/services/v1/delete/{serviceId}` |
 
 ### API Versioning
 
-- **Decision:** New Endpoint
-- **Previous Endpoint:** Tidak ada API delete layanan admin yang teridentifikasi pada solutioning sprint ini.
-- **Final Endpoint (current Go):** `DELETE /api/admin/services/v1/delete/{serviceId}`
-- **Backward Compatibility:** Belum ada consumer API ini yang teridentifikasi. Perubahan semantik atau error contract yang mematahkan consumer memerlukan major version baru.
+- **Inventory status:** Method/path yang sama tercatat pada route inventory repo ini; bagian ini bukan klaim bahwa route belum ada.
+- **Target contract:** IFA mengusulkan perilaku pada `DELETE /api/admin/services/v1/delete/{serviceId}`; lifecycle, permission, response, dan status target belum disetujui terhadap inventory.
+- **Versioning:** Tetap `v1` pada usulan ini; perubahan kompatibilitas perlu keputusan API owner.
+- **Proposed target endpoint:** `DELETE /api/admin/services/v1/delete/{serviceId}`
+- **Backward Compatibility:** Consumer belum dinilai. Perubahan response, semantik, atau status harus diverifikasi terhadap consumer; perubahan yang mematahkan consumer memerlukan keputusan versioning API owner.
 - **Reason:** Admin UI menyediakan aksi hapus layanan; endpoint menerapkan penghapusan aman sambil mempertahankan referensi transaksi.
 
 ## Business Rules
@@ -98,18 +100,20 @@ sequenceDiagram
 5. Relasi ke game dan kategori tidak dihapus atau diubah. Tidak ada cascade ke game/kategori, order, order item, pembayaran, refund, komplain, maupun audit.
 6. Order historis tetap utuh dan menggunakan snapshot nama, harga, mata uang, dan estimasi saat checkout. Delete katalog tidak membatalkan atau mengubah status order yang sudah dibuat.
 7. Layanan yang tidak ditemukan atau sudah soft-deleted mengembalikan kode bisnis yang sama untuk menghindari enumerasi status record.
-8. Operasi update `deleted_at` harus atomik dan hanya berlaku bila `deleted_at IS NULL`; concurrent delete pertama menang. Retry sesudah sukses menghasilkan not-found/already-deleted tanpa efek samping tambahan.
-9. Audit merekam actor, service ID, action, dan waktu. Detail audit storage/retention mengikuti platform audit policy.
+8. Target mengusulkan update bersyarat yang hanya berlaku bila service belum terhapus, agar retry setelah delete sukses tidak memberi efek samping tambahan. Jaminan concurrent write serta mapping field fisik masih harus dicocokkan dengan penyimpanan yang disetujui.
+9. BR-022 mewajibkan audit event untuk aksi ini. Target event dan redaksi ditentukan oleh D-07; store, durability/delivery guarantee, urutan commit, serta respons bila audit gagal masih menunggu D-08.
 10. Hard delete, restore, reassignment, dan pengubahan harga/status layanan bukan bagian endpoint ini.
 11. ERD belum menentukan apakah service delete ditolak ketika sedang dipakai oleh proses fulfillment yang berjalan. Jika ada active fulfillment reference, perilaku blokir/allow harus ditentukan bersama modul order sebelum implementasi.
 
 ## Request Headers
 
-| Header          | E/N/T | Type   | M/O/C | Max Length | Description                                                  | Example                 |
-| --------------- | ----- | ------ | ----- | ---------: | ------------------------------------------------------------ | ----------------------- |
-| `Authorization` | N     | String | M     |       4096 | Kredensial administrator; skema mengikuti identity provider. | `Bearer {access-token}` |
-| `Accept`        | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.           | `application/json`      |
-| `X-Request-Id`  | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.          | `req-2b84f1`            |
+| Header         | E/N/T | Type   | M/O/C | Max Length | Description                                                                     | Example                      |
+| -------------- | ----- | ------ | ----- | ---------: | ------------------------------------------------------------------------------- | ---------------------------- |
+| `Cookie`       | E     | String | M     |        TBD | Session admin dikirim browser; nama dan atribut cookie mengikuti auth Sprint 1. | `{admin session cookie}`     |
+| `Origin`       | N     | String | M     |        TBD | Origin dashboard harus cocok dengan allowlist.                                  | `https://admin.example.test` |
+| `X-CSRF-Token` | N     | String | M     |        TBD | Token CSRF untuk request admin cookie-authenticated.                            | `{csrf-token}`               |
+| `Accept`       | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.                              | `application/json`           |
+| `X-Request-Id` | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.                             | `req-2b84f1`                 |
 
 ## Request Parameters
 
@@ -123,23 +127,22 @@ Tidak ada request body.
 
 ### Request Validation
 
-1. `Authorization` harus mengidentifikasi administrator terautentikasi dengan izin `service-delete`. Kembalikan `SRVB01001` bila belum terautentikasi dan `SRVB01002` bila tidak berizin.
+1. Session cookie harus valid; `Origin` harus exact-allowlisted; token CSRF dan permission `service-delete` harus valid. HTTP/service-code mapping auth dan CSRF tetap mengikuti API standard yang disetujui.
 2. `serviceId` wajib, tidak kosong, maksimal 64 karakter, dan mengikuti format ID implementasi. Format invalid menghasilkan `SRVB02001`.
 3. Tolak request body dan query parameter yang tidak didefinisikan.
 4. Lakukan soft delete hanya bila service ditemukan dan `deleted_at IS NULL`; bila tidak ditemukan atau sudah terhapus, kembalikan `SRVB02002`.
-5. Pastikan transaksi tidak menghapus atau mengubah referensi order historis. Terapkan optimistic condition/row lock agar concurrent update tidak mengaktifkan kembali service yang sedang dihapus.
-6. Catat audit secara durable sesuai platform policy.
+5. Jangan menghapus atau mengubah referensi order historis. Strategi agar concurrent update tidak mengaktifkan kembali service yang sedang dihapus masih perlu ditetapkan; jangan mengasumsikan row lock atau transaksi lintas dokumen.
+6. Terapkan audit sesuai policy BR-022 setelah store, durability/delivery guarantee, urutan commit, retry/deduplication, dan respons gagal disetujui. Syarat durability belum dapat dianggap sebagai implementasi yang tersedia.
 7. Kegagalan database menghasilkan HTTP 500 `SRVT03001` tanpa detail internal.
 
 ## Response Body
 
-Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `data: null`.
+Semua response target menggunakan envelope Sprint 1 `{code,message,data}`. Untuk detail, `data` langsung berisi object resource; untuk list, `data` adalah array dan `pagination` sibling di root. Error mengembalikan `data: null`.
 
 | Attribute        | E/N/T | Type               | M/O/C | Max Length | Description                           | Example                |
 | ---------------- | ----- | ------------------ | ----- | ---------: | ------------------------------------- | ---------------------- |
-| `status`         | N     | Object             | M     |          — | Object status response.               | `{}`                   |
-| `status.code`    | N     | String             | M     |         20 | Service status code.                  | `SRVS00000`            |
-| `status.message` | N     | String             | O     |        200 | Pesan hasil untuk consumer.           | `Service deleted`      |
+| `code`           | N     | String             | M     |         20 | Service code.                         | `SRVS00000`            |
+| `message`        | N     | String             | O     |        200 | Pesan hasil untuk consumer.           | `Service deleted`      |
 | `data`           | N     | Object/null        | M     |          — | Payload hasil; `null` ketika error.   | `{}`                   |
 | `data.serviceId` | N     | String             | M     |         64 | ID layanan yang ditandai terhapus.    | `svc_01JXYZ`           |
 | `data.deletedAt` | N     | String (date-time) | M     |         35 | Waktu soft delete dalam ISO 8601 UTC. | `2026-10-11T10:30:00Z` |
@@ -148,10 +151,8 @@ Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `da
 
 ```json
 {
-  "status": {
-    "code": "SRVS00000",
-    "message": "Service deleted"
-  },
+  "code": "SRVS00000",
+  "message": "Service deleted",
   "data": {
     "serviceId": "svc_01JXYZ",
     "deletedAt": "2026-10-11T10:30:00Z"
@@ -163,10 +164,8 @@ Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `da
 
 ```json
 {
-  "status": {
-    "code": "SRVB02002",
-    "message": "Service not found"
-  },
+  "code": "SRVB02002",
+  "message": "Service not found",
   "data": null
 }
 ```
@@ -175,10 +174,8 @@ Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `da
 
 ```json
 {
-  "status": {
-    "code": "SRVT03001",
-    "message": "Service catalog is temporarily unavailable"
-  },
+  "code": "SRVT03001",
+  "message": "Service catalog is temporarily unavailable",
   "data": null
 }
 ```
@@ -206,38 +203,42 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## API Exposure Classification
 
-| Classification                 | Rationale                                                                                                                                         |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Enterprise Intranet (proposed) | Operasi destruktif admin pada katalog. Jika endpoint dapat diakses dari internet, klasifikasikan sebagai Public dan terapkan proteksi API publik. |
+| Classification            | Rationale                                                                                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TBD (deployment exposure) | Operasi destruktif admin pada katalog. Jika endpoint dapat diakses dari internet, klasifikasikan sebagai Public dan terapkan proteksi API publik. |
 
 ## Testing & Documentation Scope
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                         |
-| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | API delete admin baru. Uji layanan aktif/nonaktif, layanan tidak ditemukan, soft-deleted, retry, query katalog sesudah delete, serta operasi concurrent update/delete. VUser, CPU/memory, target TPS TBD menunggu forecast. |
-| VA/Pentest | Yes      | Verifikasi authentication/authorization, IDOR, privilege boundaries, audit attribution, no hard-delete/cascade, dan order snapshot tetap tersedia.                                                                          |
+| NFT / VA-Pentest handoff   | Value                                                                                                                                                                                  |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Service / module           | Game Service Management                                                                                                                                                                |
+| Endpoint                   | `DELETE /api/admin/services/v1/delete/{serviceId}`                                                                                                                                     |
+| Sample parameter / request | Path: `serviceId=svc_01JXYZ`                                                                                                                                                           |
+| Sample response            | Success code `SRVS00000`; use the complete Success Example below. Probe code `SRVB01002`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
+| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                               |
+| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                                |
 
-## Current Go behavior vs proposed target
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                                      |
+| ---------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFT        | Yes      | Validasi target contract untuk route delete admin yang sudah tercatat di inventory. Uji layanan aktif/nonaktif, layanan tidak ditemukan, soft-deleted, retry, query katalog sesudah delete, serta operasi concurrent update/delete. VUser, CPU/memory, target TPS TBD menunggu forecast. |
+| VA/Pentest | Yes      | Verifikasi authentication/authorization, IDOR, privilege boundaries, audit attribution, no hard-delete/cascade, dan order snapshot tetap tersedia.                                                                                                                                       |
 
-- Go route: `DELETE /api/admin/services/v1/delete/{serviceId}`; requires admin session and `catalog-manage`; success HTTP 200 `SRVS00000`, domain result in `data`; service/repository may reject deletion based on business references. FE page calls this exact route/method.
-- Current Go envelope is `{code,message,data?}`. Delete policy and result fields remain source-derived from `AdminCatalogController`/repository, not assumed from proposal wording.
+## Current Implementation Alignment
+
+The local route inventory records `DELETE /api/admin/services/v1/delete/{serviceId}` under `catalog-manage`, returning the deleted service ID and timestamp. This IFA uses the same method/path, but soft-delete/reference rules, permission, response envelope, and target status codes remain proposals not reconciled with that inventory. Resolve service lifecycle, historical-order references, and audit policy before implementation (D-02/D-04). See the [route-to-handler coverage](../../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage).
 
 ## Assumptions
 
-- Endpoint, permission, response envelope, dan prefix `SRV` mengikuti proposal [Create Service](create-service.md); belum ada backend service API yang disetujui.
+- Root envelope mengikuti Sprint 1; permission, payload, status code, dan prefix `SRV` mengikuti proposal [Create Service](create-service.md) dan masih menunggu persetujuan, walaupun method/path route tercatat pada inventory lokal.
 - Soft delete mengikuti kolom `deleted_at` dan rekomendasi Service ERD; kebijakan restore/retensi perlu disetujui.
-- Endpoint tetap mengizinkan delete meskipun ada order historis karena FK/history dipertahankan dan order memakai snapshots; proses fulfillment aktif perlu aturan eksplisit.
+- Target mengizinkan soft delete meskipun ada order historis karena order memakai snapshot; referensi aplikasi tetap dipertahankan dan tidak ada FK yang ditegakkan MongoDB. Proses fulfillment aktif perlu aturan eksplisit.
 - HTTP `200` dan response envelope mengikuti project baseline; `204` dapat dipilih oleh standar API final.
-- Audit mechanism, identity provider, role mapping, database engine, active fulfillment guard, dan SLA TBD.
+- Audit mechanism dan delivery/failure policy, identity provider, role mapping, database engine, active fulfillment guard, dan SLA TBD.
 
 ## References
 
+- [Sprint 2 BRD](../../../BRD.md) — BR-019, pengelolaan dan lifecycle layanan.
 - `../../erd/service-erd.md` — `deleted_at`, relasi parent, soft-delete proposal, dan audit rule.
-- `docs-game-service-platform/sprint_3/solutioning/erd/order-erd.md` — order item service reference, immutable snapshots, dan larangan menghapus histori.
+- [order-erd.md](../../../../sprint-3/solutioning/erd/order-erd.md) — order item service reference, immutable snapshots, dan larangan menghapus histori.
 - `./create-service.md` — service ID, field, permission, dan response naming baseline.
 - `./update-service.md` — perilaku update dan referensi service.
-- `src/features/AdminServices/views/templates/AdminServices.template.tsx` — aksi konfirmasi delete pada Admin Services UI.
-
-## Current Go Implementation Alignment
-
-Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../../../sprint_1/solutioning/dashboard-management/QUESTION.md).

@@ -2,7 +2,7 @@
 
 > **Document Type:** ERD  
 > **Status:** Draft  
-> **Scope:** Customer account identity/status and member-profile model for Sprint 3 account and member management. Administrator account and role records are defined in the Sprint 1 [Administrator Account ERD](../../../sprint_1/erd/admin-account-erd.md) and [Role ERD](../../../sprint_1/erd/role-erd.md). Order-derived metrics and role definitions are referenced, not duplicated here.
+> **Scope:** Customer account identity/status and member-profile model for Sprint 3 account and member management. Administrator account and role records are defined in the Sprint 1 [Administrator Account ERD](../../../sprint-1/erd/admin-account-erd.md) and [Role ERD](../../../sprint-1/erd/role-erd.md). Order-derived metrics and role definitions are referenced, not duplicated here.
 
 ## ERD
 
@@ -190,16 +190,12 @@ These status history tables are proposed domain history, not a replacement for t
 - Confirm member-tier ownership and calculation; `orderCount`/`totalSpend` source, aggregation, currency, refunds, and freshness.
 - Confirm whether admin users can have multiple roles. Role ERD models many-to-many while AdminManagement UI currently displays one role.
 - Confirm database engine, naming conventions, index implementation, and PII retention policy.
-- No user/admin management API solutioning or AC was found in `docs/sprint_1/solutioning`; current ERD proposals are inferred from UI-facing interfaces in `src/features/AdminUsers`, `src/features/AdminMembers`, and `src/features/AdminManagement`.
 
 ## References
 
-- `../../../sprint_1/erd/admin-account-erd.md` — administrator account identity and lifecycle.
-- `../../../sprint_1/erd/role-erd.md` — proposed administrator role, permission, and account-role assignment entities.
+- [admin-account-erd.md](../../../sprint-1/erd/admin-account-erd.md) — administrator account identity and lifecycle.
+- [role-erd.md](../../../sprint-1/erd/role-erd.md) — proposed administrator role, permission, and account-role assignment entities.
 - `../dashboard/accounts-roles/get-list-roles.md`
 - `../dashboard/accounts-roles/get-detail-role.md`
 - `../dashboard/accounts-roles/update-role.md`
 - `../dashboard/accounts-roles/delete-role.md`
-- `src/features/AdminUsers/views/interfaces/admin-user.interface.ts`
-- `src/features/AdminMembers/views/interfaces/admin-member.interface.ts`
-- `src/features/AdminManagement/views/interfaces/admin-account.interface.ts`

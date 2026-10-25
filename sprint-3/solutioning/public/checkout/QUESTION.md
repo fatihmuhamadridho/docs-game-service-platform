@@ -20,7 +20,7 @@ Current Go endpoint behavior is summarized in [the order/payment source IFA](../
 
 ## Q3 — Which next action and payment-report sequence should Sprint 2 clients follow?
 
-- **Question:** Should checkout keep returning `nextAction=UPLOAD_PAYMENT_PROOF` when `FEATURE_SPRINT_2=true`, with `POST .../proofs` required before `POST .../report-paid`, or should customer confirmation alone remain available?
+- **Question:** Should checkout keep returning `nextAction=UPLOAD_PAYMENT_PROOF` when `FEATURE_SPRINT_2=true`, with `POST /api/orders/v1/payments/{paymentId}/proofs` required before `POST /api/orders/v1/payments/{paymentId}/report-paid`, or should customer confirmation alone remain available?
 - **Evidence gap:** `OrderController.Checkout` switches `nextAction` on the feature flag. `ReportPayment` requires at least one proof under Sprint 2; otherwise it reports without proof. These are current Go behaviors, but product/release owner has not approved when the flag is enabled or which experience is the release gate.
 - **Affected routes/docs:** `POST /api/orders/v1/checkout`, `POST /api/orders/v1/payments/{paymentId}/report-paid`, `POST /api/orders/v1/payments/{paymentId}/proofs`; [continue to payment IFA](continue-to-payment.md), [submit proof IFA](submit-payment-proof.md), [Go order/payment IFA](../../backend-go/order-payment-ifa.md).
 - **Decision owner:** Product/API owner (release owner not identified in source).

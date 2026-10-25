@@ -7,7 +7,7 @@
 
 ## Design
 
-API ini mengambil riwayat aksi administrator di dashboard untuk kebutuhan audit dan monitoring. Daftar mendukung search, filter kategori, filter tanggal, pagination, dan ringkasan hasil. Log harus ditulis oleh server saat aksi dilakukan dan bersifat append-only; UI tidak dapat membuat, mengubah, atau menghapus event audit melalui endpoint ini. Belum ada ERD activity log generik, sehingga schema dan integrasi audit lintas domain adalah usulan yang perlu disepakati.
+API ini mengambil riwayat aksi administrator di dashboard untuk kebutuhan audit dan monitoring. Daftar mendukung search, filter kategori, filter tanggal, pagination, dan ringkasan hasil. Log harus ditulis oleh server saat aksi dilakukan dan bersifat append-only; UI tidak dapat membuat, mengubah, atau menghapus event audit melalui endpoint ini. Sprint 2 menyediakan [ERD activity log logis](../../../../sprint-2/solutioning/erd/activity-log-erd.md), tetapi schema fisik, taxonomy, jaminan penulisan, dan integrasi audit lintas domain masih berupa proposal yang perlu disepakati.
 
 ## Sequence Diagram
 
@@ -84,7 +84,7 @@ sequenceDiagram
 1. Hanya administrator terautentikasi dengan izin `activity-log-read` dapat membaca log. Permission name adalah usulan dan perlu selaras dengan RBAC.
 2. Event dicatat server-side oleh domain/service yang melakukan aksi. Aksi gagal yang sudah melewati autentikasi dan validasi keamanan juga dicatat; request tidak valid yang ditolak gateway dapat masuk ke security log terpisah.
 3. Activity log bersifat append-only bagi consumer aplikasi. Koreksi/retensi dilakukan melalui mekanisme operasional terproteksi dan tetap diaudit.
-4. Setiap event mencatat actor ID serta snapshot nama/email jika tersedia, action code/label, target type dan target reference, kategori, hasil, waktu UTC, dan metadata request yang aman.
+4. Setiap event mencatat actor ID serta snapshot nama/email jika tersedia, action code/label, target type dan identitas target non-sensitif yang stabil (ID, approved singleton key, atau reference), kategori, hasil, waktu UTC, dan metadata request yang aman. Mapping wajib ini perlu diselaraskan dengan [logical activity log ERD Sprint 2](../../../../sprint-2/solutioning/erd/activity-log-erd.md).
 5. Kategori API memakai nilai stabil: `ORDER`, `PRODUCT`, `USER`, `CONTENT`, `SETTINGS`. UI memetakan ke label Indonesia `Pesanan`, `Produk`, `Pengguna`, `Konten`, `Pengaturan`.
 6. Hasil API memakai `SUCCESS` atau `FAILED`; UI memetakan ke `Berhasil` atau `Gagal`.
 7. Search berjalan pada admin name/email, action, target reference, dan IP bila diizinkan. Search tidak boleh mengakses atau mencocokkan secret/token.
@@ -141,37 +141,37 @@ Tidak ada request body.
 
 Semua response menggunakan envelope `status` dan `data`. Sukses mengembalikan halaman activity log, summary atas semua hasil filter, dan pagination; error mengembalikan `data: null`.
 
-| Attribute                              | E/N/T | Type               | M/O/C |       Max Length | Description                                                              | Example                   |
-| -------------------------------------- | ----- | ------------------ | ----- | ---------------: | ------------------------------------------------------------------------ | ------------------------- |
-| `status`                               | N     | Object             | M     |                — | Object status response.                                                  | `{}`                      |
-| `status.code`                          | N     | String             | M     |               20 | Service status code.                                                     | `ACTS00000`               |
-| `status.message`                       | N     | String             | O     |              200 | Pesan hasil untuk consumer.                                              | `Activity logs retrieved` |
-| `data`                                 | N     | Object/null        | M     |                — | Payload hasil; `null` ketika error.                                      | `{}`                      |
-| `data.activityLogs`                    | N     | Array of Object    | M     | `pageSize` items | Halaman activity log; array kosong bila tidak ada hasil.                 | `[]`                      |
-| `data.activityLogs[].id`               | N     | String             | M     |               64 | ID immutable event.                                                      | `act_01JXYZ`              |
-| `data.activityLogs[].actor`            | N     | Object/null        | O     |                — | Admin pelaku; null bila account dihapus/anonymized.                      | `{}`                      |
-| `data.activityLogs[].actor.id`         | N     | String             | O     |               64 | ID admin saat aksi.                                                      | `admin_01JXYZ`            |
-| `data.activityLogs[].actor.name`       | N     | String/null        | O     |              150 | Snapshot nama admin.                                                     | `Fatih Muhamad Ridho`     |
-| `data.activityLogs[].actor.email`      | N     | String/null        | O     |              254 | Snapshot email; visibility/masking sesuai policy.                        | `fatih@example.com`       |
-| `data.activityLogs[].action`           | N     | String             | M     |              100 | Kode aksi stabil.                                                        | `ORDER_STATUS_UPDATED`    |
-| `data.activityLogs[].actionLabel`      | N     | String             | M     |              200 | Label aksi untuk tampilan admin.                                         | `Mengubah status pesanan` |
-| `data.activityLogs[].target`           | N     | Object             | M     |                — | Referensi target aksi.                                                   | `{}`                      |
-| `data.activityLogs[].target.type`      | N     | String             | M     |               50 | Tipe resource target.                                                    | `ORDER`                   |
-| `data.activityLogs[].target.id`        | N     | String/null        | O     |               64 | ID internal target, bila tersedia.                                       | `ord_01JXYZ`              |
-| `data.activityLogs[].target.reference` | N     | String/null        | O     |              150 | Nomor/reference yang bisa dibaca admin.                                  | `JH-2026-001248`          |
-| `data.activityLogs[].category`         | N     | String             | M     |               30 | Enum kategori stabil: `ORDER`, `PRODUCT`, `USER`, `CONTENT`, `SETTINGS`. | `ORDER`                   |
-| `data.activityLogs[].occurredAt`       | N     | String (date-time) | M     |               35 | Waktu event ISO 8601 UTC.                                                | `2026-10-11T09:18:00Z`    |
-| `data.activityLogs[].ipAddress`        | N     | String/null        | O     |               45 | IP client yang tervalidasi; akses sesuai policy.                         | `192.0.2.28`              |
-| `data.activityLogs[].result`           | N     | String             | M     |               20 | `SUCCESS` atau `FAILED`.                                                 | `SUCCESS`                 |
-| `data.summary`                         | N     | Object             | M     |                — | Ringkasan seluruh hasil setelah filter.                                  | `{}`                      |
-| `data.summary.totalItems`              | N     | Integer            | M     |        10 digits | Total aktivitas yang cocok dengan filter.                                | `1`                       |
-| `data.summary.successCount`            | N     | Integer            | M     |        10 digits | Jumlah event sukses pada seluruh hasil terfilter.                        | `1`                       |
-| `data.summary.failedCount`             | N     | Integer            | M     |        10 digits | Jumlah event gagal pada seluruh hasil terfilter.                         | `0`                       |
-| `data.pagination`                      | N     | Object             | M     |                — | Metadata pagination.                                                     | `{}`                      |
-| `data.pagination.page`                 | N     | Integer            | M     |        10 digits | Halaman yang dikembalikan.                                               | `1`                       |
-| `data.pagination.pageSize`             | N     | Integer            | M     |        10 digits | Ukuran halaman efektif.                                                  | `20`                      |
-| `data.pagination.totalItems`           | N     | Integer            | M     |        10 digits | Total activity log setelah filter.                                       | `1`                       |
-| `data.pagination.totalPages`           | N     | Integer            | M     |        10 digits | Total halaman; `0` bila kosong.                                          | `1`                       |
+| Attribute                              | E/N/T | Type               | M/O/C |       Max Length | Description                                                                                                                                                | Example                   |
+| -------------------------------------- | ----- | ------------------ | ----- | ---------------: | ---------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------- |
+| `status`                               | N     | Object             | M     |                — | Object status response.                                                                                                                                    | `{}`                      |
+| `status.code`                          | N     | String             | M     |               20 | Service status code.                                                                                                                                       | `ACTS00000`               |
+| `status.message`                       | N     | String             | O     |              200 | Pesan hasil untuk consumer.                                                                                                                                | `Activity logs retrieved` |
+| `data`                                 | N     | Object/null        | M     |                — | Payload hasil; `null` ketika error.                                                                                                                        | `{}`                      |
+| `data.activityLogs`                    | N     | Array of Object    | M     | `pageSize` items | Halaman activity log; array kosong bila tidak ada hasil.                                                                                                   | `[]`                      |
+| `data.activityLogs[].id`               | N     | String             | M     |               64 | ID immutable event.                                                                                                                                        | `act_01JXYZ`              |
+| `data.activityLogs[].actor`            | N     | Object/null        | O     |                — | Proyeksi identitas admin; dapat null hanya bila policy mengizinkan redaksi/anonymization. Persisted event tetap memerlukan identitas actor menurut BR-022. | `{}`                      |
+| `data.activityLogs[].actor.id`         | N     | String/null        | O     |               64 | Identitas admin yang diproyeksikan bila policy mengizinkan; null pada proyeksi yang dianonimkan. Persisted event actor tidak boleh dianggap absent.        | `admin_01JXYZ`            |
+| `data.activityLogs[].actor.name`       | N     | String/null        | O     |              150 | Snapshot nama admin.                                                                                                                                       | `Fatih Muhamad Ridho`     |
+| `data.activityLogs[].actor.email`      | N     | String/null        | O     |              254 | Snapshot email; visibility/masking sesuai policy.                                                                                                          | `fatih@example.com`       |
+| `data.activityLogs[].action`           | N     | String             | M     |              100 | Kode aksi stabil.                                                                                                                                          | `ORDER_STATUS_UPDATED`    |
+| `data.activityLogs[].actionLabel`      | N     | String             | M     |              200 | Label aksi untuk tampilan admin.                                                                                                                           | `Mengubah status pesanan` |
+| `data.activityLogs[].target`           | N     | Object             | M     |                — | Referensi target aksi.                                                                                                                                     | `{}`                      |
+| `data.activityLogs[].target.type`      | N     | String             | M     |               50 | Tipe resource target.                                                                                                                                      | `ORDER`                   |
+| `data.activityLogs[].target.id`        | N     | String/null        | O     |               64 | ID internal target bila termasuk proyeksi yang diizinkan. Event tersimpan tetap harus memiliki identitas target stabil.                                    | `ord_01JXYZ`              |
+| `data.activityLogs[].target.reference` | N     | String/null        | O     |              150 | Reference yang bisa dibaca admin bila termasuk proyeksi yang diizinkan. Event tersimpan tetap harus memiliki identitas target stabil.                      | `JH-2026-001248`          |
+| `data.activityLogs[].category`         | N     | String             | M     |               30 | Enum kategori stabil: `ORDER`, `PRODUCT`, `USER`, `CONTENT`, `SETTINGS`.                                                                                   | `ORDER`                   |
+| `data.activityLogs[].occurredAt`       | N     | String (date-time) | M     |               35 | Waktu event ISO 8601 UTC.                                                                                                                                  | `2026-10-11T09:18:00Z`    |
+| `data.activityLogs[].ipAddress`        | N     | String/null        | O     |               45 | IP client yang tervalidasi; akses sesuai policy.                                                                                                           | `192.0.2.28`              |
+| `data.activityLogs[].result`           | N     | String             | M     |               20 | `SUCCESS` atau `FAILED`.                                                                                                                                   | `SUCCESS`                 |
+| `data.summary`                         | N     | Object             | M     |                — | Ringkasan seluruh hasil setelah filter.                                                                                                                    | `{}`                      |
+| `data.summary.totalItems`              | N     | Integer            | M     |        10 digits | Total aktivitas yang cocok dengan filter.                                                                                                                  | `1`                       |
+| `data.summary.successCount`            | N     | Integer            | M     |        10 digits | Jumlah event sukses pada seluruh hasil terfilter.                                                                                                          | `1`                       |
+| `data.summary.failedCount`             | N     | Integer            | M     |        10 digits | Jumlah event gagal pada seluruh hasil terfilter.                                                                                                           | `0`                       |
+| `data.pagination`                      | N     | Object             | M     |                — | Metadata pagination.                                                                                                                                       | `{}`                      |
+| `data.pagination.page`                 | N     | Integer            | M     |        10 digits | Halaman yang dikembalikan.                                                                                                                                 | `1`                       |
+| `data.pagination.pageSize`             | N     | Integer            | M     |        10 digits | Ukuran halaman efektif.                                                                                                                                    | `20`                      |
+| `data.pagination.totalItems`           | N     | Integer            | M     |        10 digits | Total activity log setelah filter.                                                                                                                         | `1`                       |
+| `data.pagination.totalPages`           | N     | Integer            | M     |        10 digits | Total halaman; `0` bila kosong.                                                                                                                            | `1`                       |
 
 ### Success Example
 
@@ -279,19 +279,16 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 - Endpoint `/api/admin/activity-logs/v1/list`, field query/response, envelope, prefix `ACT`, serta status code adalah usulan; API/security owner perlu menyetujui.
 - Kategori API `ORDER`, `PRODUCT`, `USER`, `CONTENT`, `SETTINGS` dipetakan ke kategori UI Indonesia; kategori lain seperti `AUTH`, `ROLE`, `TRANSACTION`, atau `SYSTEM` mungkin diperlukan dan harus ditetapkan oleh audit taxonomy owner.
-- Belum ada ERD activity log generik. Diperlukan schema/event store bersama atau audit service, termasuk actor snapshots, correlation ID, target fields, result/error classification, retention, dan indexing.
+- ERD logis activity log tersedia di Sprint 2, tetapi belum disetujui sebagai schema fisik/event store. Selaraskan taxonomy, actor snapshots, correlation ID, target fields, result/error classification, retention, dan indexing dengan keputusan BR-022.
+- `actor` dan `target` pada response adalah read projections, bukan bukti kelengkapan event tersimpan. Setiap event tersimpan harus membawa actor dan target identity sesuai BR-022; pembaca boleh menerima field display/identifier yang dihilangkan hanya jika redaction/anonymization policy mengizinkannya. Representasi system actor dan perlakuan identitas setelah penghapusan akun tetap membutuhkan keputusan owner (Sprint 2 D-07/D-08).
 - Mock UI menyediakan nama/email admin, action, target, category, occurredAt, IP, dan result. Form detail/diff perubahan belum tersedia pada UI saat ini.
 - Aturan pencatatan aksi gagal, IP source/proxy trust, timezone platform, masking, audit write fail-open/fail-closed, retensi, permission, SLA, dan HTTP status mapping masih TBD.
 - Endpoint hanya membaca log; ekspor, purge/retention management, perubahan data, dan log aktivitas member/customer berada di luar scope.
 
 ## References
 
-- `src/features/AdminActivityLogs/views/interfaces/admin-activity-log.interface.ts` — kategori dan field activity log pada UI.
-- `src/features/AdminActivityLogs/views/pages/AdminActivityLogs.page.tsx` — mock activity dan client-side search/category/date filters.
-- `src/features/AdminActivityLogs/views/templates/AdminActivityLogs.template.tsx` — tabel, ringkasan, dan filter yang ditampilkan.
-- `docs-game-service-platform/sprint_2/solutioning/dashboard/settings/general-settings.md` — kontrak admin dashboard dan pola pengaturan.
-- `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — template kontrak API sprint.
+- [general-settings.md](../../../../sprint-2/solutioning/dashboard/settings/general-settings.md) — kontrak admin dashboard dan pola pengaturan.
 
 ## Current Go Implementation Alignment
 
-Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../../../sprint_1/solutioning/dashboard-management/QUESTION.md).
+Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in dashboard QUESTION.md.

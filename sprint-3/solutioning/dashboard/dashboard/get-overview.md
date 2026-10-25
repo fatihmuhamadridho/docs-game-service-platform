@@ -370,15 +370,13 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## References
 
-- `src/features/AdminDashboard/views/pages/AdminDashboard.page.tsx` — metric cards, chart, breakdown, recent orders, dan recent activities mock.
-- `docs-game-service-platform/sprint_3/solutioning/dashboard/orders/get-list-orders.md` — order status, snapshot, dan field pesanan.
-- `docs-game-service-platform/sprint_3/solutioning/erd/order-erd.md` — order/payment source of truth.
-- `docs-game-service-platform/sprint_3/solutioning/erd/transaction-erd.md` — financial transaction dan settlement status.
-- `docs-game-service-platform/sprint_1/solutioning/erd/game-catalog-erd.md` — game catalog reference.
-- `docs-game-service-platform/sprint_2/solutioning/erd/service-erd.md` — service catalog reference.
-- `docs-game-service-platform/sprint_3/solutioning/dashboard/activity-logs/get-list-activity-logs.md` — recent activity source and taxonomy proposal.
-- `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — template kontrak API sprint.
+- [get-list-orders.md](../orders/get-list-orders.md) — order status, snapshot, dan field pesanan.
+- [order-erd.md](../../erd/order-erd.md) — order/payment source of truth.
+- [transaction-erd.md](../../erd/transaction-erd.md) — financial transaction dan settlement status.
+- [game-catalog-erd.md](../../../../sprint-1/erd/game-catalog-erd.md) — game catalog reference.
+- [service-erd.md](../../../../sprint-2/solutioning/erd/service-erd.md) — service catalog reference.
+- [get-list-activity-logs.md](../activity-logs/get-list-activity-logs.md) — recent activity source and taxonomy proposal.
 
 ## Current Go Implementation Alignment
 
-Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../../../sprint_1/solutioning/dashboard-management/QUESTION.md).
+Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in dashboard QUESTION.md.

@@ -1,6 +1,6 @@
 # Public order tracking implementation
 
-This implements `docs-game-service-platform/sprint_3/solutioning/public/orders/track-order.md` and `get-order-status.md` in the existing `/cek-pesanan` flow.
+This implements `public/orders/track-order.md` and `get-order-status.md` in the existing `/cek-pesanan` flow.
 
 ## Lookup and refresh
 

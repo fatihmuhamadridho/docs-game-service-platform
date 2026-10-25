@@ -7,7 +7,9 @@
 
 ## Design
 
-API mengambil daftar layanan game untuk Admin Dashboard. Daftar mendukung pencarian nama layanan/game, filter kategori dan status, serta pagination. Response menyediakan harga fixed/custom, estimasi, relasi game/kategori, dan waktu perubahan sesuai tabel Admin Services. Sumber data `game_service` dan relasinya mengikuti [Service ERD](../../erd/service-erd.md); record soft-deleted dikecualikan.
+API mengambil daftar layanan game untuk Admin Dashboard. Daftar mendukung pencarian nama layanan/game, filter kategori dan status, serta pagination. Response menyediakan harga fixed/custom, estimasi, relasi game/kategori, dan waktu perubahan sesuai tabel Admin Services. Sumber data `game_service` dan relasinya mengikuti [Service ERD](../../../erd/service-erd.md); record soft-deleted dikecualikan.
+
+> **Status kontrak target:** Struktur response mengikuti baseline Sprint 1 `{code,message,data}`. Service code, HTTP mapping, dan permission per route masih perlu disepakati terhadap inventory; auth/HTTP compatibility dicatat di D-11 dan extension permission/grant role di D-18.
 
 ## Sequence Diagram
 
@@ -32,7 +34,7 @@ sequenceDiagram
             API->>DB: Cari/filter service dan relasi, urutkan, hitung total, ambil halaman
             alt Query berhasil
                 DB-->>API: Halaman service dan total hasil
-                API-->>UI: 200 SRVS00000, data.services dan pagination
+                API-->>UI: 200 SRVS00000, data[] dan pagination pada root
                 UI-->>Admin: Tampilkan daftar atau empty state
             else Database gagal
                 DB-->>API: Kegagalan baca katalog
@@ -45,9 +47,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                                        | VUser                                   | CPU / Memory                             | Response Time                                                                        |
-| --------------------------------------------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------ |
-| TBD; konfirmasi criticality dan availability target | TBD; konfirmasi concurrent admin puncak | TBD; tetapkan dari capacity estimate/NFT | TBD; usulan baseline web non-kritis: ideal 200 ms, acceptable 1 s, max tolerable 2 s |
+| Success Rate                                        | VUser                                   | CPU / Memory                             | Response Time                                                 |
+| --------------------------------------------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
+| TBD; konfirmasi criticality dan availability target | TBD; konfirmasi concurrent admin puncak | TBD; tetapkan dari capacity estimate/NFT | TBD; target belum ditetapkan; baseline opsional menunggu D-12 |
 
 ## General Information
 
@@ -63,20 +65,20 @@ sequenceDiagram
 
 ### Path / Endpoint
 
-| Section        | Value                             |
-| -------------- | --------------------------------- |
-| Host / Domain  | `{host}` (environment-specific)   |
-| Service Name   | Game Service Management           |
-| Version        | `v1`                              |
-| Resource       | `/admin/services/v1/list`         |
-| Final Endpoint | `GET /api/admin/services/v1/list` |
+| Section                  | Value                             |
+| ------------------------ | --------------------------------- |
+| Host / Domain            | `{host}` (environment-specific)   |
+| Service Name             | Game Service Management           |
+| Version                  | `v1`                              |
+| Resource                 | `/admin/services/v1/list`         |
+| Proposed target endpoint | `GET /api/admin/services/v1/list` |
 
 ### API Versioning
 
-- **Decision:** New Endpoint
-- **Previous Endpoint:** Tidak ada API daftar layanan admin yang teridentifikasi pada solutioning sprint ini.
-- **Final Endpoint:** `GET /api/admin/services/v1/list`
-- **Backward Compatibility:** Belum ada consumer API ini yang teridentifikasi. Penambahan field response opsional bersifat kompatibel; perubahan kontrak yang mematahkan consumer memerlukan major version baru.
+- **Inventory status:** Method/path yang sama tercatat pada route inventory repo ini; bagian ini bukan klaim bahwa route belum ada.
+- **Target contract:** IFA mengusulkan perilaku pada `GET /api/admin/services/v1/list`; query, permission, projection, pagination, response, dan status target belum disetujui terhadap inventory.
+- **Versioning:** Tetap `v1` pada usulan ini; perubahan kompatibilitas perlu keputusan API owner.
+- **Backward Compatibility:** Consumer belum dinilai. Penambahan field hanya dapat dianggap kompatibel setelah perilaku consumer diverifikasi; perubahan field/semantik/status yang mematahkan consumer memerlukan keputusan versioning API owner.
 - **Reason:** Admin Dashboard memerlukan daftar layanan yang dapat dicari dan difilter untuk pengelolaan katalog.
 
 ## Business Rules
@@ -87,7 +89,7 @@ sequenceDiagram
 4. `categoryId`, bila diberikan, memfilter exact match pada `game_service.category_id`. Kategori inactive tetap dapat digunakan untuk filter daftar historis/admin; kategori soft-deleted masih dapat menjadi relasi service dan tetap ditampilkan sebagai snapshot projection bila parent record tersedia.
 5. `isActive`, bila diberikan, memfilter status layanan secara exact. Jika tidak diberikan, status aktif dan nonaktif ditampilkan.
 6. Hasil diurutkan `updated_at DESC`, lalu `service_id DESC` untuk urutan deterministik. UI menampilkan latest-updated list; bila product menginginkan nama sort, definisikan terpisah.
-7. `total` menghitung layanan setelah search dan filter, sebelum pagination. Hasil kosong adalah sukses dengan `services: []` dan `total: 0`.
+7. `total` menghitung layanan setelah search dan filter, sebelum pagination. Hasil kosong adalah sukses dengan `data: []` dan `pagination.total: 0`.
 8. Harga diambil dari `price_amount` dan `is_custom_price` yang tersimpan. Custom price memiliki `priceAmount=null` dan `isCustomPrice=true`; fixed price memiliki nilai non-negative dan flag false.
 9. Nama game dan kategori adalah projection dari relasi katalog terkini untuk tampilan admin. Order historis memakai snapshot tersendiri dan tidak bergantung pada nilai projection list.
 10. `updatedAt` dikembalikan ISO 8601 UTC dari `game_service.updated_at`.
@@ -97,11 +99,13 @@ sequenceDiagram
 
 ## Request Headers
 
-| Header          | E/N/T | Type   | M/O/C | Max Length | Description                                                  | Example                 |
-| --------------- | ----- | ------ | ----- | ---------: | ------------------------------------------------------------ | ----------------------- |
-| `Authorization` | N     | String | M     |       4096 | Kredensial administrator; skema mengikuti identity provider. | `Bearer {access-token}` |
-| `Accept`        | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.           | `application/json`      |
-| `X-Request-Id`  | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.          | `req-f340b2`            |
+| Header         | E/N/T | Type   | M/O/C | Max Length | Description                                                                     | Example                      |
+| -------------- | ----- | ------ | ----- | ---------: | ------------------------------------------------------------------------------- | ---------------------------- |
+| `Cookie`       | E     | String | M     |        TBD | Session admin dikirim browser; nama dan atribut cookie mengikuti auth Sprint 1. | `{admin session cookie}`     |
+| `Origin`       | N     | String | M     |        TBD | Origin dashboard harus cocok dengan allowlist.                                  | `https://admin.example.test` |
+| `X-CSRF-Token` | N     | String | M     |        TBD | Token CSRF untuk request admin cookie-authenticated.                            | `{csrf-token}`               |
+| `Accept`       | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.                              | `application/json`           |
+| `X-Request-Id` | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.                             | `req-f340b2`                 |
 
 ## Request Parameters
 
@@ -114,8 +118,8 @@ Tidak ada path parameter.
 | `q`          | N     | String  | O     |        100 | Cari nama layanan atau nama game.                                | `diamond`    |
 | `categoryId` | N     | String  | O     |         64 | Filter berdasarkan ID kategori.                                  | `cat_01JXYZ` |
 | `isActive`   | N     | Boolean | O     |          5 | Filter status layanan `true` atau `false`.                       | `true`       |
+| `page`       | N     | Integer | O     |   9 digits | Nomor halaman, dimulai dari `1`; default `1`.                    | `1`          |
 | `limit`      | N     | Integer | O     |   3 digits | Jumlah layanan per halaman; default `20`, maksimum usulan `100`. | `20`         |
-| `offset`     | N     | Integer | O     |   9 digits | Jumlah hasil yang dilewati; default `0`.                         | `0`          |
 
 ## Request Body
 
@@ -123,72 +127,68 @@ Tidak ada request body.
 
 ### Request Validation
 
-1. `Authorization` harus mengidentifikasi administrator terautentikasi dengan izin `service-read`. Kembalikan `SRVB01001` bila belum terautentikasi dan `SRVB01002` bila tidak berizin.
+1. Session cookie harus valid; `Origin` harus exact-allowlisted; token CSRF dan permission `service-read` harus valid. HTTP/service-code mapping auth dan CSRF tetap mengikuti API standard yang disetujui.
 2. `q`, bila dikirim, harus string maksimal 100 karakter setelah trim. Gunakan parameterized query dan kebijakan escape wildcard database.
 3. `categoryId`, bila dikirim, harus string non-kosong maksimal 64 karakter dan sesuai format ID implementasi.
 4. `isActive`, bila dikirim, hanya menerima `true` atau `false`.
-5. `limit` harus integer 1–100; default `20`.
-6. `offset` harus integer >= 0 dan tidak melebihi batas integer implementasi; default `0`.
-7. Tolak query parameter yang tidak dikenal dengan `SRVB02001`.
-8. Query mengecualikan service yang soft-deleted dan menghasilkan satu record per `serviceId`.
-9. Jika tidak ada hasil, kembalikan HTTP 200 dengan array kosong dan total `0`.
-10. Kegagalan database mengembalikan HTTP 500 tanpa detail internal.
+5. `page` harus integer >= 1; default `1`. `limit` harus integer 1–100; default `20`.
+6. Tolak query parameter yang tidak dikenal dengan `SRVB02001`.
+7. Query mengecualikan service yang soft-deleted dan menghasilkan satu record per `serviceId`.
+8. Jika tidak ada hasil, kembalikan HTTP 200 dengan array kosong dan total `0`.
+9. Kegagalan database mengembalikan HTTP 500 tanpa detail internal.
 
 ## Response Body
 
-Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `data: null`.
+Semua response target menggunakan envelope Sprint 1 `{code,message,data}`. Untuk detail, `data` langsung berisi object resource; untuk list, `data` adalah array dan `pagination` sibling di root. Error mengembalikan `data: null`.
 
-| Attribute                       | E/N/T | Type               | M/O/C |    Max Length | Description                                      | Example                |
-| ------------------------------- | ----- | ------------------ | ----- | ------------: | ------------------------------------------------ | ---------------------- |
-| `status`                        | N     | Object             | M     |             — | Object status response.                          | `{}`                   |
-| `status.code`                   | N     | String             | M     |            20 | Service status code.                             | `SRVS00000`            |
-| `status.message`                | N     | String             | O     |           200 | Pesan hasil untuk consumer.                      | `Services retrieved`   |
-| `data`                          | N     | Object/null        | M     |             — | Payload hasil; `null` ketika error.              | `{}`                   |
-| `data.services`                 | N     | Array of Object    | M     | `limit` items | Halaman layanan; array kosong bila hasil kosong. | `[]`                   |
-| `data.services[].id`            | N     | String             | M     |            64 | ID internal service.                             | `svc_01JXYZ`           |
-| `data.services[].name`          | N     | String             | M     |           150 | Nama layanan.                                    | `Top Up Diamond 100`   |
-| `data.services[].gameId`        | N     | String             | M     |            64 | ID game terkait.                                 | `gm_01JXYZ`            |
-| `data.services[].gameName`      | N     | String/null        | O     |           100 | Nama game hasil relasi katalog.                  | `Mobile Legends`       |
-| `data.services[].categoryId`    | N     | String             | M     |            64 | ID kategori terkait.                             | `cat_01JXYZ`           |
-| `data.services[].categoryName`  | N     | String/null        | O     |           100 | Nama kategori hasil relasi katalog.              | `Top Up`               |
-| `data.services[].priceAmount`   | N     | Decimal/null       | C     |          18,2 | Harga fixed; null untuk custom price.            | `25000.00`             |
-| `data.services[].isCustomPrice` | N     | Boolean            | M     |             — | Penanda custom pricing.                          | `false`                |
-| `data.services[].estimateText`  | N     | String             | M     |           100 | Estimasi display penyelesaian.                   | `Instan`               |
-| `data.services[].isActive`      | N     | Boolean            | M     |             — | Status publikasi layanan.                        | `true`                 |
-| `data.services[].updatedAt`     | N     | String (date-time) | M     |            35 | Waktu perubahan terakhir dalam ISO 8601 UTC.     | `2026-10-11T08:30:00Z` |
-| `data.pagination.limit`         | N     | Integer            | M     |      3 digits | Batas hasil efektif.                             | `20`                   |
-| `data.pagination.offset`        | N     | Integer            | M     |      9 digits | Offset efektif.                                  | `0`                    |
-| `data.pagination.total`         | N     | Integer            | M     |     10 digits | Total service yang cocok sebelum pagination.     | `1`                    |
+| Attribute               | E/N/T | Type               | M/O/C |    Max Length | Description                                                                          | Example                |
+| ----------------------- | ----- | ------------------ | ----- | ------------: | ------------------------------------------------------------------------------------ | ---------------------- |
+| `code`                  | N     | String             | M     |            20 | Service code.                                                                        | `SRVS00000`            |
+| `message`               | N     | String             | O     |           200 | Pesan hasil untuk consumer.                                                          | `Services retrieved`   |
+| `data`                  | N     | Array of Object    | M     | `limit` items | Halaman layanan; array kosong bila hasil kosong.                                     | `[]`                   |
+| `data[].id`             | N     | String             | M     |            64 | ID internal service.                                                                 | `svc_01JXYZ`           |
+| `data[].name`           | N     | String             | M     |           150 | Nama layanan.                                                                        | `Top Up Diamond 100`   |
+| `data[].gameId`         | N     | String             | M     |            64 | ID game terkait.                                                                     | `gm_01JXYZ`            |
+| `data[].gameName`       | N     | String/null        | O     |           100 | Nama game hasil relasi katalog.                                                      | `Mobile Legends`       |
+| `data[].categoryId`     | N     | String             | M     |            64 | ID kategori terkait.                                                                 | `cat_01JXYZ`           |
+| `data[].categoryName`   | N     | String/null        | O     |           100 | Nama kategori hasil relasi katalog.                                                  | `Top Up`               |
+| `data[].priceAmount`    | N     | Decimal/null       | C     |          18,2 | Harga fixed; null untuk custom price.                                                | `25000.00`             |
+| `data[].isCustomPrice`  | N     | Boolean            | M     |             — | Penanda custom pricing.                                                              | `false`                |
+| `data[].estimateText`   | N     | String             | M     |           100 | Estimasi display penyelesaian.                                                       | `Instan`               |
+| `data[].isActive`       | N     | Boolean            | M     |             — | Status publikasi layanan.                                                            | `true`                 |
+| `data[].updatedAt`      | N     | String (date-time) | M     |            35 | Waktu perubahan terakhir dalam ISO 8601 UTC.                                         | `2026-10-11T08:30:00Z` |
+| `pagination`            | N     | Object             | C     |             — | Metadata pagination di root, sejajar dengan `data`; hadir pada response list sukses. | `{}`                   |
+| `pagination.page`       | N     | Integer            | C     |      9 digits | Halaman efektif, dimulai dari 1; hadir pada response list sukses.                    | `1`                    |
+| `pagination.limit`      | N     | Integer            | C     |      3 digits | Batas hasil efektif; hadir pada response list sukses.                                | `20`                   |
+| `pagination.total`      | N     | Integer            | C     |     10 digits | Total service yang cocok sebelum pagination; hadir pada response list sukses.        | `1`                    |
+| `pagination.totalPages` | N     | Integer            | C     |      9 digits | Jumlah halaman hasil; `0` bila tidak ada hasil; hadir pada response list sukses.     | `1`                    |
 
 ### Success Example
 
 ```json
 {
-  "status": {
-    "code": "SRVS00000",
-    "message": "Services retrieved"
-  },
-  "data": {
-    "services": [
-      {
-        "id": "svc_01JXYZ",
-        "name": "Top Up Diamond 100",
-        "gameId": "gm_01JXYZ",
-        "gameName": "Mobile Legends",
-        "categoryId": "cat_01JXYZ",
-        "categoryName": "Top Up",
-        "priceAmount": 25000.0,
-        "isCustomPrice": false,
-        "estimateText": "Instan",
-        "isActive": true,
-        "updatedAt": "2026-10-11T08:30:00Z"
-      }
-    ],
-    "pagination": {
-      "limit": 20,
-      "offset": 0,
-      "total": 1
+  "code": "SRVS00000",
+  "message": "Services retrieved",
+  "data": [
+    {
+      "id": "svc_01JXYZ",
+      "name": "Top Up Diamond 100",
+      "gameId": "gm_01JXYZ",
+      "gameName": "Mobile Legends",
+      "categoryId": "cat_01JXYZ",
+      "categoryName": "Top Up",
+      "priceAmount": 25000.0,
+      "isCustomPrice": false,
+      "estimateText": "Instan",
+      "isActive": true,
+      "updatedAt": "2026-10-11T08:30:00Z"
     }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "totalPages": 1
   }
 }
 ```
@@ -197,10 +197,8 @@ Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `da
 
 ```json
 {
-  "status": {
-    "code": "SRVB02001",
-    "message": "Invalid service-list parameters"
-  },
+  "code": "SRVB02001",
+  "message": "Invalid service-list parameters",
   "data": null
 }
 ```
@@ -209,10 +207,8 @@ Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `da
 
 ```json
 {
-  "status": {
-    "code": "SRVT03001",
-    "message": "Service catalog is temporarily unavailable"
-  },
+  "code": "SRVT03001",
+  "message": "Service catalog is temporarily unavailable",
   "data": null
 }
 ```
@@ -239,40 +235,47 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## API Exposure Classification
 
-| Classification                 | Rationale                                                                                                                                  |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------ |
-| Enterprise Intranet (proposed) | Endpoint admin untuk katalog. Jika dapat diakses dari internet, klasifikasikan sebagai Public dan terapkan kontrol API publik yang sesuai. |
+| Classification            | Rationale                                                                                                                                  |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| TBD (deployment exposure) | Endpoint admin untuk katalog. Jika dapat diakses dari internet, klasifikasikan sebagai Public dan terapkan kontrol API publik yang sesuai. |
 
 ## Testing & Documentation Scope
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                      |
-| ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | API list admin baru. Uji search, filter kategori/status, pagination minimum/maksimum, hasil kosong, custom/fixed price, serta join tanpa duplikasi. VUser, CPU/memory, target TPS TBD menunggu forecast. |
-| VA/Pentest | Yes      | Verifikasi authentication/authorization, privilege boundaries, injection, parameter validation, IDOR pada category filter, dan pengecualian service soft-deleted.                                        |
+| NFT / VA-Pentest handoff   | Value                                                                                                                                                                                  |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Service / module           | Game Service Management                                                                                                                                                                |
+| Endpoint                   | `GET /api/admin/services/v1/list`                                                                                                                                                      |
+| Sample parameter / request | Query: `q=robux&categoryId=cat_01JXYZ&isActive=true&page=1&limit=20`                                                                                                                   |
+| Sample response            | Success code `SRVS00000`; use the complete Success Example below. Probe code `SRVB01002`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
+| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                               |
+| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                                |
+
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                   |
+| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFT        | Yes      | Validasi target contract untuk route list admin yang sudah tercatat di inventory. Uji search, filter kategori/status, pagination minimum/maksimum, hasil kosong, custom/fixed price, serta join tanpa duplikasi. VUser, CPU/memory, target TPS TBD menunggu forecast. |
+| VA/Pentest | Yes      | Verifikasi authentication/authorization, privilege boundaries, injection, parameter validation, IDOR pada category filter, dan pengecualian service soft-deleted.                                                                                                     |
 
 ## Assumptions
 
-- Endpoint, parameter, pagination, response envelope, service prefix/codes, dan permission adalah proposal karena backend service API belum didefinisikan.
-- Pagination menggunakan `limit`/`offset`, selaras dengan pola list game dalam solutioning. `limit=20`, maksimum `100` adalah proposal.
+- Parameter, pagination, response envelope, service prefix/codes, permission, dan perilaku target adalah proposal; method/path route tercatat pada inventory lokal.
+- Pagination menggunakan `page`/`limit`, selaras dengan pola list game dalam solutioning. `limit=20`, maksimum `100` adalah proposal.
 - Search terbatas pada nama layanan dan nama game sesuai UI placeholder/filter saat ini; status dan kategori menjadi filter terpisah.
 - Daftar menyertakan aktif/nonaktif dan mengecualikan soft-deleted service. Kategori/game nonaktif tetap terbaca dalam admin list.
 - Nama game/category di response berasal dari relasi katalog terkini; penanganan parent record yang hilang perlu diselaraskan dengan data-integrity policy.
-- `isCustomPrice` mengikuti proposal ERD, sementara UI model menandai custom dengan `price === null`. Currency diasumsikan konfigurasi platform tunggal; keputusan final TBD.
+- `isCustomPrice` mengikuti proposal ERD, sementara UI model menandai custom dengan `price === null`. Currency tidak disimpan per service pada proposal ERD; IFA publik mengusulkan turunannya dari `defaultCurrency` platform, yang masih menunggu keputusan D-03/D-05.
 - Identity provider, role mapping, SLA, rate limit, database engine, sort policy, serta category soft-delete visibility TBD.
 
 ## References
 
+- [Sprint 2 BRD](../../../BRD.md) — BR-019, pengelolaan layanan; BR-005, pembedaan harga tetap dan quote pada katalog publik.
 - `../../erd/service-erd.md` — field `game_service`, parent relationships, status, price constraints, soft-delete proposal.
 - `../../erd/game-catalog-erd.md` — game catalog source.
 - `../../erd/service-category-erd.md` — category source.
 - `./create-service.md` — contract create service dan price model proposal.
 - `./update-service.md` — contract update service.
 - `./delete-service.md` — soft-delete behavior.
-- `src/features/AdminServices/views/interfaces/admin-service.interface.ts` — table/form field model.
-- `src/features/AdminServices/views/templates/AdminServices.template.tsx` — search, filters, table, dan service form.
-- `src/features/AdminServices/views/pages/AdminServices.page.tsx` — mock data, category filter behavior, dan custom price representation.
 - `../games/get-list-games.md` — pagination dan service code convention pembanding.
 
 ## Current Go Implementation Alignment
 
-Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../../../sprint_1/solutioning/dashboard-management/QUESTION.md).
+The local route inventory records `GET /api/admin/services/v1/list` under `catalog-manage`, returning services plus game/category option projections; listed service fields include `price` and `estimate`, with no pagination fields. This IFA uses the same method/path, but permission, search/filter/pagination, response envelope, price fields, and target codes remain proposals not reconciled with that inventory. Coordinate admin display fields with catalog wire/ERD proposals (D-02/D-03/D-04/D-11). See the [route-to-handler coverage](../../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage).

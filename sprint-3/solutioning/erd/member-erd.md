@@ -136,7 +136,4 @@ Tier history is proposed because tier may be changed manually or recalculated. I
 ## References
 
 - `./user-management-erd.md` — canonical user account and status model.
-- `../../../sprint_1/erd/role-erd.md` — administrator role model.
-- `src/features/AdminMembers/views/interfaces/admin-member.interface.ts` — member UI data fields.
-- `src/features/AdminMembers/views/pages/AdminMembers.page.tsx` — current mock data and local status behavior.
-- `src/features/AdminMembers/views/templates/AdminMembers.template.tsx` — member list/detail, tier/status filters, order metrics.
+- [role-erd.md](../../../sprint-1/erd/role-erd.md) — administrator role model.

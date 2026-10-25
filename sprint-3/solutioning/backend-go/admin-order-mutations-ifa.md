@@ -179,5 +179,3 @@ Current Go JSON envelope: `{code,message,data?}`; error `data` is null. Exact su
 - [Public orders QUESTION.md](../public/orders/QUESTION.md)
 - [Admin order mutation decisions](../dashboard/orders/QUESTION.md)
 - `../dashboard/orders/get-detail-order.md`
-- `../../../../go-game-service-platform/internal/controller/http/admin_order_http.go`
-- `../../../../go-game-service-platform/internal/controller/admin_order.go`

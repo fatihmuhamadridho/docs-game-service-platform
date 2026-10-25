@@ -1,6 +1,6 @@
 # Checkout and manual payment implementation
 
-This note records the implemented checkout flow against `docs-game-service-platform/sprint_3/solutioning/public/checkout` contracts. It uses manually configured QRIS image or bank transfer details; no payment gateway is connected.
+This note records the implemented checkout flow for the Sprint 3 public checkout contracts. It uses manually configured QRIS image or bank transfer details; no payment gateway is connected.
 
 ## Checkout
 

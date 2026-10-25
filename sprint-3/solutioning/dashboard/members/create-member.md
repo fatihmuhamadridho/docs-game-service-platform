@@ -276,14 +276,9 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## References
 
-- `src/features/AdminUsers/views/interfaces/admin-user.interface.ts` — user form fields and current role/status options.
-- `src/features/AdminUsers/views/templates/AdminUsers.template.tsx` — create-user form in the admin UI.
-- `src/features/AdminManagement/views/interfaces/admin-account.interface.ts` — separate admin account role and status model.
-- `src/features/AdminManagement/views/templates/AdminManagement.template.tsx` — admin-account creation and note that invitation/permissions are not yet connected.
 - `../../erd/user-management-erd.md` — proposed customer account fields and lifecycle.
-- `../../../../sprint_1/erd/role-erd.md` — administrator role/permission assignment model.
-- `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — API contract template.
+- [role-erd.md](../../../../sprint-1/erd/role-erd.md) — administrator role/permission assignment model.
 
 ## Current Go Implementation Alignment
 
-Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../dashboard-management/QUESTION.md).
+Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../dashboard-management/QUESTION.md).

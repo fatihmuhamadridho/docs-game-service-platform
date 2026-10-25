@@ -33,4 +33,3 @@ Acceptance criteria are not planned deliverables. The separate [BR-010 candidate
 - [Sprint 3 solutioning](./solutioning/README.md)
 - [Sprint 3 identity/email open questions](./solutioning/public/auth/QUESTION.md)
 - [Sprint 3 glossary](./GLOSSARY.md)
-- [Artwork reference](./reference/game-artwork-sources.md)

@@ -135,7 +135,6 @@ Database engine and index syntax are TBD. If a source payment can produce multip
 
 ## Assumptions / Decisions Needed
 
-- Model is inferred from `AdminTransactions` UI, `Order ERD`, and refund/payout interfaces; no approved transaction API or accounting ledger specification exists in `docs/sprint_1/solutioning`.
 - Confirm whether transaction table is a derived read model from payment/refund tables or the financial system of record. This ERD treats it as a linked transaction record while preserving source workflows.
 - Resolve method mismatch: checkout currently offers `QRIS` and manual `Transfer Bank BCA`; AdminTransactions UI uses `QRIS` and `BCA Virtual Account`. Confirm manual transfer vs actual VA provider before fixing method enum.
 - Confirm whether failed/rejected payment attempts appear as transaction rows or only settled/financially relevant movements.
@@ -148,9 +147,5 @@ Database engine and index syntax are TBD. If a source payment can produce multip
 
 ## References
 
-- `src/features/AdminTransactions/views/interfaces/admin-transaction.interface.ts` — transaction list types, labels, methods, and statuses.
-- `src/features/AdminRefunds/views/interfaces/admin-refund.interface.ts` — refund source fields and status flow.
-- `src/features/AdminPayouts/views/interfaces/admin-payout.interface.ts` — separate payout/disbursement interface.
-- `src/features/AdminBankAccounts/views/interfaces/admin-bank-account.interface.ts` — bank destination account fields.
 - `./order-erd.md` — order payment attempts and manual proof validation model.
 - `./user-management-erd.md` — user account reference.

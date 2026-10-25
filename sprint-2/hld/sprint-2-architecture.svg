@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="648" viewBox="0 0 1000 720" role="img" aria-labelledby="title desc">
+  <title id="title">Sprint 2 target architecture draft</title>
+  <desc id="desc">Visitors and administrators use the Next.js web app and Go API deployed through Vercel, following the Sprint 1 HLD baseline. The API accesses the existing MongoDB platform database outside that boundary. Current settings PUT records an activity event, but the wider BR-022 guarantees and topology remain undecided. Settings cache and propagation are target decisions.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#40536b"/></marker>
+    <style>
+      .bg{fill:#f7f9fc}.box{fill:#fff;stroke:#45617f;stroke-width:2;rx:14}.pending{fill:#fff9e8;stroke:#bd8b23;stroke-width:2;stroke-dasharray:8 6;rx:14}.boundary{fill:none;stroke:#95a7ba;stroke-width:2;stroke-dasharray:9 7;rx:24}.title{font:700 23px Arial,sans-serif;fill:#10263d}.label{font:700 17px Arial,sans-serif;fill:#17324d}.sub{font:14px Arial,sans-serif;fill:#40536b}.edge{stroke:#40536b;stroke-width:2.5;fill:none;marker-end:url(#arrow)}.proposedEdge{stroke:#8b6a1b;stroke-width:2.5;stroke-dasharray:7 5;fill:none;marker-end:url(#arrow)}.edgeText{font:13px Arial,sans-serif;fill:#334a62}.note{font:14px Arial,sans-serif;fill:#70520c}
+    </style>
+  </defs>
+  <rect class="bg" width="1000" height="720"/>
+  <text class="title" x="32" y="45">JokiHub Sprint 2 — target boundary (Draft)</text>
+
+  <rect class="boundary" x="230" y="80" width="555" height="405"/>
+  <text class="label" x="255" y="112">Vercel deployment boundary — environment topology TBD</text>
+
+  <rect class="box" x="30" y="185" width="170" height="82"/>
+  <text class="label" x="115" y="218" text-anchor="middle">Visitor</text>
+  <text class="sub" x="115" y="243" text-anchor="middle">Public catalog</text>
+
+  <rect class="box" x="30" y="315" width="170" height="82"/>
+  <text class="label" x="115" y="348" text-anchor="middle">Administrator</text>
+  <text class="sub" x="115" y="373" text-anchor="middle">Authorized dashboard</text>
+
+  <rect class="box" x="250" y="205" width="220" height="145"/>
+  <text class="label" x="360" y="245" text-anchor="middle">Next.js Web App</text>
+  <text class="sub" x="360" y="273" text-anchor="middle">Storefront + Admin UI</text>
+  <text class="sub" x="360" y="300" text-anchor="middle">Sprint 2 persistence TBD</text>
+
+  <rect class="box" x="550" y="205" width="220" height="145"/>
+  <text class="label" x="660" y="245" text-anchor="middle">Go API</text>
+  <text class="sub" x="660" y="273" text-anchor="middle">Recorded public/admin routes</text>
+  <text class="sub" x="660" y="300" text-anchor="middle">Sprint 2 target mapping TBD</text>
+
+  <rect class="box" x="825" y="205" width="150" height="145"/>
+  <text class="label" x="900" y="245" text-anchor="middle">MongoDB</text>
+  <text class="sub" x="900" y="273" text-anchor="middle">Existing platform DB</text>
+  <text class="sub" x="900" y="300" text-anchor="middle">Hosting/schema TBD</text>
+
+  <path class="edge" d="M200 226 L250 240"/>
+  <text class="edgeText" x="205" y="215">HTTPS</text>
+  <path class="edge" d="M200 356 L250 310"/>
+  <text class="edgeText" x="205" y="365">HTTPS</text>
+  <path class="edge" d="M470 278 L550 278"/>
+  <text class="edgeText" x="510" y="261" text-anchor="middle">REST / HTTPS</text>
+  <path class="edge" d="M770 278 L825 278"/>
+  <text class="edgeText" x="797" y="261" text-anchor="middle">Mongo</text>
+
+  <rect class="pending" x="280" y="525" width="280" height="105"/>
+  <text class="label" x="420" y="567" text-anchor="middle">Observed settings event</text>
+  <text class="note" x="420" y="593" text-anchor="middle">BR-022 guarantees / topology TBD</text>
+
+  <rect class="pending" x="620" y="525" width="300" height="105"/>
+  <text class="label" x="770" y="567" text-anchor="middle">Settings cache / propagation</text>
+  <text class="note" x="770" y="593" text-anchor="middle">Mechanism / freshness TBD</text>
+
+  <path class="edge" d="M610 350 C610 425 530 475 460 525"/>
+  <text class="edgeText" x="495" y="447" text-anchor="middle">Recorded on settings PUT</text>
+  <path class="proposedEdge" d="M710 350 C710 425 745 475 765 525"/>
+  <text class="edgeText" x="755" y="447" text-anchor="middle">Target policy TBD</text>
+
+  <text class="sub" x="32" y="673">Settings PUT records an activity event; this does not establish complete BR-022 coverage or guarantees.</text>
+  <text class="sub" x="32" y="699">Reconcile target components with approved BRD, MongoDB data design, IFAs, security policy, and operational SLA before release.</text>
+</svg>

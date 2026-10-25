@@ -7,7 +7,9 @@
 
 ## Design
 
-API memperbarui satu layanan game dari modal edit Admin Services. UI mengirim seluruh field form: game, kategori, nama, harga fixed/custom, estimasi, dan status aktif. API memvalidasi ID serta relasi game/kategori, memastikan kombinasi harga valid, mempertahankan ID dan `createdAt`, memperbarui `updatedAt`, dan mencatat audit. Perubahan katalog tidak menulis ulang snapshot layanan atau harga pada order historis.
+IFA ini mengusulkan pembaruan satu layanan game dari modal edit Admin Services. UI mengirim seluruh field form: game, kategori, nama, harga fixed/custom, estimasi, dan status aktif. Target API memvalidasi ID serta relasi game/kategori, memastikan kombinasi harga valid, mempertahankan ID dan `createdAt`, serta memperbarui `updatedAt`. Perubahan katalog tidak menulis ulang snapshot layanan atau harga pada order historis.
+
+> **Status kontrak target:** Struktur response mengikuti baseline Sprint 1 `{code,message,data}`. Service code, HTTP mapping, dan permission per route masih perlu disepakati terhadap inventory; auth/HTTP compatibility dicatat di D-11 dan extension permission/grant role di D-18.
 
 ## Sequence Diagram
 
@@ -17,7 +19,7 @@ sequenceDiagram
     participant UI as Admin Dashboard UI
     participant API as Game Service Management API
     participant DB as Catalog Database
-    participant Audit as Platform Audit Service
+    participant Audit as Audit policy (TBD)
     Admin->>UI: Edit layanan dan simpan perubahan
     UI->>API: PUT /api/admin/services/v1/update/{serviceId} dengan payload dan kredensial admin
     API->>API: Autentikasi dan otorisasi izin service-update
@@ -40,12 +42,11 @@ sequenceDiagram
                 API-->>UI: 400 SRVB02002, data null
                 UI-->>Admin: Tampilkan referensi tidak dapat digunakan
             else Referensi valid
-                API->>DB: Update game_service secara atomik
+                API->>DB: Simpan perubahan game_service setelah validasi referensi
                 alt Update berhasil
                     DB-->>API: Service terbaru
-                    API->>Audit: Catat actor, perubahan field, serviceId, dan timestamp
-                    Audit-->>API: Audit tercatat atau diterima sesuai kontrak audit
-                    API-->>UI: 200 SRVS00000, data.service
+                    Note over API,Audit: BR-022 mewajibkan audit event, tetapi delivery dan failure policy belum diputuskan
+                    API-->>UI: 200 SRVS00000, data
                     UI-->>Admin: Tampilkan konfirmasi dan data terbaru
                 else Database gagal
                     DB-->>API: Kegagalan update
@@ -59,9 +60,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                                        | VUser                                   | CPU / Memory                             | Response Time                                                                        |
-| --------------------------------------------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------ |
-| TBD; konfirmasi criticality dan availability target | TBD; konfirmasi concurrent admin puncak | TBD; tetapkan dari capacity estimate/NFT | TBD; usulan baseline web non-kritis: ideal 200 ms, acceptable 1 s, max tolerable 2 s |
+| Success Rate                                        | VUser                                   | CPU / Memory                             | Response Time                                                 |
+| --------------------------------------------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
+| TBD; konfirmasi criticality dan availability target | TBD; konfirmasi concurrent admin puncak | TBD; tetapkan dari capacity estimate/NFT | TBD; target belum ditetapkan; baseline opsional menunggu D-12 |
 
 ## General Information
 
@@ -77,49 +78,52 @@ sequenceDiagram
 
 ### Path / Endpoint
 
-| Section        | Value                                           |
-| -------------- | ----------------------------------------------- |
-| Host / Domain  | `{host}` (environment-specific)                 |
-| Service Name   | Game Service Management                         |
-| Version        | `v1`                                            |
-| Resource       | `/admin/services/v1/update/{serviceId}`         |
-| Final Endpoint | `PUT /api/admin/services/v1/update/{serviceId}` |
+| Section                  | Value                                           |
+| ------------------------ | ----------------------------------------------- |
+| Host / Domain            | `{host}` (environment-specific)                 |
+| Service Name             | Game Service Management                         |
+| Version                  | `v1`                                            |
+| Resource                 | `/admin/services/v1/update/{serviceId}`         |
+| Proposed target endpoint | `PUT /api/admin/services/v1/update/{serviceId}` |
 
 ### API Versioning
 
-- **Decision:** New Endpoint
-- **Previous Endpoint:** Belum ada API update layanan admin yang teridentifikasi pada solutioning sprint ini.
-- **Final Endpoint (current Go):** `PUT /api/admin/services/v1/update/{serviceId}`
-- **Backward Compatibility:** Belum ada consumer API ini yang teridentifikasi. Penambahan field request opsional bersifat kompatibel; perubahan kontrak yang mematahkan consumer memerlukan major version baru.
+- **Inventory status:** Method/path yang sama tercatat pada route inventory repo ini; bagian ini bukan klaim bahwa route belum ada.
+- **Target contract:** IFA mengusulkan perilaku pada `PUT /api/admin/services/v1/update/{serviceId}`; payload semantics, permission, response, dan status target belum disetujui terhadap inventory.
+- **Versioning:** Tetap `v1` pada usulan ini; perubahan kompatibilitas perlu keputusan API owner.
+- **Proposed target endpoint:** `PUT /api/admin/services/v1/update/{serviceId}`
+- **Backward Compatibility:** Consumer belum dinilai. Penambahan field hanya dapat dianggap kompatibel setelah perilaku consumer diverifikasi; perubahan field/semantik/status yang mematahkan consumer memerlukan keputusan versioning API owner.
 - **Reason:** Admin perlu mengubah semua atribut layanan melalui form edit yang mengirim keseluruhan model.
 
 ## Business Rules
 
-1. Hanya administrator terautentikasi dengan izin `service-update` yang dapat memperbarui layanan. Role mapping final TBD.
+1. Session cookie harus valid; `Origin` harus exact-allowlisted; token CSRF dan permission `service-update` harus valid. Role mapping dan HTTP/service-code mapping auth tetap mengikuti API standard yang disetujui.
 2. `serviceId` adalah ID immutable `game_service.service_id`; body tidak boleh mengubah ID, `createdAt`, `updatedAt`, atau `deletedAt`.
 3. Hanya layanan yang ada dan belum soft-deleted dapat diperbarui. Layanan aktif maupun nonaktif dapat diedit.
 4. Payload adalah full replacement untuk field form: `gameId`, `categoryId`, `name`, `isCustomPrice`, `priceAmount`, `estimateText`, dan `isActive` wajib dikirim. Penghilangan field bukan instruksi untuk mempertahankan nilai lama.
 5. `gameId` dan `categoryId` harus merujuk game dan kategori yang ada serta belum soft-deleted. Layanan aktif hanya boleh menunjuk game dan kategori aktif, mengikuti ERD; aturan mengedit layanan menjadi nonaktif pada parent nonaktif tetap perlu dipastikan.
 6. `name` wajib, di-trim, tidak kosong, dan maksimal 150 karakter. ERD belum menetapkan uniqueness scope; update tidak memberlakukan aturan nama unik baru tanpa keputusan product/API owner.
 7. Harga fixed membutuhkan `isCustomPrice=false` dan `priceAmount >= 0`. Harga custom membutuhkan `isCustomPrice=true` dan `priceAmount=null`. Kombinasi yang tidak sesuai ditolak.
-8. Mata uang mengikuti konfigurasi platform tunggal yang masih perlu dikonfirmasi. Request tidak menerima currency karena kolom currency belum ada pada ERD.
+8. Mata uang tidak dikirim dalam request dan tidak disimpan per service pada proposal ERD. Usulan response publik menurunkan currency dari `defaultCurrency` platform; ownership, perubahan nilai, presisi, dan konsistensi dengan order snapshot perlu keputusan D-03/D-05.
 9. `estimateText` wajib, di-trim, dan maksimal 100 karakter. Nilainya adalah teks estimasi, bukan SLA atau jaminan fulfillment.
 10. `isActive` menentukan ketersediaan layanan baru pada storefront. Menonaktifkan layanan tidak menghapus order atau referensi historis.
 11. Perubahan `gameId`, `categoryId`, nama, harga, atau estimasi hanya memengaruhi katalog untuk pemesanan baru. Snapshot pada order yang sudah dibuat tetap immutable sesuai Order ERD.
 12. `updatedAt` ditetapkan service dalam UTC. `createdAt` tetap. Usulan: no-op tidak mengubah timestamp dan tidak menghasilkan audit perubahan.
-13. Validasi parent dan update harus atomik terhadap concurrent deactivation/deletion; FK dan transaksi/recheck melindungi integritas.
-14. Audit mencatat actor, service ID, perubahan before/after yang relevan, dan waktu. Gunakan pola audit durable platform; detail transaksi/outbox TBD.
+13. Validasi parent dan update harus konsisten terhadap concurrent deactivation/deletion. MongoDB tidak menegakkan FK; mekanisme koordinasi/recheck write dan consistency guarantee masih harus diputuskan.
+14. Kebutuhan serta event boundary audit untuk operasi update ini harus ditetapkan konsisten dengan BR-022/D-07. Field diff/allowlist, delivery/durability, atomicity, dan perilaku gagal belum ditetapkan (D-08); jangan mengasumsikan perubahan bisnis pasti bercommit bersama event.
 15. Update tidak membuat atau menghapus game, kategori, order, payment, maupun data fulfillment.
 
 ## Request Headers
 
-| Header          | E/N/T | Type   | M/O/C | Max Length | Description                                                                      | Example                 |
-| --------------- | ----- | ------ | ----- | ---------: | -------------------------------------------------------------------------------- | ----------------------- |
-| `Authorization` | N     | String | M     |       4096 | Kredensial administrator; skema mengikuti identity provider.                     | `Bearer {access-token}` |
-| `Content-Type`  | N     | String | M     |        100 | Format payload.                                                                  | `application/json`      |
-| `Accept`        | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.                               | `application/json`      |
-| `X-Request-Id`  | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.                              | `req-1f56a9`            |
-| `If-Match`      | N     | String | O     |        100 | ETag/version untuk optimistic concurrency bila platform mendukung; dukungan TBD. | `W/"v4"`                |
+| Header         | E/N/T | Type   | M/O/C | Max Length | Description                                                                      | Example                      |
+| -------------- | ----- | ------ | ----- | ---------: | -------------------------------------------------------------------------------- | ---------------------------- |
+| `Cookie`       | E     | String | M     |        TBD | Session admin dikirim browser; nama dan atribut cookie mengikuti auth Sprint 1.  | `{admin session cookie}`     |
+| `Origin`       | N     | String | M     |        TBD | Origin dashboard harus cocok dengan allowlist.                                   | `https://admin.example.test` |
+| `X-CSRF-Token` | N     | String | M     |        TBD | Token CSRF untuk request admin cookie-authenticated.                             | `{csrf-token}`               |
+| `Content-Type` | N     | String | M     |        100 | Format payload.                                                                  | `application/json`           |
+| `Accept`       | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.                               | `application/json`           |
+| `X-Request-Id` | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.                              | `req-1f56a9`                 |
+| `If-Match`     | N     | String | O     |        100 | ETag/version untuk optimistic concurrency bila platform mendukung; dukungan TBD. | `W/"v4"`                     |
 
 ## Request Parameters
 
@@ -155,7 +159,7 @@ sequenceDiagram
 
 ### Request Validation
 
-1. `Authorization` harus mengidentifikasi administrator terautentikasi dengan izin `service-update`. Kembalikan `SRVB01001` bila belum terautentikasi dan `SRVB01002` bila tidak berizin.
+1. Session cookie harus valid; `Origin` harus exact-allowlisted; token CSRF dan permission `service-update` harus valid. HTTP/service-code mapping auth dan CSRF tetap mengikuti API standard yang disetujui.
 2. `serviceId` wajib, tidak kosong, maksimal 64 karakter, dan mengikuti format ID implementasi. Format invalid menghasilkan `SRVB02001`.
 3. Body wajib JSON object valid. Tolak field tak dikenal termasuk `id`, `serviceId`, `createdAt`, `updatedAt`, dan `deletedAt` dengan `SRVB02001`.
 4. Semua field bisnis wajib hadir. `gameId` dan `categoryId` berupa string non-kosong maksimal 64 karakter; `name` berupa string setelah trim, tidak kosong, maksimal 150 karakter.
@@ -169,51 +173,45 @@ sequenceDiagram
 
 ## Response Body
 
-Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `data: null`.
+Semua response target menggunakan envelope Sprint 1 `{code,message,data}`. Untuk detail, `data` langsung berisi object resource; untuk list, `data` adalah array dan `pagination` sibling di root. Error mengembalikan `data: null`.
 
-| Attribute                    | E/N/T | Type               | M/O/C | Max Length | Description                           | Example                |
-| ---------------------------- | ----- | ------------------ | ----- | ---------: | ------------------------------------- | ---------------------- |
-| `status`                     | N     | Object             | M     |          — | Object status response.               | `{}`                   |
-| `status.code`                | N     | String             | M     |         20 | Service status code.                  | `SRVS00000`            |
-| `status.message`             | N     | String             | O     |        200 | Pesan hasil untuk consumer.           | `Service updated`      |
-| `data`                       | N     | Object/null        | M     |          — | Payload hasil; `null` ketika error.   | `{}`                   |
-| `data.service`               | N     | Object             | M     |          — | Layanan setelah update.               | `{}`                   |
-| `data.service.id`            | N     | String             | M     |         64 | ID layanan yang tetap.                | `svc_01JXYZ`           |
-| `data.service.gameId`        | N     | String             | M     |         64 | ID game terbaru.                      | `gm_01JXYZ`            |
-| `data.service.gameName`      | N     | String             | M     |        100 | Nama game hasil projection.           | `Mobile Legends`       |
-| `data.service.categoryId`    | N     | String             | M     |         64 | ID kategori terbaru.                  | `cat_01JXYZ`           |
-| `data.service.categoryName`  | N     | String             | M     |        100 | Nama kategori hasil projection.       | `Top Up`               |
-| `data.service.name`          | N     | String             | M     |        150 | Nama layanan terbaru.                 | `Top Up 100 Diamonds`  |
-| `data.service.priceAmount`   | N     | Decimal/null       | C     |       18,2 | Harga terbaru atau null untuk custom. | `30000.00`             |
-| `data.service.isCustomPrice` | N     | Boolean            | M     |          — | Status custom pricing.                | `false`                |
-| `data.service.estimateText`  | N     | String             | M     |        100 | Estimasi terbaru.                     | `Instan`               |
-| `data.service.isActive`      | N     | Boolean            | M     |          — | Status aktif terbaru.                 | `true`                 |
-| `data.service.createdAt`     | N     | String (date-time) | M     |         35 | Waktu pembuatan awal, tidak berubah.  | `2026-10-10T08:00:00Z` |
-| `data.service.updatedAt`     | N     | String (date-time) | M     |         35 | Waktu update UTC.                     | `2026-10-11T10:20:00Z` |
+| Attribute            | E/N/T | Type               | M/O/C | Max Length | Description                           | Example                |
+| -------------------- | ----- | ------------------ | ----- | ---------: | ------------------------------------- | ---------------------- |
+| `code`               | N     | String             | M     |         20 | Service code.                         | `SRVS00000`            |
+| `message`            | N     | String             | O     |        200 | Pesan hasil untuk consumer.           | `Service updated`      |
+| `data`               | N     | Object/null        | M     |          — | Payload hasil; `null` ketika error.   | `{}`                   |
+| `data.id`            | N     | String             | M     |         64 | ID layanan yang tetap.                | `svc_01JXYZ`           |
+| `data.gameId`        | N     | String             | M     |         64 | ID game terbaru.                      | `gm_01JXYZ`            |
+| `data.gameName`      | N     | String             | M     |        100 | Nama game hasil projection.           | `Mobile Legends`       |
+| `data.categoryId`    | N     | String             | M     |         64 | ID kategori terbaru.                  | `cat_01JXYZ`           |
+| `data.categoryName`  | N     | String             | M     |        100 | Nama kategori hasil projection.       | `Top Up`               |
+| `data.name`          | N     | String             | M     |        150 | Nama layanan terbaru.                 | `Top Up 100 Diamonds`  |
+| `data.priceAmount`   | N     | Decimal/null       | C     |       18,2 | Harga terbaru atau null untuk custom. | `30000.00`             |
+| `data.isCustomPrice` | N     | Boolean            | M     |          — | Status custom pricing.                | `false`                |
+| `data.estimateText`  | N     | String             | M     |        100 | Estimasi terbaru.                     | `Instan`               |
+| `data.isActive`      | N     | Boolean            | M     |          — | Status aktif terbaru.                 | `true`                 |
+| `data.createdAt`     | N     | String (date-time) | M     |         35 | Waktu pembuatan awal, tidak berubah.  | `2026-10-10T08:00:00Z` |
+| `data.updatedAt`     | N     | String (date-time) | M     |         35 | Waktu update UTC.                     | `2026-10-11T10:20:00Z` |
 
 ### Success Example
 
 ```json
 {
-  "status": {
-    "code": "SRVS00000",
-    "message": "Service updated"
-  },
+  "code": "SRVS00000",
+  "message": "Service updated",
   "data": {
-    "service": {
-      "id": "svc_01JXYZ",
-      "gameId": "gm_01JXYZ",
-      "gameName": "Mobile Legends",
-      "categoryId": "cat_01JXYZ",
-      "categoryName": "Top Up",
-      "name": "Top Up 100 Diamonds",
-      "priceAmount": 30000.0,
-      "isCustomPrice": false,
-      "estimateText": "Instan",
-      "isActive": true,
-      "createdAt": "2026-10-10T08:00:00Z",
-      "updatedAt": "2026-10-11T10:20:00Z"
-    }
+    "id": "svc_01JXYZ",
+    "gameId": "gm_01JXYZ",
+    "gameName": "Mobile Legends",
+    "categoryId": "cat_01JXYZ",
+    "categoryName": "Top Up",
+    "name": "Top Up 100 Diamonds",
+    "priceAmount": 30000.0,
+    "isCustomPrice": false,
+    "estimateText": "Instan",
+    "isActive": true,
+    "createdAt": "2026-10-10T08:00:00Z",
+    "updatedAt": "2026-10-11T10:20:00Z"
   }
 }
 ```
@@ -222,10 +220,8 @@ Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `da
 
 ```json
 {
-  "status": {
-    "code": "SRVB02002",
-    "message": "Game or category is unavailable for this service"
-  },
+  "code": "SRVB02002",
+  "message": "Game or category is unavailable for this service",
   "data": null
 }
 ```
@@ -234,10 +230,8 @@ Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `da
 
 ```json
 {
-  "status": {
-    "code": "SRVT03001",
-    "message": "Service catalog is temporarily unavailable"
-  },
+  "code": "SRVT03001",
+  "message": "Service catalog is temporarily unavailable",
   "data": null
 }
 ```
@@ -266,41 +260,44 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## API Exposure Classification
 
-| Classification                 | Rationale                                                                                                                               |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------- |
-| Enterprise Intranet (proposed) | Operasi tulis katalog admin. Jika endpoint dapat diakses dari internet, klasifikasikan sebagai Public dan terapkan proteksi API publik. |
+| Classification            | Rationale                                                                                                                               |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| TBD (deployment exposure) | Operasi tulis katalog admin. Jika endpoint dapat diakses dari internet, klasifikasikan sebagai Public dan terapkan proteksi API publik. |
 
 ## Testing & Documentation Scope
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                              |
-| ---------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | API update admin baru. Uji update setiap field, fixed/custom price, parent aktif/nonaktif/deleted, perubahan relasi, no-op, concurrency, serta persistence. VUser, CPU/memory, target TPS TBD menunggu forecast. |
-| VA/Pentest | Yes      | Uji authentication/authorization, IDOR, mass assignment, validasi referensi, race condition, audit attribution, dan pastikan snapshot order lama tidak berubah.                                                  |
+| NFT / VA-Pentest handoff   | Value                                                                                                                                                                                  |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Service / module           | Game Service Management                                                                                                                                                                |
+| Endpoint                   | `PUT /api/admin/services/v1/update/{serviceId}`                                                                                                                                        |
+| Sample parameter / request | Path: `serviceId=svc_01JXYZ`; body uses `isCustomPrice=false`, `priceAmount=30000`                                                                                                     |
+| Sample response            | Success code `SRVS00000`; use the complete Success Example below. Probe code `SRVB01002`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
+| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                               |
+| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                                |
 
-## Current Go behavior vs proposed target
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                           |
+| ---------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFT        | Yes      | Validasi target contract untuk route update admin yang sudah tercatat di inventory. Uji update setiap field, fixed/custom price, parent aktif/nonaktif/deleted, perubahan relasi, no-op, concurrency, serta persistence. VUser, CPU/memory, target TPS TBD menunggu forecast. |
+| VA/Pentest | Yes      | Uji authentication/authorization, IDOR, mass assignment, validasi referensi, race condition, audit attribution, dan pastikan snapshot order lama tidak berubah.                                                                                                               |
 
-- Go route: `PUT /api/admin/services/v1/update/{serviceId}`; requires admin session and `catalog-manage`; accepts partial `gameId`, `categoryId`, `name`, `priceAmount`, `isCustomPrice`, `estimateText`, `isActive`; unknown keys/type errors return 400 `SRVB02001`; success HTTP 200 `SRVS00000` with `data.service`; service enforces pricing consistency and audit context. FE page sends PUT with these keys to exact path.
-- Current Go envelope is `{code,message,data?}`. Exact numeric/string bounds and target response envelope remain subject to source/owner confirmation.
+## Current Implementation Alignment
+
+The local route inventory records `PUT /api/admin/services/v1/update/{serviceId}` under `catalog-manage`; it describes partial fields merged with the persisted service before validation. This IFA uses the same method/path, but permission, payload semantics, response envelope, and target status codes remain proposals not reconciled with that inventory. Resolve catalog lifecycle, price representation, auth, and audit decisions before implementation (D-02/D-03/D-04/D-11). See the [route-to-handler coverage](../../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage).
 
 ## Assumptions
 
-- Endpoint, response envelope, permission, dan prefix `SRV` mengikuti usulan pada [Create Service](create-service.md); belum ada backend contract yang disetujui.
+- Root envelope mengikuti Sprint 1; permission, payload, status code, dan prefix `SRV` mengikuti usulan pada [Create Service](create-service.md) dan masih menunggu persetujuan, walaupun method/path route tercatat pada inventory lokal.
 - `PUT` dipakai karena modal edit mengirim seluruh field. Penggunaan `PATCH` memerlukan semantik omission/null yang berbeda.
 - ERD belum menetapkan name uniqueness, currency schema, atau aturan update ke parent inactive; keputusan product/API owner diperlukan.
 - Flag `isCustomPrice` merupakan field eksplisit pada proposed persistence model; UI saat ini merepresentasikannya sebagai `price === null`.
-- Audit mechanism, optimistic concurrency/ETag, identity provider, role mapping, auth HTTP mapping, database engine, dan SLA TBD.
+- BR-022 mewajibkan event, tetapi target audit store/service, delivery/atomicity, serta respons saat gagal belum diputuskan; diagram tidak mengasumsikan platform audit service tertentu.
+- Optimistic concurrency/ETag, identity provider, role mapping, auth HTTP mapping, database engine, dan SLA TBD.
 
 ## References
 
+- [Sprint 2 BRD](../../../BRD.md) — BR-019, pengelolaan layanan; BR-005, pembedaan harga tetap dan quote pada katalog publik.
 - `../../erd/service-erd.md` — field layanan, harga, relasi, lifecycle, dan order snapshot rule.
 - `../../erd/game-catalog-erd.md` — status dan lifecycle game.
 - `../../erd/service-category-erd.md` — status dan lifecycle kategori.
 - `./create-service.md` — kontrak create dan validasi service baseline.
-- `src/features/AdminServices/views/interfaces/admin-service.interface.ts` — field layanan pada UI.
-- `src/features/AdminServices/views/templates/AdminServices.template.tsx` — form edit, harga custom, estimasi, status, dan relasi.
-- `src/features/AdminServices/views/pages/AdminServices.page.tsx` — alur edit form dan mock behavior.
-- `docs-game-service-platform/sprint_3/solutioning/erd/order-erd.md` — snapshot transaksi/order yang tidak boleh berubah saat katalog diperbarui.
-
-## Current Go Implementation Alignment
-
-Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../../../sprint_1/solutioning/dashboard-management/QUESTION.md).
+- [order-erd.md](../../../../sprint-3/solutioning/erd/order-erd.md) — snapshot transaksi/order yang tidak boleh berubah saat katalog diperbarui.

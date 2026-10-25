@@ -284,7 +284,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Current Go implementation — source evidence, not target
 
-`GET /api/orders/v1/tracking/{orderNumber}/status` is implemented in `go-game-service-platform/internal/controller/http/order_http.go` and `internal/controller/order.go`.
+`GET /api/orders/v1/tracking/{orderNumber}/status` is an implemented public read route.
 
 | Area        | Current implementation                                                                                                                                                                                                                                                                                                  |
 | ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -299,9 +299,5 @@ See [order tracking open decisions](QUESTION.md) for target lifecycle and displa
 
 - `QUESTION.md` — unresolved tracking lifecycle/display decisions.
 - `../../backend-go/order-payment-ifa.md` — current Go payment/tracking behavior.
-- `src/app/cek-pesanan/[orderId]/page.tsx` — public detail tracking route.
-- `src/features/OrderTracking/views/pages/OrderTracking.page.tsx` — lookup form and current redirect behavior.
-- `src/features/OrderTracking/views/pages/OrderTrackingResult.page.tsx` — timeline and public fields shown by UI.
-- `docs-game-service-platform/sprint_3/solutioning/public/orders/track-order.md` — lookup verification and tracking token proposal.
-- `docs-game-service-platform/sprint_3/solutioning/erd/order-erd.md` — order/payment status histories and customer snapshot.
-- `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — API contract template.
+- [track-order.md](track-order.md) — lookup verification and tracking token proposal.
+- [order-erd.md](../../erd/order-erd.md) — order/payment status histories and customer snapshot.

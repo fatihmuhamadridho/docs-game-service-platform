@@ -75,7 +75,7 @@ sequenceDiagram
 3. Reset token must match source token pattern, be unexpired, and be consumed once. Success changes password and revokes customer refresh sessions.
 4. Admin credentials are checked only against admin identity for admin login. Authenticated admin routes require valid admin access token.
 5. Rate limiting returns HTTP 429 and `Retry-After`; no retry target should be inferred by client.
-6. Go source envelope is `{ "code": "...", "message": "...", "data": ... }`. The nested `{status:{code,message},data}` shape in examples below is a **proposed target**, not current wire behavior. Do not change clients until envelope decision is approved.
+6. Go source envelope is `{ "code": "...", "message": "...", "data":... }`. The nested `{status:{code,message},data}` shape in examples below is a **proposed target**, not current wire behavior. Do not change clients until envelope decision is approved.
 
 ## Request Headers
 
@@ -225,4 +225,3 @@ Proposed template target (not current Go wire):
 ## References
 
 - [Public auth QUESTION.md](QUESTION.md)
-- `../../../../../go-game-service-platform/internal/controller/http/auth_http.go`

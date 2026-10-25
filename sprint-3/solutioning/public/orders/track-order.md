@@ -285,7 +285,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Current Go implementation — source evidence, not target
 
-`POST /api/orders/v1/tracking/lookup` is implemented in `go-game-service-platform/internal/controller/http/order_http.go` and `internal/controller/order.go`.
+`POST /api/orders/v1/tracking/lookup` is implemented.
 
 | Area                  | Current implementation                                                                                                                                                                                                                                                                                                                                           |
 | --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -300,10 +300,5 @@ See [order tracking open decisions](QUESTION.md) for target token lifetime and r
 
 - `QUESTION.md` — unresolved tracking lifecycle/display decisions.
 - `../../backend-go/order-payment-ifa.md` — current Go payment/tracking behavior.
-- `src/app/cek-pesanan/page.tsx` — public order lookup route.
-- `src/app/cek-pesanan/[orderId]/page.tsx` — public tracking result route.
-- `src/features/OrderTracking/views/pages/OrderTracking.page.tsx` — order number/WhatsApp form and current navigation behavior.
-- `src/features/OrderTracking/views/pages/OrderTrackingResult.page.tsx` — current simulated status and timeline presentation.
-- `docs-game-service-platform/sprint_3/solutioning/erd/order-erd.md` — order, payment, and status history model plus tracking verification notes.
-- `docs-game-service-platform/sprint_3/solutioning/public/checkout/continue-to-payment.md` — checkout order creation and initial statuses.
-- `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — API contract template.
+- [order-erd.md](../../erd/order-erd.md) — order, payment, and status history model plus tracking verification notes.
+- [continue-to-payment.md](../checkout/continue-to-payment.md) — checkout order creation and initial statuses.

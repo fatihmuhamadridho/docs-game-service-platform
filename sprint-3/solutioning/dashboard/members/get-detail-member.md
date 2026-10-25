@@ -238,10 +238,8 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - `./get-list-members.md` — list fields, PII boundaries, and service codes.
 - `./create-member.md` — scope account provisioning and separation from administrator account creation.
 - `../../erd/user-management-erd.md` — customer account model.
-- `src/features/AdminUsers/views/interfaces/admin-user.interface.ts` — field detail user di UI.
-- `src/features/AdminUsers/views/templates/AdminUsers.template.tsx` — modal detail user dan data yang ditampilkan.
-- `docs-game-service-platform/sprint_1/solutioning/dashboard/games/get-detail-game.md` — pola endpoint detail admin.
+- [get-detail-game.md](../../../../sprint-1/solutioning/dashboard/games/get-detail-game.md) — pola endpoint detail admin.
 
 ## Current Go Implementation Alignment
 
-Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../dashboard-management/QUESTION.md).
+Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../dashboard-management/QUESTION.md).

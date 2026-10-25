@@ -280,7 +280,5 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 ## References
 
 - `../../erd/user-management-erd.md` — account status, PII, dan kepemilikan credential eksternal.
-- `../../../../sprint_1/erd/role-erd.md` — administrator role/permission model.
-- `src/features/Auth/views/organisms/LoginForm.organism.tsx` — email/WhatsApp identifier dan password form; auth belum terhubung.
-- `src/features/Auth/views/pages/Login.page.tsx` — login page composition.
+- [role-erd.md](../../../../sprint-1/erd/role-erd.md) — administrator role/permission model.
 - `../../dashboard/members/create-member.md` — administrator-managed account provisioning reference.

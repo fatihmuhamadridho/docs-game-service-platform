@@ -268,13 +268,10 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## References
 
-- `docs-game-service-platform/sprint_3/solutioning/erd/order-erd.md` — order, item snapshot, payment, and status history model.
+- [order-erd.md](../../erd/order-erd.md) — order, item snapshot, payment, and status history model.
 - `../../erd/service-erd.md` — service catalog source for order snapshots.
-- `src/features/AdminOrders/views/interfaces/admin-order.interface.ts` — Admin Orders table field/status types.
-- `src/features/AdminOrders/views/templates/AdminOrders.template.tsx` — Admin Orders table, filter, and detail display.
-- `src/features/AdminOrders/views/pages/AdminOrders.page.tsx` — current mock order records and field values.
-- `docs-game-service-platform/sprint_1/solutioning/dashboard/games/get-list-games.md` — list API pagination and response pattern.
+- [get-list-games.md](../../../../sprint-1/solutioning/dashboard/games/get-list-games.md) — list API pagination and response pattern.
 
 ## Current Go Implementation Alignment
 
-Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../../../sprint_1/solutioning/dashboard-management/QUESTION.md).
+Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in dashboard QUESTION.md.

@@ -6,7 +6,7 @@ Current Go implementation evidence is in [catalog source audit](source-audit-202
 
 - **Question:** Should `GET /api/games/v1/popular` scan all active games or retain current fixed 100-item source scan before applying popular filter and pagination?
 - **Evidence gap:** `CatalogPresenter` obtains at most 100 sorted active games, then filters popular. No source requirement or acceptance decision says whether this bound is intentional.
-- **Affected routes/docs:** `GET /api/games/v1/popular`; [popular games IFA](../../../../sprint_1/solutioning/public/games/get-popular-games.md), source audit.
+- **Affected routes/docs:** `GET /api/games/v1/popular`; [popular games IFA](../../../../sprint-1/solutioning/public/games/get-popular-games.md), source audit.
 - **Decision owner:** Catalog/product owner.
 - **Impact:** Completeness of popular results and database query/load strategy.
 
@@ -14,7 +14,7 @@ Current Go implementation evidence is in [catalog source audit](source-audit-202
 
 - **Question:** Should public catalog keep current JSON numeric `float64` price representation or use decimal string/minor-unit representation for exact currency values?
 - **Evidence gap:** Mongo Decimal128 converts to float64 in current catalog presenters. No approved money serialization standard is present in the source audit or target contract.
-- **Affected routes/docs:** Public game services and catalog routes; [services-by-game IFA](../services/get-list-services-by-game.md), [checkout IFA](../../../../sprint_3/solutioning/public/checkout/continue-to-payment.md), source audit.
+- **Affected routes/docs:** Public game services and catalog routes; [services-by-game IFA](../services/get-list-services-by-game.md), [checkout IFA](../../../../sprint-3/solutioning/public/checkout/continue-to-payment.md), source audit.
 - **Decision owner:** API/finance owner.
 - **Impact:** Client display precision and authoritative checkout price comparison.
 
@@ -38,6 +38,6 @@ Current Go implementation evidence is in [catalog source audit](source-audit-202
 
 - **Question:** Should `GET /api/services/v1/games/{gameSlug}` remain a supported alias alongside canonical `GET /api/games/v1/{gameSlug}/services`?
 - **Evidence gap:** Both handlers are registered, but their query behavior differs and no deprecation or consumer decision is recorded.
-- **Affected routes/docs:** Both routes; [public catalog extensions IFA](../../backend-go/public-catalog-extensions-ifa.md), [services-by-game IFA](../services/get-list-services-by-game.md), and [catalog source audit](source-audit-2026-10-23.md).
+- **Affected routes/docs:** Both routes; [services-by-game IFA](../services/get-list-services-by-game.md) documents the canonical route and alias, alongside the [catalog source audit](source-audit-2026-10-23.md).
 - **Decision owner:** API/catalog owner.
 - **Impact:** Route compatibility, query policy, and maintenance of the alternate handler.

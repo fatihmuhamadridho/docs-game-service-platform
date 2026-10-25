@@ -273,7 +273,6 @@ History and primary state updates must commit atomically. The platform activity 
 
 ## Assumptions / Decisions Needed
 
-- Schema is proposed from the current Admin Orders, Checkout, Payment, Payment Success, and Order Tracking UIs; there is no approved backend order contract in `docs/sprint_1/solutioning`.
 - Confirm guest checkout versus mandatory account. Current checkout form does not require sign-in, so `user_id` is nullable and customer details are snapshotted.
 - Confirm one order item per order for MVP versus multi-line order support. Current UI selects one service but quantity may exceed one.
 - Confirm order number format/sequence, status transitions, cancellation/expiry window, proof rejection/resubmission, and whether an order may have multiple payment attempts or partial payments.
@@ -286,16 +285,6 @@ History and primary state updates must commit atomically. The platform activity 
 
 ## References
 
-- `src/features/AdminOrders/views/interfaces/admin-order.interface.ts` — admin order and payment UI status values.
-- `src/features/AdminOrders/views/pages/AdminOrders.page.tsx` — mock order fields and payment methods.
-- `src/features/Checkout/views/organisms/OrderDetailsForm.organism.tsx` — customer contact, game account ID, server, and notes fields.
-- `src/features/Checkout/views/organisms/OrderSummary.organism.tsx` — service, quantity, price, estimate, and total display.
-- `src/features/Checkout/views/organisms/PaymentStep.organism.tsx` — QRIS/BCA manual payment options, proof upload, and countdown UI.
-- `src/features/Checkout/views/organisms/PaymentSuccess.organism.tsx` — simulated submission and manual validation status.
-- `src/features/OrderTracking/views/pages/OrderTracking.page.tsx` — order number plus WhatsApp tracking lookup.
-- `src/features/OrderTracking/views/pages/OrderTrackingResult.page.tsx` — tracking timeline and displayed state.
-- `src/features/AdminRefunds/views/interfaces/admin-refund.interface.ts` — refund order reference and review state.
-- `src/features/AdminComplaints/views/interfaces/admin-complaint.interface.ts` — complaint order reference and conversation state.
 - `./user-management-erd.md` — user account reference.
 - `./game-catalog-erd.md` — game catalog reference.
 - `./service-category-erd.md` — category reference.

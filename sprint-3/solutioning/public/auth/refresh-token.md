@@ -257,5 +257,5 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 - `./login.md` — customer login dan session-cookie proposal.
 - `./logout.md` — session revocation dan cookie clearing.
-- [Sprint 3 registration IFA](../../../../sprint_3/solutioning/public/auth/register.md) — account verification state yang menentukan kelayakan refresh.
+- [Sprint 3 registration IFA](register.md) — account verification state yang menentukan kelayakan refresh.
 - `../../erd/user-management-erd.md` — customer account lifecycle and status.

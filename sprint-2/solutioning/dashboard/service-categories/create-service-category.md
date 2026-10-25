@@ -7,7 +7,9 @@
 
 ## Design
 
-API ini membuat kategori layanan baru dari form Admin Service Categories. Admin mengirim nama, slug, deskripsi opsional, dan status aktif; service menghasilkan `categoryId` dan timestamp. Field dan constraints mengikuti [Service Category ERD](../../erd/service-category-erd.md) dan form UI. Kategori baru tidak otomatis membuat atau mengubah layanan.
+IFA ini mengusulkan pembuatan kategori layanan dari form Admin Service Categories. Admin mengirim nama, slug, deskripsi opsional, dan status aktif; target service menghasilkan `categoryId` dan timestamp. Field dan constraints mengikuti [Service Category ERD](../../../erd/service-category-erd.md) dan form UI sebagai proposal. Kategori baru tidak otomatis membuat atau mengubah layanan.
+
+> **Status kontrak target:** Struktur response mengikuti baseline Sprint 1 `{code,message,data}`. Service code, HTTP mapping, dan permission per route masih perlu disepakati terhadap inventory; auth/HTTP compatibility dicatat di D-11 dan extension permission/grant role di D-18.
 
 ## Sequence Diagram
 
@@ -17,7 +19,7 @@ sequenceDiagram
     participant UI as Admin Dashboard UI
     participant API as Service Category Management API
     participant DB as Catalog Database
-    participant Audit as Platform Audit Service
+    participant Audit as Audit policy (TBD)
     Admin->>UI: Isi form kategori baru dan simpan
     UI->>API: POST /api/admin/service-categories/v1/create dengan payload dan kredensial admin
     API->>API: Autentikasi dan otorisasi izin service-category-create
@@ -36,12 +38,11 @@ sequenceDiagram
                 API-->>UI: 400 SCAB02002, data null
                 UI-->>Admin: Tampilkan konflik nama atau slug
             else Tidak duplikat
-                API->>DB: Simpan kategori dan metadata audit dalam transaksi
+                API->>DB: Simpan kategori
                 alt Penyimpanan berhasil
                     DB-->>API: Kategori baru dan ID
-                    API->>Audit: Catat actor, action, categoryId, dan timestamp
-                    Audit-->>API: Audit tercatat atau diterima sesuai kontrak audit
-                    API-->>UI: 200 SCAS00000, data.category
+                    Note over API,Audit: BR-022 mewajibkan audit event, tetapi delivery dan failure policy belum diputuskan
+                    API-->>UI: 200 SCAS00000, data
                     UI-->>Admin: Tampilkan konfirmasi dan kategori baru
                 else Database gagal
                     DB-->>API: Kegagalan penyimpanan
@@ -55,9 +56,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                                        | VUser                                   | CPU / Memory                             | Response Time                                                                        |
-| --------------------------------------------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------ |
-| TBD; konfirmasi criticality dan availability target | TBD; konfirmasi concurrent admin puncak | TBD; tetapkan dari capacity estimate/NFT | TBD; usulan baseline web non-kritis: ideal 200 ms, acceptable 1 s, max tolerable 2 s |
+| Success Rate                                        | VUser                                   | CPU / Memory                             | Response Time                                                 |
+| --------------------------------------------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
+| TBD; konfirmasi criticality dan availability target | TBD; konfirmasi concurrent admin puncak | TBD; tetapkan dari capacity estimate/NFT | TBD; target belum ditetapkan; baseline opsional menunggu D-12 |
 
 ## General Information
 
@@ -73,20 +74,20 @@ sequenceDiagram
 
 ### Path / Endpoint
 
-| Section        | Value                                          |
-| -------------- | ---------------------------------------------- |
-| Host / Domain  | `{host}` (environment-specific)                |
-| Service Name   | Service Category Management                    |
-| Version        | `v1`                                           |
-| Resource       | `/admin/service-categories/v1/create`          |
-| Final Endpoint | `POST /api/admin/service-categories/v1/create` |
+| Section                  | Value                                          |
+| ------------------------ | ---------------------------------------------- |
+| Host / Domain            | `{host}` (environment-specific)                |
+| Service Name             | Service Category Management                    |
+| Version                  | `v1`                                           |
+| Resource                 | `/admin/service-categories/v1/create`          |
+| Proposed target endpoint | `POST /api/admin/service-categories/v1/create` |
 
 ### API Versioning
 
-- **Decision:** New Endpoint
-- **Previous Endpoint:** Tidak ada API create kategori admin yang teridentifikasi pada solutioning sprint ini.
-- **Final Endpoint:** `POST /api/admin/service-categories/v1/create`
-- **Backward Compatibility:** Belum ada consumer API ini yang teridentifikasi. Penambahan field request opsional bersifat kompatibel; perubahan kontrak yang mematahkan consumer memerlukan major version baru.
+- **Inventory status:** Method/path yang sama tercatat pada route inventory repo ini; bagian ini bukan klaim bahwa route belum ada.
+- **Target contract:** IFA mengusulkan perilaku pada `POST /api/admin/service-categories/v1/create`; payload, permission, response, dan status target belum disetujui terhadap inventory.
+- **Versioning:** Tetap `v1` pada usulan ini; perubahan kompatibilitas perlu keputusan API owner.
+- **Backward Compatibility:** Consumer belum dinilai. Penambahan field hanya dapat dianggap kompatibel setelah perilaku consumer diverifikasi; perubahan field/semantik/status yang mematahkan consumer memerlukan keputusan versioning API owner.
 - **Reason:** Admin Dashboard memerlukan operasi untuk menambah kelompok layanan ke katalog.
 
 ## Business Rules
@@ -94,24 +95,26 @@ sequenceDiagram
 1. Hanya administrator terautentikasi dengan izin `service-category-create` yang dapat membuat kategori. Role mapping final TBD.
 2. `categoryId`, `createdAt`, dan `updatedAt` dibuat oleh service; client tidak boleh mengirim nilai tersebut.
 3. `name` dan `slug` wajib. Nama disimpan setelah trim; slug disimpan lowercase setelah trim dan harus sesuai format URL-safe.
-4. Nama kategori yang dinormalisasi harus unik case-insensitive dan slug harus unik di antara kategori non-deleted sesuai unique index usulan ERD. Constraint database menjadi kontrol akhir untuk race condition.
+4. Usulan target: nama kategori ternormalisasi unik case-insensitive dan slug unik. Cakupan record yang diperiksa, aturan reuse setelah soft delete, dan mekanisme penegakan terhadap penulisan bersamaan belum disetujui; rancangan indeks pada ERD masih kandidat.
 5. Kategori duplikat tidak menimpa atau menggabungkan record yang sudah ada. Kembalikan konflik validasi yang sama untuk duplicate name atau slug agar tidak mengekspos record lain.
 6. `description` opsional; nilai kosong setelah trim dinormalisasi menjadi `null`. Batas 500 karakter mengikuti proposal ERD.
 7. `isActive` menentukan apakah kategori tersedia untuk assignment/publikasi katalog. Default `true` mengikuti proposal ERD bila field tidak dikirim; konfirmasi default sebelum implementasi.
 8. Kategori dibuat dengan `serviceCount=0`. Pembuatan kategori tidak membuat layanan dan tidak mengubah layanan yang sudah ada.
 9. `createdAt` dan `updatedAt` diset ke waktu server UTC yang sama pada pembuatan.
-10. Keberhasilan pembuatan dicatat pada audit platform dengan actor, action, category ID, dan waktu. Audit tidak boleh menggagalkan/menyebabkan duplikasi create setelah record tersimpan; mekanisme outbox atau transaksi audit mengikuti platform standard dan TBD.
+10. BR-022 menetapkan kebutuhan audit administratif minimum, tetapi event boundary (attempt/success/failure), payload, dan perilaku target create ini harus diselaraskan pada D-07. Store, delivery, atomicity, retry/deduplication, dan respons kegagalan masih menunggu D-08; jangan menyiratkan event pasti berhasil dicatat.
 11. Endpoint tidak menerima `deletedAt`; kategori baru selalu non-deleted.
-12. Retry setelah timeout dapat membuat duplikat jika client mengulang request. Idempotency key belum didefinisikan; tentukan kebutuhan sebelum implementasi atau gunakan unique constraint untuk mencegah duplikasi nama/slug.
+12. Retry setelah timeout dapat mengulangi create. Idempotency key dan perilaku retry belum ditetapkan; putuskan kebutuhan tersebut sebelum implementasi. Keunikan nama/slug adalah aturan bisnis terpisah dan tidak dengan sendirinya menjamin idempotensi request.
 
 ## Request Headers
 
-| Header          | E/N/T | Type   | M/O/C | Max Length | Description                                                  | Example                 |
-| --------------- | ----- | ------ | ----- | ---------: | ------------------------------------------------------------ | ----------------------- |
-| `Authorization` | N     | String | M     |       4096 | Kredensial administrator; skema mengikuti identity provider. | `Bearer {access-token}` |
-| `Content-Type`  | N     | String | M     |        100 | Format payload.                                              | `application/json`      |
-| `Accept`        | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.           | `application/json`      |
-| `X-Request-Id`  | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.          | `req-3c2f10`            |
+| Header         | E/N/T | Type   | M/O/C | Max Length | Description                                                                     | Example                      |
+| -------------- | ----- | ------ | ----- | ---------: | ------------------------------------------------------------------------------- | ---------------------------- |
+| `Cookie`       | E     | String | M     |        TBD | Session admin dikirim browser; nama dan atribut cookie mengikuti auth Sprint 1. | `{admin session cookie}`     |
+| `Origin`       | N     | String | M     |        TBD | Origin dashboard harus cocok dengan allowlist.                                  | `https://admin.example.test` |
+| `X-CSRF-Token` | N     | String | M     |        TBD | Token CSRF untuk request admin cookie-authenticated.                            | `{csrf-token}`               |
+| `Content-Type` | N     | String | M     |        100 | Format payload.                                                                 | `application/json`           |
+| `Accept`       | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.                              | `application/json`           |
+| `X-Request-Id` | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.                             | `req-3c2f10`                 |
 
 ## Request Parameters
 
@@ -139,55 +142,49 @@ Tidak ada path/query parameter.
 
 ### Request Validation
 
-1. `Authorization` harus mengidentifikasi administrator terautentikasi dengan izin `service-category-create`. Kembalikan `SCAB01001` bila belum terautentikasi dan `SCAB01002` bila izin tidak tersedia.
+1. Session cookie harus valid; `Origin` harus exact-allowlisted; token CSRF dan permission `service-category-create` harus valid. HTTP/service-code mapping auth dan CSRF tetap mengikuti API standard yang disetujui.
 2. Body wajib berupa JSON object valid. Tolak field yang tidak dikenal, termasuk `id`, `categoryId`, `createdAt`, `updatedAt`, `deletedAt`, dan `serviceCount`, dengan `SCAB02001`.
 3. `name` wajib berupa string; trim sebelum validasi dan simpan. Nilai setelah trim tidak boleh kosong dan panjangnya maksimal 100 karakter.
 4. `slug` wajib berupa string; trim dan ubah ke lowercase sebelum validasi. Nilai harus cocok dengan `^[a-z0-9]+(?:-[a-z0-9]+)*$` dan panjang maksimal 100 karakter. UI dapat mengisi slug dari nama, tetapi API tetap menerima slug eksplisit.
 5. `description`, bila dikirim, harus string atau `null`; trim sebelum simpan, maksimal 500 karakter. Nilai kosong/whitespace menjadi `null`.
 6. `isActive`, bila dikirim, harus boolean JSON. Jika tidak dikirim, gunakan default `true` yang masih menunggu persetujuan product/API owner.
-7. Nama ternormalisasi atau slug yang sudah dipakai kategori non-deleted menghasilkan `SCAB02002`. Pemeriksaan aplikasi harus didukung unique constraint transaksional/database.
+7. Bila aturan uniqueness nama/slug disetujui, konflik menghasilkan `SCAB02002`. Cakupan uniqueness dan mekanisme penyimpanan untuk mencegah race masih TBD; jangan menganggap kandidat indeks ERD sebagai constraint yang sudah dipilih.
 8. Jika kategori dengan slug sama pernah soft-deleted, aturan penggunaan ulang slug belum diputuskan; perlakukan sebagai konflik sampai aturan reuse disetujui.
 9. Kegagalan database saat penyimpanan menghasilkan HTTP 500 `SCAT03001`; jangan mengembalikan detail query atau constraint internal.
 
 ## Response Body
 
-Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `data: null`.
+Semua response target menggunakan envelope Sprint 1 `{code,message,data}`. Untuk detail, `data` langsung berisi object resource; untuk list, `data` adalah array dan `pagination` sibling di root. Error mengembalikan `data: null`.
 
-| Attribute                    | E/N/T | Type               | M/O/C | Max Length | Description                                        | Example                        |
-| ---------------------------- | ----- | ------------------ | ----- | ---------: | -------------------------------------------------- | ------------------------------ |
-| `status`                     | N     | Object             | M     |          — | Object status response.                            | `{}`                           |
-| `status.code`                | N     | String             | M     |         20 | Service status code.                               | `SCAS00000`                    |
-| `status.message`             | N     | String             | O     |        200 | Pesan hasil untuk consumer.                        | `Service category created`     |
-| `data`                       | N     | Object/null        | M     |          — | Payload hasil; `null` ketika error.                | `{}`                           |
-| `data.category`              | N     | Object             | M     |          — | Kategori yang berhasil dibuat.                     | `{}`                           |
-| `data.category.id`           | N     | String             | M     |         64 | ID immutable yang dibuat service.                  | `cat_01JXYZ`                   |
-| `data.category.name`         | N     | String             | M     |        100 | Nama kategori setelah trim.                        | `Top Up`                       |
-| `data.category.slug`         | N     | String             | M     |        100 | Slug kategori normalized.                          | `top-up`                       |
-| `data.category.description`  | N     | String/null        | O     |        500 | Deskripsi kategori.                                | `Layanan pengisian saldo game` |
-| `data.category.isActive`     | N     | Boolean            | M     |          — | Status aktif tersimpan.                            | `true`                         |
-| `data.category.serviceCount` | N     | Integer            | M     |  10 digits | Jumlah layanan saat dibuat; selalu `0`.            | `0`                            |
-| `data.category.createdAt`    | N     | String (date-time) | M     |         35 | Waktu pembuatan UTC.                               | `2026-10-11T09:00:00Z`         |
-| `data.category.updatedAt`    | N     | String (date-time) | M     |         35 | Waktu update; sama dengan `createdAt` saat create. | `2026-10-11T09:00:00Z`         |
+| Attribute           | E/N/T | Type               | M/O/C | Max Length | Description                                        | Example                        |
+| ------------------- | ----- | ------------------ | ----- | ---------: | -------------------------------------------------- | ------------------------------ |
+| `code`              | N     | String             | M     |         20 | Service code.                                      | `SCAS00000`                    |
+| `message`           | N     | String             | O     |        200 | Pesan hasil untuk consumer.                        | `Service category created`     |
+| `data`              | N     | Object/null        | M     |          — | Payload hasil; `null` ketika error.                | `{}`                           |
+| `data.id`           | N     | String             | M     |         64 | ID immutable yang dibuat service.                  | `cat_01JXYZ`                   |
+| `data.name`         | N     | String             | M     |        100 | Nama kategori setelah trim.                        | `Top Up`                       |
+| `data.slug`         | N     | String             | M     |        100 | Slug kategori normalized.                          | `top-up`                       |
+| `data.description`  | N     | String/null        | O     |        500 | Deskripsi kategori.                                | `Layanan pengisian saldo game` |
+| `data.isActive`     | N     | Boolean            | M     |          — | Status aktif tersimpan.                            | `true`                         |
+| `data.serviceCount` | N     | Integer            | M     |  10 digits | Jumlah layanan saat dibuat; selalu `0`.            | `0`                            |
+| `data.createdAt`    | N     | String (date-time) | M     |         35 | Waktu pembuatan UTC.                               | `2026-10-11T09:00:00Z`         |
+| `data.updatedAt`    | N     | String (date-time) | M     |         35 | Waktu update; sama dengan `createdAt` saat create. | `2026-10-11T09:00:00Z`         |
 
 ### Success Example
 
 ```json
 {
-  "status": {
-    "code": "SCAS00000",
-    "message": "Service category created"
-  },
+  "code": "SCAS00000",
+  "message": "Service category created",
   "data": {
-    "category": {
-      "id": "cat_01JXYZ",
-      "name": "Top Up",
-      "slug": "top-up",
-      "description": "Layanan pengisian saldo game",
-      "isActive": true,
-      "serviceCount": 0,
-      "createdAt": "2026-10-11T09:00:00Z",
-      "updatedAt": "2026-10-11T09:00:00Z"
-    }
+    "id": "cat_01JXYZ",
+    "name": "Top Up",
+    "slug": "top-up",
+    "description": "Layanan pengisian saldo game",
+    "isActive": true,
+    "serviceCount": 0,
+    "createdAt": "2026-10-11T09:00:00Z",
+    "updatedAt": "2026-10-11T09:00:00Z"
   }
 }
 ```
@@ -196,10 +193,8 @@ Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `da
 
 ```json
 {
-  "status": {
-    "code": "SCAB02002",
-    "message": "Service category name or slug already exists"
-  },
+  "code": "SCAB02002",
+  "message": "Service category name or slug already exists",
   "data": null
 }
 ```
@@ -208,10 +203,8 @@ Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `da
 
 ```json
 {
-  "status": {
-    "code": "SCAT03001",
-    "message": "Service category data is temporarily unavailable"
-  },
+  "code": "SCAT03001",
+  "message": "Service category data is temporarily unavailable",
   "data": null
 }
 ```
@@ -239,34 +232,42 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## API Exposure Classification
 
-| Classification                 | Rationale                                                                                                                                     |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------- |
-| Enterprise Intranet (proposed) | Operasi tulis admin untuk katalog. Jika endpoint dapat diakses dari internet, klasifikasikan sebagai Public dan terapkan proteksi API publik. |
+| Classification            | Rationale                                                                                                                                     |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| TBD (deployment exposure) | Operasi tulis admin untuk katalog. Jika endpoint dapat diakses dari internet, klasifikasikan sebagai Public dan terapkan proteksi API publik. |
 
 ## Testing & Documentation Scope
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                         |
-| ---------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | API create admin baru. Uji payload valid, batas panjang, duplikasi, request bersamaan dengan slug sama, persistence, dan retry setelah timeout. VUser, CPU/memory, serta target TPS TBD mengikuti forecast. |
-| VA/Pentest | Yes      | Verifikasi authentication/authorization, privilege boundaries, mass assignment, input validation, injection, audit attribution, dan tidak ada overwrite record duplikat.                                    |
+| NFT / VA-Pentest handoff   | Value                                                                                                                                                                                  |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Service / module           | Service Category Management                                                                                                                                                            |
+| Endpoint                   | `POST /api/admin/service-categories/v1/create`                                                                                                                                         |
+| Sample parameter / request | JSON body: `name="Top Up"`, `slug="top-up"`, `isActive=true`                                                                                                                           |
+| Sample response            | Success code `SCAS00000`; use the complete Success Example below. Probe code `SCAB01002`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
+| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                               |
+| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                                |
+
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                      |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| NFT        | Yes      | Validasi target contract untuk route create admin yang sudah tercatat di inventory. Uji payload valid, batas panjang, duplikasi, request bersamaan dengan slug sama, persistence, dan retry setelah timeout. VUser, CPU/memory, serta target TPS TBD mengikuti forecast. |
+| VA/Pentest | Yes      | Verifikasi authentication/authorization, privilege boundaries, mass assignment, input validation, injection, audit attribution, dan tidak ada overwrite record duplikat.                                                                                                 |
 
 ## Assumptions
 
-- Endpoint, response envelope, service prefix/codes, dan permission adalah usulan karena backend category API belum didefinisikan.
-- Nama unik case-insensitive setelah trim, slug unik, batas field, dan default `isActive=true` mengikuti proposal ERD; owner perlu menyetujui sebelum implementasi.
+- Target contract untuk response envelope, service prefix/codes, dan permission belum disetujui; method/path route tercatat pada inventory lokal.
+- Normalisasi dan uniqueness nama/slug, batas field, serta default `isActive=true` adalah proposal; owner perlu menyetujui aturan dan mekanisme penegakannya sebelum implementasi.
 - Slug reuse setelah soft delete belum ditetapkan. Kontrak menganggap slug tetap konflik sampai keputusan final.
-- Audit menggunakan platform audit service; transaksi/outbox dan perilaku saat audit service gagal mengikuti standar platform yang belum tersedia.
+- BR-022 mewajibkan event untuk aksi administratif ini, tetapi target audit store/service, bentuk event, delivery/atomicity, serta respons saat gagal belum diputuskan; diagram tidak mengasumsikan platform audit service tertentu.
 - Idempotency key belum menjadi bagian kontrak. Jika client retry harus menjamin exactly-once semantics, tambahkan mekanisme idempotency pada API standard.
 - HTTP `201` vs `200`, identity provider, role mapping, rate limit, database engine, dan SLA TBD.
 
 ## References
 
-- `../../erd/service-category-erd.md` — atribut kategori, unique constraints, default, serta audit proposal.
-- `src/features/AdminServiceCategories/views/interfaces/admin-service-category.interface.ts` — field model kategori pada UI.
-- `src/features/AdminServiceCategories/views/templates/AdminServiceCategories.template.tsx` — field form, slug generation, dan active toggle.
+- [Sprint 2 BRD](../../../BRD.md) — BR-019, pengelolaan kategori layanan.
+- `../../erd/service-category-erd.md` — atribut kategori dan kandidat uniqueness/index/default serta kebutuhan audit.
 - `./get-list-service-categories.md` — kontrak daftar kategori dan response summary.
 - `./get-detail-service-category.md` — kontrak pembacaan kategori detail.
 
 ## Current Go Implementation Alignment
 
-Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../../../sprint_1/solutioning/dashboard-management/QUESTION.md).
+The local route inventory records `POST /api/admin/service-categories/v1/create` under `catalog-manage`, returning HTTP 201 and a source category projection. This IFA uses the same method/path, but its permission, request fields, uniqueness, transaction, audit interaction, response envelope, and target status codes have not been reconciled with that inventory or approved. The UI form is not approval of target rules. See [Sprint 2 assessment](../../README.md#keputusan-yang-menghalangi-finalisasi) and the [route-to-handler coverage](../../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage).

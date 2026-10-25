@@ -325,9 +325,6 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 - `QUESTION.md` — unresolved target upload/payment-report sequencing decisions.
 - `../../backend-go/order-payment-ifa.md` — current Go implementation contract.
-- `src/features/Checkout/views/organisms/PaymentStep.organism.tsx` — payment method, countdown, proof file input, and submission UI.
-- `src/features/Checkout/views/organisms/PaymentSuccess.organism.tsx` — post-submit simulated manual validation state.
-- `docs-game-service-platform/sprint_3/solutioning/public/checkout/continue-to-payment.md` — order/payment attempt creation and returned payment instructions.
-- `docs-game-service-platform/sprint_3/solutioning/erd/order-erd.md` — `ORDER_PAYMENT`, `PAYMENT_PROOF`, expiry, payment status history, and upload security rules.
-- `docs-game-service-platform/sprint_3/solutioning/dashboard/orders/get-detail-order.md` — admin order/payment detail contract.
-- `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — API contract template.
+- [continue-to-payment.md](continue-to-payment.md) — order/payment attempt creation and returned payment instructions.
+- [order-erd.md](../../erd/order-erd.md) — `ORDER_PAYMENT`, `PAYMENT_PROOF`, expiry, payment status history, and upload security rules.
+- [get-detail-order.md](../../dashboard/orders/get-detail-order.md) — admin order/payment detail contract.

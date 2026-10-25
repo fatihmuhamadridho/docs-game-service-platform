@@ -336,7 +336,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Current Go implementation — source evidence, not target
 
-The implementation is registered as `POST /api/orders/v1/checkout` in `go-game-service-platform/internal/controller/http/order_http.go`; the proposed contract above is not wire evidence.
+The implementation registers `POST /api/orders/v1/checkout`; the proposed contract above is not wire evidence.
 
 | Area             | Current implementation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
 | ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
@@ -353,12 +353,6 @@ See [checkout open contract decisions](QUESTION.md) for target-state and idempot
 
 - `QUESTION.md` — unresolved current-vs-target checkout decisions.
 - `../../backend-go/order-payment-ifa.md` — current Go source behavior.
-- `src/app/order/[gameSlug]/page.tsx` — dynamic game slug route.
-- `src/features/Checkout/views/pages/Checkout.page.tsx` — selected game/service, quantity, and simulated continue action.
-- `src/features/Checkout/views/organisms/OrderSummary.organism.tsx` — `Lanjut Pembayaran` CTA and order summary.
-- `src/features/Checkout/views/organisms/PaymentStep.organism.tsx` — QRIS/BCA method choice, promo placeholder, payment instructions, and proof upload UI.
-- `src/features/Checkout/views/organisms/PaymentSuccess.organism.tsx` — simulated success copy and manual validation state.
-- `docs-game-service-platform/sprint_2/solutioning/public/services/get-list-services-by-game.md` — public game service catalog and pricing behavior.
-- `docs-game-service-platform/sprint_3/solutioning/erd/order-erd.md` — order/payment/proof model and checkout invariants.
-- `docs-game-service-platform/sprint_2/solutioning/erd/service-erd.md` — authoritative service pricing, custom price, and availability.
-- `docs-game-service-platform/sprint_1/solutioning/TEMPLATE.md` — API contract template.
+- [get-list-services-by-game.md](../../../../sprint-2/solutioning/public/services/get-list-services-by-game.md) — public game service catalog and pricing behavior.
+- [order-erd.md](../../erd/order-erd.md) — order/payment/proof model and checkout invariants.
+- [service-erd.md](../../../../sprint-2/solutioning/erd/service-erd.md) — authoritative service pricing, custom price, and availability.

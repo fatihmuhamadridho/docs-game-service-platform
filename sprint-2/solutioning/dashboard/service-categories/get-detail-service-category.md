@@ -7,7 +7,9 @@
 
 ## Design
 
-API mengambil satu kategori layanan berdasarkan `categoryId` untuk kebutuhan detail/edit Admin Dashboard. Response mencakup atribut kategori dan daftar layanan yang terhubung secara paginasi, termasuk status layanan dan game terkait bila tersedia. Sumber kategori dan relasi adalah [Service Category ERD](../../erd/service-category-erd.md); kebutuhan field UI mengikuti interface Admin Service Categories dan Admin Services. UI saat ini memakai modal edit berisi atribut kategori dan belum memuat detail layanan dari backend.
+API mengambil satu kategori layanan berdasarkan `categoryId` untuk kebutuhan detail/edit Admin Dashboard. Response `data` berisi satu object kategori dan `serviceCount`; daftar kategori terkait layanan tersedia melalui endpoint list layanan tersendiri. Sumber kategori dan relasi adalah [Service Category ERD](../../../erd/service-category-erd.md); UI saat ini memakai modal edit berisi atribut kategori dan tidak memuat daftar layanan dari endpoint detail.
+
+> **Status kontrak target:** Struktur response mengikuti baseline Sprint 1 `{code,message,data}`. Service code, HTTP mapping, dan permission per route masih perlu disepakati terhadap inventory; auth/HTTP compatibility dicatat di D-11 dan extension permission/grant role di D-18.
 
 ## Sequence Diagram
 
@@ -24,20 +26,20 @@ sequenceDiagram
         API-->>UI: 400 SCAB01001 / SCAB01002, data null
         UI-->>Admin: Tampilkan pesan akses
     else Berizin
-        API->>API: Validasi categoryId dan parameter layanan
-        alt Identifier atau parameter tidak valid
+        API->>API: Validasi categoryId
+        alt Identifier tidak valid
             API-->>UI: 400 SCAB02001, data null
             UI-->>Admin: Tampilkan kesalahan request
         else Request valid
-            API->>DB: Ambil kategori dan halaman layanan terkait
+            API->>DB: Ambil kategori dan hitung layanan terkait
             alt Kategori tidak ditemukan atau soft-deleted
                 DB-->>API: Tidak ada kategori aktif/non-deleted
                 API-->>UI: 400 SCAB02002, data null
                 UI-->>Admin: Tampilkan kategori tidak ditemukan
             else Query berhasil
-                DB-->>API: Atribut kategori, layanan, total layanan
-                API-->>UI: 200 SCAS00000, data.category
-                UI-->>Admin: Tampilkan detail kategori dan layanan terkait
+                DB-->>API: Atribut kategori dan jumlah layanan
+                API-->>UI: 200 SCAS00000, data
+                UI-->>Admin: Tampilkan detail kategori
             else Database gagal
                 DB-->>API: Kegagalan baca katalog
                 API-->>UI: 500 SCAT03001, data null
@@ -49,9 +51,9 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
-| Success Rate                                        | VUser                                   | CPU / Memory                             | Response Time                                                                        |
-| --------------------------------------------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------------------------------ |
-| TBD; konfirmasi criticality dan availability target | TBD; konfirmasi concurrent admin puncak | TBD; tetapkan dari capacity estimate/NFT | TBD; usulan baseline web non-kritis: ideal 200 ms, acceptable 1 s, max tolerable 2 s |
+| Success Rate                                        | VUser                                   | CPU / Memory                             | Response Time                                                 |
+| --------------------------------------------------- | --------------------------------------- | ---------------------------------------- | ------------------------------------------------------------- |
+| TBD; konfirmasi criticality dan availability target | TBD; konfirmasi concurrent admin puncak | TBD; tetapkan dari capacity estimate/NFT | TBD; target belum ditetapkan; baseline opsional menunggu D-12 |
 
 ## General Information
 
@@ -67,20 +69,20 @@ sequenceDiagram
 
 ### Path / Endpoint
 
-| Section        | Value                                                      |
-| -------------- | ---------------------------------------------------------- |
-| Host / Domain  | `{host}` (environment-specific)                            |
-| Service Name   | Service Category Management                                |
-| Version        | `v1`                                                       |
-| Resource       | `/admin/service-categories/v1/detail/{categoryId}`         |
-| Final Endpoint | `GET /api/admin/service-categories/v1/detail/{categoryId}` |
+| Section                  | Value                                                      |
+| ------------------------ | ---------------------------------------------------------- |
+| Host / Domain            | `{host}` (environment-specific)                            |
+| Service Name             | Service Category Management                                |
+| Version                  | `v1`                                                       |
+| Resource                 | `/admin/service-categories/v1/detail/{categoryId}`         |
+| Proposed target endpoint | `GET /api/admin/service-categories/v1/detail/{categoryId}` |
 
 ### API Versioning
 
-- **Decision:** New Endpoint
-- **Previous Endpoint:** Tidak ada API detail kategori admin yang teridentifikasi pada solutioning sprint ini.
-- **Final Endpoint (current Go):** `GET /api/admin/service-categories/v1/detail/{categoryId}`
-- **Backward Compatibility:** Belum ada consumer API ini yang teridentifikasi. Penambahan field response opsional bersifat kompatibel; perubahan kontrak yang mematahkan consumer memerlukan major version baru.
+- **Inventory status:** Method/path yang sama tercatat pada route inventory repo ini; bagian ini bukan klaim bahwa route belum ada.
+- **Target contract:** IFA mengusulkan perilaku pada `GET /api/admin/service-categories/v1/detail/{categoryId}`; projection, permission, response, dan status target belum disetujui terhadap inventory.
+- **Versioning:** Tetap `v1` pada usulan ini; perubahan kompatibilitas perlu keputusan API owner.
+- **Backward Compatibility:** Consumer belum dinilai. Penambahan field hanya dapat dianggap kompatibel setelah perilaku consumer diverifikasi; perubahan field/semantik/status yang mematahkan consumer memerlukan keputusan versioning API owner.
 - **Reason:** Admin membutuhkan satu resource kategori untuk melihat/edit atribut serta memeriksa layanan yang masih terhubung sebelum perubahan atau penghapusan.
 
 ## Business Rules
@@ -89,22 +91,23 @@ sequenceDiagram
 2. `categoryId` adalah identifier immutable pada `service_category.category_id`, bukan nama atau slug kategori.
 3. Kategori aktif dan nonaktif dapat dibaca oleh admin. Kategori soft-deleted (`deleted_at IS NOT NULL`) tidak dikembalikan pada endpoint ini; kebijakan pemulihan kategori terhapus memerlukan endpoint/permission terpisah.
 4. Field kategori berasal dari record `service_category`: `name`, `slug`, `description`, `is_active`, `created_at`, dan `updated_at`. `deleted_at` serta field internal lain tidak diekspos.
-5. `serviceCount` adalah jumlah total layanan terkait sesuai kebijakan hitung yang sama dengan list endpoint. Usulan awal menghitung layanan non-deleted, baik aktif maupun nonaktif; definisi soft delete/status layanan harus dikonfirmasi.
-6. `services` hanya mengembalikan satu halaman layanan terkait untuk mencegah response tidak terbatas. Default `serviceLimit=20`, maksimum `100`; urutan `name ASC`, lalu `service_id ASC` untuk hasil deterministik.
-7. Setiap service summary mencakup ID, nama, game, status aktif, dan updated timestamp bila sumber service ERD menyediakan field tersebut. Field yang belum tersedia pada service ERD bersifat TBD sebelum implementasi.
-8. Kategori tanpa layanan terkait tetap sukses dengan `services: []`, `serviceCount: 0`, dan pagination `total: 0`.
-9. Relasi satu kategori ke banyak layanan mengikuti model UI saat ini; response tidak mengubah assignment atau status layanan.
-10. Endpoint bersifat read-only. Tidak memutasi kategori/layanan dan tidak menulis audit perubahan.
-11. Untuk menghindari ID enumeration, kategori yang tidak ditemukan dan kategori soft-deleted mengembalikan kode bisnis yang sama.
-12. Query layanan harus membatasi `category_id` sesuai kategori yang sudah lolos authorization dan pengecekan non-deleted; jangan menerima category ID dari query sebagai pengganti path ID.
+5. `serviceCount` adalah metrik operasional admin dengan usulan predicate yang sama dengan list endpoint: layanan non-deleted, baik aktif maupun nonaktif. Metrik publik berbeda (aktif services pada active games); tujuan dan predicate per context harus disetujui melalui D-14.
+6. Endpoint detail mengembalikan satu object kategori di `data`, tanpa array `services` dan tanpa pagination. Daftar layanan menggunakan endpoint list layanan dengan filter kategori.
+7. Kategori tanpa layanan terkait tetap sukses dengan `serviceCount: 0`.
+8. Relasi satu kategori ke banyak layanan mengikuti model UI saat ini; response tidak mengubah assignment atau status layanan.
+9. Endpoint bersifat read-only. Tidak memutasi kategori/layanan dan tidak menulis audit perubahan.
+10. Untuk menghindari ID enumeration, kategori yang tidak ditemukan dan kategori soft-deleted mengembalikan kode bisnis yang sama.
+11. Penghitungan `serviceCount` membatasi `category_id` sesuai kategori yang sudah lolos authorization dan pengecekan non-deleted.
 
 ## Request Headers
 
-| Header          | E/N/T | Type   | M/O/C | Max Length | Description                                                  | Example                 |
-| --------------- | ----- | ------ | ----- | ---------: | ------------------------------------------------------------ | ----------------------- |
-| `Authorization` | N     | String | M     |       4096 | Kredensial administrator; skema mengikuti identity provider. | `Bearer {access-token}` |
-| `Accept`        | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.           | `application/json`      |
-| `X-Request-Id`  | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.          | `req-e4f09b`            |
+| Header         | E/N/T | Type   | M/O/C | Max Length | Description                                                                     | Example                      |
+| -------------- | ----- | ------ | ----- | ---------: | ------------------------------------------------------------------------------- | ---------------------------- |
+| `Cookie`       | E     | String | M     |        TBD | Session admin dikirim browser; nama dan atribut cookie mengikuti auth Sprint 1. | `{admin session cookie}`     |
+| `Origin`       | N     | String | M     |        TBD | Origin dashboard harus cocok dengan allowlist.                                  | `https://admin.example.test` |
+| `X-CSRF-Token` | N     | String | M     |        TBD | Token CSRF untuk request admin cookie-authenticated.                            | `{csrf-token}`               |
+| `Accept`       | N     | String | O     |        100 | Tipe media response yang diinginkan; default JSON.                              | `application/json`           |
+| `X-Request-Id` | N     | String | O     |        100 | ID korelasi untuk audit/support; jangan memuat PII.                             | `req-e4f09b`                 |
 
 ## Request Parameters
 
@@ -112,90 +115,53 @@ sequenceDiagram
 | ------------ | ----- | ------------- | ----- | ---------: | ------------------------------ | ------------ |
 | `categoryId` | N     | String (path) | M     |         64 | ID immutable kategori layanan. | `cat_01JXYZ` |
 
-## Request Query Parameters
-
-| Parameter       | E/N/T | Type    | M/O/C | Max Length | Description                                                      | Example |
-| --------------- | ----- | ------- | ----- | ---------: | ---------------------------------------------------------------- | ------- |
-| `serviceLimit`  | N     | Integer | O     |   3 digits | Jumlah layanan per halaman; default `20`, maksimum usulan `100`. | `20`    |
-| `serviceOffset` | N     | Integer | O     |   9 digits | Jumlah layanan yang dilewati; default `0`.                       | `0`     |
-
 ## Request Body
 
 Tidak ada request body.
 
 ### Request Validation
 
-1. `Authorization` harus mengidentifikasi administrator terautentikasi dengan izin `service-category-read`. Kembalikan `SCAB01001` bila belum terautentikasi dan `SCAB01002` bila tidak berizin.
+1. Session cookie harus valid; `Origin` harus exact-allowlisted; token CSRF dan permission `service-category-read` harus valid. HTTP/service-code mapping auth dan CSRF tetap mengikuti API standard yang disetujui.
 2. `categoryId` wajib, tidak kosong, maksimal 64 karakter, dan mengikuti format ID yang ditetapkan implementasi. Format invalid menghasilkan `SCAB02001`.
-3. `serviceLimit` harus integer dari 1 sampai 100; default `20`.
-4. `serviceOffset` harus integer >= 0 dan tidak melebihi batas integer yang disepakati implementasi; default `0`.
-5. Parameter query yang tidak dikenal ditolak dengan `SCAB02001`.
-6. Identifier valid yang tidak ditemukan atau menunjuk kategori soft-deleted menghasilkan `SCAB02002`.
-7. Kategori valid tanpa layanan terkait adalah sukses, bukan error.
-8. Kegagalan database mengembalikan HTTP 500 tanpa detail internal.
+3. Endpoint ini tidak menerima parameter query.
+4. Parameter query yang tidak dikenal ditolak dengan `SCAB02001`.
+5. Identifier valid yang tidak ditemukan atau menunjuk kategori soft-deleted menghasilkan `SCAB02002`.
+6. Kategori valid tanpa layanan terkait tetap sukses dengan `serviceCount: 0`.
+7. Kegagalan database mengembalikan HTTP 500 tanpa detail internal.
 
 ## Response Body
 
-Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `data: null`.
+Semua response target menggunakan envelope Sprint 1 `{code,message,data}`. Untuk detail, `data` langsung berisi object resource; untuk list, `data` adalah array dan `pagination` sibling di root. Error mengembalikan `data: null`.
 
-| Attribute                                 | E/N/T | Type                    | M/O/C |           Max Length | Description                                                           | Example                             |
-| ----------------------------------------- | ----- | ----------------------- | ----- | -------------------: | --------------------------------------------------------------------- | ----------------------------------- |
-| `status`                                  | N     | Object                  | M     |                    — | Object status response.                                               | `{}`                                |
-| `status.code`                             | N     | String                  | M     |                   20 | Service status code.                                                  | `SCAS00000`                         |
-| `status.message`                          | N     | String                  | O     |                  200 | Pesan hasil untuk consumer.                                           | `Service category detail retrieved` |
-| `data`                                    | N     | Object/null             | M     |                    — | Payload hasil; `null` ketika error.                                   | `{}`                                |
-| `data.category`                           | N     | Object                  | M     |                    — | Detail kategori.                                                      | `{}`                                |
-| `data.category.id`                        | N     | String                  | M     |                   64 | ID internal kategori.                                                 | `cat_01JXYZ`                        |
-| `data.category.name`                      | N     | String                  | M     |                  100 | Nama kategori.                                                        | `Top Up`                            |
-| `data.category.slug`                      | N     | String                  | M     |                  100 | Slug kategori.                                                        | `top-up`                            |
-| `data.category.description`               | N     | String/null             | O     |                  500 | Deskripsi kategori.                                                   | `Layanan pengisian saldo game`      |
-| `data.category.isActive`                  | N     | Boolean                 | M     |                    — | Status aktif kategori.                                                | `true`                              |
-| `data.category.createdAt`                 | N     | String (date-time)      | M     |                   35 | Waktu pembuatan UTC.                                                  | `2026-10-10T07:00:00Z`              |
-| `data.category.updatedAt`                 | N     | String (date-time)      | M     |                   35 | Waktu terakhir diperbarui UTC.                                        | `2026-10-11T08:30:00Z`              |
-| `data.category.serviceCount`              | N     | Integer                 | M     |            10 digits | Total layanan terkait menurut kebijakan hitung.                       | `8`                                 |
-| `data.category.services`                  | N     | Array of Object         | M     | `serviceLimit` items | Halaman ringkasan layanan terkait.                                    | `[]`                                |
-| `data.category.services[].id`             | N     | String                  | M     |                   64 | ID layanan.                                                           | `svc_01JXYZ`                        |
-| `data.category.services[].name`           | N     | String                  | M     |                  150 | Nama layanan.                                                         | `Top Up 86 Diamonds`                |
-| `data.category.services[].gameName`       | N     | String/null             | O     |                  100 | Nama game terkait bila tersedia melalui relasi service-game.          | `Mobile Legends`                    |
-| `data.category.services[].isActive`       | N     | Boolean                 | M     |                    — | Status aktif layanan.                                                 | `true`                              |
-| `data.category.services[].updatedAt`      | N     | String (date-time)/null | O     |                   35 | Waktu update layanan jika tersedia di service schema.                 | `2026-10-11T08:00:00Z`              |
-| `data.category.servicesPagination.limit`  | N     | Integer                 | M     |             3 digits | Batas layanan efektif.                                                | `20`                                |
-| `data.category.servicesPagination.offset` | N     | Integer                 | M     |             9 digits | Offset layanan efektif.                                               | `0`                                 |
-| `data.category.servicesPagination.total`  | N     | Integer                 | M     |            10 digits | Total layanan terkait sebelum pagination; sama dengan `serviceCount`. | `8`                                 |
+| Attribute           | E/N/T | Type               | M/O/C | Max Length | Description                                     | Example                             |
+| ------------------- | ----- | ------------------ | ----- | ---------: | ----------------------------------------------- | ----------------------------------- |
+| `code`              | N     | String             | M     |         20 | Service code.                                   | `SCAS00000`                         |
+| `message`           | N     | String             | O     |        200 | Pesan hasil untuk consumer.                     | `Service category detail retrieved` |
+| `data`              | N     | Object/null        | M     |          — | Satu object kategori; `null` ketika error.      | `{}`                                |
+| `data.id`           | N     | String             | M     |         64 | ID internal kategori.                           | `cat_01JXYZ`                        |
+| `data.name`         | N     | String             | M     |        100 | Nama kategori.                                  | `Top Up`                            |
+| `data.slug`         | N     | String             | M     |        100 | Slug kategori.                                  | `top-up`                            |
+| `data.description`  | N     | String/null        | O     |        500 | Deskripsi kategori.                             | `Layanan pengisian saldo game`      |
+| `data.isActive`     | N     | Boolean            | M     |          — | Status aktif kategori.                          | `true`                              |
+| `data.createdAt`    | N     | String (date-time) | M     |         35 | Waktu pembuatan UTC.                            | `2026-10-10T07:00:00Z`              |
+| `data.updatedAt`    | N     | String (date-time) | M     |         35 | Waktu terakhir diperbarui UTC.                  | `2026-10-11T08:30:00Z`              |
+| `data.serviceCount` | N     | Integer            | M     |  10 digits | Total layanan terkait menurut kebijakan hitung. | `8`                                 |
 
 ### Success Example
 
 ```json
 {
-  "status": {
-    "code": "SCAS00000",
-    "message": "Service category detail retrieved"
-  },
+  "code": "SCAS00000",
+  "message": "Service category detail retrieved",
   "data": {
-    "category": {
-      "id": "cat_01JXYZ",
-      "name": "Top Up",
-      "slug": "top-up",
-      "description": "Layanan pengisian saldo game",
-      "isActive": true,
-      "createdAt": "2026-10-10T07:00:00Z",
-      "updatedAt": "2026-10-11T08:30:00Z",
-      "serviceCount": 1,
-      "services": [
-        {
-          "id": "svc_01JXYZ",
-          "name": "Top Up 86 Diamonds",
-          "gameName": "Mobile Legends",
-          "isActive": true,
-          "updatedAt": "2026-10-11T08:00:00Z"
-        }
-      ],
-      "servicesPagination": {
-        "limit": 20,
-        "offset": 0,
-        "total": 1
-      }
-    }
+    "id": "cat_01JXYZ",
+    "name": "Top Up",
+    "slug": "top-up",
+    "description": "Layanan pengisian saldo game",
+    "isActive": true,
+    "createdAt": "2026-10-10T07:00:00Z",
+    "updatedAt": "2026-10-11T08:30:00Z",
+    "serviceCount": 1
   }
 }
 ```
@@ -204,10 +170,8 @@ Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `da
 
 ```json
 {
-  "status": {
-    "code": "SCAB02002",
-    "message": "Service category not found"
-  },
+  "code": "SCAB02002",
+  "message": "Service category not found",
   "data": null
 }
 ```
@@ -216,10 +180,8 @@ Semua response menggunakan envelope `status` dan `data`. Error mengembalikan `da
 
 ```json
 {
-  "status": {
-    "code": "SCAT03001",
-    "message": "Service category data is temporarily unavailable"
-  },
+  "code": "SCAT03001",
+  "message": "Service category data is temporarily unavailable",
   "data": null
 }
 ```
@@ -247,39 +209,41 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## API Exposure Classification
 
-| Classification                 | Rationale                                                                                                                                           |
-| ------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Enterprise Intranet (proposed) | Endpoint admin untuk metadata katalog. Jika dapat diakses dari internet, klasifikasikan sebagai Public dan terapkan kontrol API publik yang sesuai. |
+| Classification            | Rationale                                                                                                                                           |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
+| TBD (deployment exposure) | Endpoint admin untuk metadata katalog. Jika dapat diakses dari internet, klasifikasikan sebagai Public dan terapkan kontrol API publik yang sesuai. |
 
 ## Testing & Documentation Scope
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                 |
-| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | API detail admin baru. Uji kategori dengan nol, satu, dan banyak layanan; pagination layanan; status kategori aktif/nonaktif; dan kategori soft-deleted. VUser, CPU/memory, serta target TPS TBD menunggu forecast. |
-| VA/Pentest | Yes      | Verifikasi authentication/authorization, IDOR terhadap `categoryId`, enumeration, query validation, dan pembatasan data layanan pada kategori yang diminta.                                                         |
+| NFT / VA-Pentest handoff   | Value                                                                                                                                                                                  |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Service / module           | Service Category Management                                                                                                                                                            |
+| Endpoint                   | `GET /api/admin/service-categories/v1/detail/{categoryId}`                                                                                                                             |
+| Sample parameter / request | Path: `categoryId=cat_01JXYZ`                                                                                                                                                          |
+| Sample response            | Success code `SCAS00000`; use the complete Success Example below. Probe code `SCAB01002`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
+| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                               |
+| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                                |
 
-## Current Go behavior vs proposed target
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                                             |
+| ---------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFT        | Yes      | Validasi target contract untuk route detail admin yang sudah tercatat di inventory. Uji kategori dengan nol dan banyak layanan, status kategori aktif/nonaktif, dan kategori soft-deleted; response detail tetap berupa satu object. VUser, CPU/memory, serta target TPS TBD menunggu forecast. |
+| VA/Pentest | Yes      | Verifikasi authentication/authorization, IDOR terhadap `categoryId`, enumeration, query validation, dan pembatasan data layanan pada kategori yang diminta.                                                                                                                                     |
 
-- Go route: `GET /api/admin/service-categories/v1/detail/{categoryId}`; requires admin session and `catalog-manage`; success HTTP 200 returns `{code:"SCAS00000",message,data:{category}}`. Auth failures are 401/403; repository failures use source translator. FE page currently uses list rows for edit and does not issue this detail GET.
-- The detailed response schema and not-found mapping in this proposal are not established by route evidence; verify controller/repository mapping before treating as source contract. Current Go envelope is top-level `{code,message,data?}`, not nested `status`.
+## Current Implementation Alignment
+
+The local route inventory records `GET /api/admin/service-categories/v1/detail/{categoryId}` under `catalog-manage`; missing or soft-deleted categories map to HTTP 404. This IFA uses the same method/path, but its `serviceCount`, permission, response envelope, and other target status codes have not been reconciled with that inventory. The detail endpoint returns one category object; callers needing service rows use the service list endpoint filtered by category. See the [route-to-handler coverage](../../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage).
 
 ## Assumptions
 
-- Endpoint dan kontrak response merupakan usulan karena backend category API belum didefinisikan.
+- Projection dan kontrak response target merupakan usulan; method/path route tercatat pada inventory lokal.
 - Service ERD menjadi sumber definitif nama field relasi, game mapping, status, timestamp, dan soft-delete layanan. Field ringkasan layanan yang belum terkonfirmasi bersifat TBD.
-- `serviceCount` dan daftar layanan menggunakan definisi yang sama: seluruh layanan non-deleted, termasuk inactive, sesuai usulan list kategori.
+- Admin `serviceCount` dan daftar layanan menggunakan definisi yang sama: seluruh layanan non-deleted, termasuk inactive, sesuai usulan list kategori. Ini tidak menyamakan hitungan admin dengan public source `serviceCount`; putuskan makna per context melalui D-14.
 - Kategori soft-deleted tidak dapat dilihat melalui API ini; recovery membutuhkan operasi terpisah.
-- Pagination layanan memakai `serviceLimit`/`serviceOffset` agar tidak mengembalikan daftar tak terbatas. Default/maksimum merupakan proposal.
 - Permission, auth mapping HTTP, rate limit, SLA, dan kebijakan audit akses perlu dikonfirmasi.
 
 ## References
 
+- [Sprint 2 BRD](../../../BRD.md) — BR-019, pengelolaan kategori layanan.
 - `../../erd/service-category-erd.md` — atribut kategori dan relasi category-to-services.
 - `../../erd/service-erd.md` — atribut layanan dan relasi ke game.
 - `./get-list-service-categories.md` — aturan daftar dan definisi awal `serviceCount`.
-- `src/features/AdminServiceCategories/views/interfaces/admin-service-category.interface.ts` — field tampilan kategori.
-- `src/features/AdminServices/views/interfaces/admin-service.interface.ts` — field tampilan layanan.
-
-## Current Go Implementation Alignment
-
-Current Go method/path, permission, request validation, response wrappers, DTO fields, and handler/controller error statuses are mapped in the [dashboard route source IFA](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage); repository and controller projection behavior is in [source projection rules](../../../../sprint_3/solutioning/backend-go/dashboard-source-ifa.md#controller-and-repository-projection-rules). This document defines proposed target behavior. Source audit records implementation evidence and does not approve target-only fields or rules. Open dashboard target decisions are in [dashboard QUESTION.md](../../../../sprint_1/solutioning/dashboard-management/QUESTION.md).
