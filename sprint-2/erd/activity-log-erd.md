@@ -3,6 +3,7 @@
 > **Document Type:** ERD
 > **Status:** Draft
 > **Scope:** Logical MongoDB document proposal for append-only administrative business-action audit events required by BR-022. Security telemetry outside an authenticated/attributed admin business action and Sprint 3 activity read API contract details are outside this schema scope.
+> Decisions still open in this proposal are tracked in the [Sprint 2 decision register](../solutioning/open-decisions.md).
 
 ## ERD
 
@@ -65,14 +66,14 @@ Field names, lengths, and requiredness above are estimates from the draft ERD/UI
 
 The draft activity-list IFA needs query patterns finalized before selecting compound indexes. Candidate indexes below do not approve every displayed/searchable field, PII indexing, or retention strategy.
 
-| Index                                       | Columns                                                                   | Type                         | Purpose                                                                                                                                                                                                               |
-| ------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `_id_`                                      | MongoDB `_id`                                                             | Unique (provided by MongoDB) | Document identity. A separate `activity_log_id` and index may be unnecessary.                                                                                                                                         |
-| `ix_activity_log_occurred` (candidate)      | `occurred_at` descending, approved stable event ID descending             | Non-unique candidate         | Newest-first timeline with stable tie-break. Sprint 3 consumer IFA currently proposes `activityLogId`; decide whether that maps to `activity_log_id` or MongoDB `_id` and use the same key in the query/index (D-08). |
-| `ix_activity_log_category_time` (candidate) | `category`, `occurred_at` descending, approved stable event ID descending | Non-unique candidate         | Filtered activity list only if category/date filters are approved; use the same event ID as the consumer's deterministic tie-break (D-08).                                                                            |
-| `ix_activity_log_actor_time` (candidate)    | `actor_admin_id`, `occurred_at` descending                                | Non-unique candidate         | Actor history if an approved use case needs it.                                                                                                                                                                       |
-| `ix_activity_log_target_time` (candidate)   | `target_type`, `target_id`, `occurred_at` descending                      | Non-unique candidate         | Resource-specific investigation if authorized.                                                                                                                                                                        |
-| `ix_activity_log_request_id` (candidate)    | `request_id`                                                              | Non-unique candidate         | Request correlation; deduplication requires a separately defined stable key.                                                                                                                                          |
+| Index                                       | Columns                                                                   | Type                         | Purpose                                                                                                                                                                                                     |
+| ------------------------------------------- | ------------------------------------------------------------------------- | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `_id_`                                      | MongoDB `_id`                                                             | Unique (provided by MongoDB) | Document identity. A separate `activity_log_id` and index may be unnecessary.                                                                                                                               |
+| `ix_activity_log_occurred` (candidate)      | `occurred_at` descending, approved stable event ID descending             | Non-unique candidate         | Newest-first timeline with stable tie-break. Sprint 3 consumer IFA proposes `activityLogId`; decide whether that maps to `activity_log_id` or MongoDB `_id` and use the same key in the query/index (D-08). |
+| `ix_activity_log_category_time` (candidate) | `category`, `occurred_at` descending, approved stable event ID descending | Non-unique candidate         | Filtered activity list only if category/date filters are approved; use the same event ID as the consumer's deterministic tie-break (D-08).                                                                  |
+| `ix_activity_log_actor_time` (candidate)    | `actor_admin_id`, `occurred_at` descending                                | Non-unique candidate         | Actor history if an approved use case needs it.                                                                                                                                                             |
+| `ix_activity_log_target_time` (candidate)   | `target_type`, `target_id`, `occurred_at` descending                      | Non-unique candidate         | Resource-specific investigation if authorized.                                                                                                                                                              |
+| `ix_activity_log_request_id` (candidate)    | `request_id`                                                              | Non-unique candidate         | Request correlation; deduplication requires a separately defined stable key.                                                                                                                                |
 
 Do not add indexes on actor email, IP, user-agent, labels, reason, or changed values until privacy/access/query needs are approved. TTL indexes are not a default: retention, legal hold, archival, and purge ownership must be decided first.
 
@@ -104,19 +105,19 @@ There is no confirmed event bus/outbox relation or atomic commit topology. Such 
 ## Decisions
 
 - **BRD requirement:** BR-022 requires append-only administrative audit events with actor/action/target/outcome/time and redaction of secrets/unnecessary personal/payment data. Those five logical values are marked required above; their physical mapping and taxonomy remain open.
-- **Confirmed source fact:** The platform's Go application uses MongoDB, and the current admin settings `PUT` writes an activity event. The route inventory does not establish a dedicated Sprint 2 audit collection, event schema, append-only enforcement, or delivery/failure guarantees that satisfy the full BR-022 scope.
+- **Documented baseline/evidence:** Sprint 1 HLD/ERD identifies MongoDB for the Go platform; the in-repository route-to-handler coverage document records a settings `PUT` activity event. Neither statement was reverified against code in this work. The route document does not establish a dedicated Sprint 2 audit collection, event schema, append-only enforcement, or delivery/failure guarantees that satisfy BR-022.
 - **Observed UI fact:** Sprint 3 activity mock displays actor name/email, action, target, category, time, IP, and result; mock display alone does not approve collection of those values.
 - **TBD:** physical collection/ID, action taxonomy, category taxonomy, attempt/success/failure boundary, field allowlist, actor snapshots, PII/IP/user-agent treatment, event ordering, dedupe key, append-only enforcement, storage topology, write guarantee, failure policy, retention/archive/legal hold, access control, and read indexes. Security/audit, product/domain, data, and platform owners must decide.
 
 ## SLA Baseline
 
-No approved audit-write availability, delivery latency, durability, throughput, retention, or read SLA exists for Sprint 2. Targets and measurement scope are **TBD** in the [Sprint 2 BRD](../../BRD.md#6-sla-awal); this ERD makes no database-only SLA claim.
+No approved audit-write availability, delivery latency, durability, throughput, retention, or read SLA exists for Sprint 2. Targets and measurement scope are **TBD** in the [Sprint 2 BRD](../BRD.md#6-sla-awal); this ERD makes no database-only SLA claim.
 
 ## References
 
-- [Sprint 2 BRD](../../BRD.md) — BR-022 audit requirement and redaction constraint.
+- [Sprint 2 decision register](../solutioning/open-decisions.md) — D-07/D-08.
+- [Sprint 2 BRD](../BRD.md) — BR-022 audit requirement and redaction constraint.
 - [Sprint 2 HLD](../hld/sprint-2-hld.md) — target boundary; audit delivery topology is TBD.
-- [Go admin dashboard route inventory](../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage) — documents the current settings PUT activity event, not a complete BR-022 audit implementation.
-- [Sprint 3 activity log list IFA](../../../sprint-3/solutioning/dashboard/activity-logs/get-list-activity-logs.md) — proposed consumer read/filter needs, not approval for event schema.
-- [Sprint 1 Admin Account ERD](../../../sprint-1/erd/admin-account-erd.md) and [Role ERD](../../../sprint-1/erd/role-erd.md) — actor identity/access baseline.
-- [Sprint 2 assessment and decisions](../README.md#keputusan-yang-menghalangi-finalisasi)
+- [Go admin dashboard route inventory document](../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage) — documentary note on settings PUT activity event, not reverified against code in this work and not a complete BR-022 audit implementation.
+- [Sprint 3 activity log list IFA](../../sprint-3/solutioning/dashboard/activity-logs/get-list-activity-logs.md) — proposed consumer read/filter needs, not approval for event schema.
+- [Sprint 1 Admin Account ERD](../../sprint-1/erd/admin-account-erd.md) and [Role ERD](../../sprint-1/erd/role-erd.md) — actor identity/access baseline.

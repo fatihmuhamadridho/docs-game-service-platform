@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="900" height="648" viewBox="0 0 1000 720" role="img" aria-labelledby="title desc">
   <title id="title">Sprint 2 target architecture draft</title>
-  <desc id="desc">Visitors and administrators use the Next.js web app and Go API deployed through Vercel, following the Sprint 1 HLD baseline. The API accesses the existing MongoDB platform database outside that boundary. Current settings PUT records an activity event, but the wider BR-022 guarantees and topology remain undecided. Settings cache and propagation are target decisions.</desc>
+  <desc id="desc">Visitors and administrators use the Next.js web app and Go API deployed through Vercel, following the documented Sprint 1 HLD baseline. The API accesses the MongoDB platform database described in Sprint 1 documents. The in-repository route inventory records an activity event for settings PUT, but this was not reverified against code in this work. Wider BR-022 guarantees, audit topology, settings cache, and propagation remain undecided.</desc>
   <defs>
     <marker id="arrow" markerWidth="10" markerHeight="8" refX="9" refY="4" orient="auto"><path d="M0,0 L10,4 L0,8 z" fill="#40536b"/></marker>
     <style>
@@ -46,7 +46,7 @@
   <text class="edgeText" x="797" y="261" text-anchor="middle">Mongo</text>
 
   <rect class="pending" x="280" y="525" width="280" height="105"/>
-  <text class="label" x="420" y="567" text-anchor="middle">Observed settings event</text>
+  <text class="label" x="420" y="567" text-anchor="middle">Documented settings event</text>
   <text class="note" x="420" y="593" text-anchor="middle">BR-022 guarantees / topology TBD</text>
 
   <rect class="pending" x="620" y="525" width="300" height="105"/>
@@ -54,10 +54,10 @@
   <text class="note" x="770" y="593" text-anchor="middle">Mechanism / freshness TBD</text>
 
   <path class="edge" d="M610 350 C610 425 530 475 460 525"/>
-  <text class="edgeText" x="495" y="447" text-anchor="middle">Recorded on settings PUT</text>
+  <text class="edgeText" x="495" y="447" text-anchor="middle">Route inventory: settings PUT</text>
   <path class="proposedEdge" d="M710 350 C710 425 745 475 765 525"/>
   <text class="edgeText" x="755" y="447" text-anchor="middle">Target policy TBD</text>
 
-  <text class="sub" x="32" y="673">Settings PUT records an activity event; this does not establish complete BR-022 coverage or guarantees.</text>
+  <text class="sub" x="32" y="673">Route inventory notes a settings PUT activity event; not reverified against code or complete BR-022 coverage.</text>
   <text class="sub" x="32" y="699">Reconcile target components with approved BRD, MongoDB data design, IFAs, security policy, and operational SLA before release.</text>
 </svg>

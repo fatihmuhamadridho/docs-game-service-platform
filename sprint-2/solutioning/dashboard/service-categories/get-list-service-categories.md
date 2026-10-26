@@ -45,6 +45,8 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
+> Status usulan: angka baseline turunan Sprint 1; belum menjadi komitmen Sprint 2. Forecast, kondisi ukur, dan persetujuan owner masih diperlukan (D-12).
+
 | Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time                |
 | ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------- |
 | 99.9% monthly availability; valid-request server error ≤ 0.1% | 50 VUser / 20 request/s NFT target | Initial 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75% at target load | Read p95 ≤ 500 ms; p99 ≤ 2 s |
@@ -231,25 +233,27 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 | Endpoint                   | `GET /api/admin/service-categories/v1/list`                                                                                                                                            |
 | Sample parameter / request | Query: `q=top-up&isActive=true&page=1&limit=20`                                                                                                                                        |
 | Sample response            | Success code `SCAS00000`; use the complete Success Example below. Probe code `SCAB01002`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
-| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                               |
-| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                                |
+| NFT CPU / memory target    | Usulan: 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75%. Konfirmasi D-12 pending.                                                                                                 |
+| NFT TPS target             | Usulan: 20 request/s pada 50 VUser. Forecast dan approval D-12 pending.                                                                                                                |
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                      |
-| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| NFT        | Yes      | Validasi target contract untuk route daftar admin yang sudah tercatat di inventory. Uji search, filter aktif/nonaktif, limit minimum/maksimum, page, hasil kosong, dan hitung `serviceCount` tanpa duplikasi. VUser, CPU/memory, serta target TPS TBD menunggu forecast. |
-| VA/Pentest | Yes      | Verifikasi authentication/authorization, privilege boundaries, injection, query validation, serta tidak adanya field internal yang tidak diperlukan.                                                                                                                     |
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                                                     |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFT        | Yes      | Validasi target contract untuk route daftar admin yang sudah tercatat di inventory. Uji search, filter aktif/nonaktif, limit minimum/maksimum, page, hasil kosong, dan hitung `serviceCount` tanpa duplikasi. Baseline pada tabel SLA adalah usulan; forecast, kondisi ukur, dan approval D-12 pending. |
+| VA/Pentest | Yes      | Verifikasi authentication/authorization, privilege boundaries, injection, query validation, serta tidak adanya field internal yang tidak diperlukan.                                                                                                                                                    |
 
 ## Assumptions
 
 - Parameter, pagination, response payload, service codes, permission, dan perilaku target adalah usulan; root envelope mengikuti Sprint 1 karena kontrak target kategori belum disetujui. Method/path route tercatat pada inventory lokal.
-- Admin `serviceCount` mengusulkan seluruh layanan non-deleted, termasuk inactive; public `serviceCount` saat ini hanya menghitung layanan aktif pada game aktif. Tujuan dan predicate kedua metric harus disetujui melalui D-14.
+- Admin `serviceCount` mengusulkan seluruh layanan non-deleted, termasuk inactive; catatan route publik historis (belum diverifikasi ulang) hanya menghitung layanan aktif pada game aktif. Tujuan dan predicate kedua metric harus disetujui melalui D-14.
 - Nama, slug, description, status aktif, serta batas panjang mengikuti proposal ERD/UI. Aturan uniqueness dan indeks final masih TBD.
 - `deleted_at` tersedia di ERD, tetapi kebijakan penghapusan kategori belum disetujui; API mengecualikan soft-deleted rows sebagai asumsi.
 - Sort `name ASC`, ID tie-break, default `page=1`, `limit=20`, dan maksimum `limit=100` adalah proposal.
-- Identity provider, role mapping, rate limit, SLA, database engine, dan auth HTTP mapping TBD.
+- Identity provider, role mapping, rate limit, SLA target approval, database engine, dan auth HTTP mapping TBD.
 
 ## References
 
+- [Register keputusan terbuka Sprint 2](../../open-decisions.md) — definisi dan kriteria penutupan D-01–D-18.
+
 - [Sprint 2 BRD](../../../BRD.md) — BR-019, pengelolaan kategori layanan.
-- `../../erd/service-category-erd.md` — field kategori, relasi layanan, indeks, dan aturan soft delete.
-- `../../erd/service-erd.md` — sumber relasi layanan yang dihitung pada `serviceCount`.
+- [Service Category ERD](../../../erd/service-category-erd.md) — field kategori, relasi layanan, indeks, dan aturan soft delete.
+- [Service ERD](../../../erd/service-erd.md) — sumber relasi layanan yang dihitung pada `serviceCount`.

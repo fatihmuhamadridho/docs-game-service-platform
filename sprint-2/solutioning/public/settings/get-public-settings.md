@@ -5,6 +5,8 @@
 > **Service / Domain:** Public Platform Settings
 > **Consumer / Partner:** JokiHub public storefront
 
+> Catatan bukti: Perilaku implementasi dalam dokumen ini merangkum catatan route lokal terdahulu dan belum diverifikasi ulang terhadap kode pada pekerjaan ini. Perlakukan sebagai konteks historis; kontrak Sprint 2 adalah target proposal.
+
 ## Design
 
 ![Sprint 1 homepage design](../../../design/homepage.png)
@@ -24,7 +26,7 @@ sequenceDiagram
         DB-->>API: Nilai public settings
     else Record belum ada
         DB-->>API: Tidak ada record
-        API->>API: Susun nilai fallback source yang terdokumentasi
+        API->>API: Susun nilai fallback sesuai target setelah nilai/default disetujui (D-05/D-09)
     end
     API-->>UI: 200 SETS00000, target {code,message,data}
     Note over API,UI: Cache-Control: no-store
@@ -36,21 +38,23 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
+> Status usulan: angka baseline turunan Sprint 1; belum menjadi komitmen Sprint 2. Forecast, kondisi ukur, dan persetujuan owner masih diperlukan (D-12).
+
 | Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time                |
 | ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------- |
 | 99.9% monthly availability; valid-request server error ≤ 0.1% | 50 VUser / 20 request/s NFT target | Initial 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75% at target load | Read p95 ≤ 500 ms; p99 ≤ 2 s |
 
 ## General Information
 
-| Component          | Value                                                                                                                                                                                    |
-| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Description        | Membaca proyeksi allowlist pengaturan publik untuk storefront.                                                                                                                           |
-| Resource URL       | `https://{host}/api/settings/v1/public`                                                                                                                                                  |
-| Transport Protocol | HTTPS, REST                                                                                                                                                                              |
-| Request Verb       | GET                                                                                                                                                                                      |
-| Content Type       | `application/json` response; GET tidak memiliki request body.                                                                                                                            |
-| Interaction Type   | Synchronous                                                                                                                                                                              |
-| Security Policy    | Public read tanpa autentikasi menurut source audit. Hanya field allowlist yang boleh dikembalikan; target exposure harus disetujui pada D-09. Source mengirim `Cache-Control: no-store`. |
+| Component          | Value                                                                                                                                                                  |
+| ------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Description        | Membaca proyeksi allowlist pengaturan publik untuk storefront.                                                                                                         |
+| Resource URL       | `https://{host}/api/settings/v1/public`                                                                                                                                |
+| Transport Protocol | HTTPS, REST                                                                                                                                                            |
+| Request Verb       | GET                                                                                                                                                                    |
+| Content Type       | `application/json` response; GET tidak memiliki request body.                                                                                                          |
+| Interaction Type   | Synchronous                                                                                                                                                            |
+| Security Policy    | Target proposal: public read dengan field allowlist dan `Cache-Control: no-store`; exposure, authentication boundary, dan cache policy menunggu persetujuan D-09/D-11. |
 
 ### Path / Endpoint
 
@@ -67,22 +71,22 @@ sequenceDiagram
 - **Decision:** Existing v1 route; the target response changes the current public wire envelope and is not backward-compatible without consumer coordination.
 - **Previous Endpoint:** `GET /api/settings/v1/public`.
 - **Final Endpoint:** `GET /api/settings/v1/public`.
-- **Backward Compatibility:** Current source behavior remains nested as recorded in the source audit. Decide rollout, consumer migration, and compatibility before changing the deployed route (D-09/D-11).
+- **Backward Compatibility:** Historical local route notes describe a nested response envelope; this was not reverified in this work. Decide rollout, consumer migration, and compatibility before changing the deployed route (D-09/D-11).
 - **Reason:** Storefront can display public identity/contact information from a server-owned allowlist.
 
 ## Business Rules
 
-1. Source success returns `siteName`, `siteDescription`, `contactEmail`, `contactWhatsapp`, `socialLinks` (`label`, `url`), and `businessHours`; admin-only settings such as maintenance/registration controls, currency, timezone, version, and updater identity are excluded.
-2. When no settings record exists, source returns defaults: site name `JokiHub`, empty contact/description strings, empty `socialLinks`, and `businessHours: null`.
-3. Source sets `Cache-Control: no-store`; no CDN or intermediary caching is proposed by this IFA. Any change requires D-09 approval and freshness/security review.
-4. Target success response uses root `{code,message,data}` and returns the settings object directly in `data`. Current source remains nested until an approved consumer migration is released.
+1. Historical local route notes describe success fields `siteName`, `siteDescription`, `contactEmail`, `contactWhatsapp`, `socialLinks` (`label`, `url`), and `businessHours`, and omission of admin-only settings such as maintenance/registration controls, currency, timezone, version, and updater identity. These notes are not reverified in this work; the target allowlist requires D-09 approval.
+2. Historical local route notes describe defaults when no settings record exists: site name `JokiHub`, empty contact/description strings, empty `socialLinks`, and `businessHours: null`. Confirm these target defaults under D-05/D-09.
+3. Historical local route notes describe `Cache-Control: no-store`; this IFA proposes no CDN or intermediary caching. Any change requires D-09 approval and freshness/security review.
+4. Target success response uses root `{code,message,data}` and returns the settings object directly in `data`. Historical local notes describe a nested envelope, not reverified in this work; consumer migration is required before changing deployed behavior.
 5. The public purpose, audience, field approval, localization, availability/error copy, and whether this route has a product-facing acceptance criterion are TBD (D-09/D-15).
 
 ## Request Headers
 
-| Header   | Type   | M/O/C | Max Length | Description                                                                             | Example            |
-| -------- | ------ | ----- | ---------: | --------------------------------------------------------------------------------------- | ------------------ |
-| `Accept` | String | O     |        100 | Consumer may request JSON; current source does not document explicit header validation. | `application/json` |
+| Header   | Type   | M/O/C | Max Length | Description                                                                                    | Example            |
+| -------- | ------ | ----- | ---------: | ---------------------------------------------------------------------------------------------- | ------------------ |
+| `Accept` | String | O     |        100 | Consumer may request JSON; historical local notes do not establish explicit header validation. | `application/json` |
 
 ## Request Parameters
 
@@ -151,7 +155,7 @@ No business error is defined for this parameter-free read route.
 | HTTP Status | Usage                                                                                  |
 | ----------- | -------------------------------------------------------------------------------------- |
 | `200`       | Public settings retrieved, including documented fallback values when no record exists. |
-| `500`       | Settings repository read failure; source code is `SETT03001`.                          |
+| `500`       | Settings repository read failure; proposed service code is `SETT03001`.                |
 
 ## Service Status Codes
 
@@ -164,9 +168,9 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`.
 
 ## API Exposure Classification
 
-| Classification                                       | Rationale                                                                                                                |
-| ---------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
-| Public (current source; target product approval TBD) | Route is an unauthenticated public read in the local source audit. Target business purpose/exposure still requires D-09. |
+| Classification                        | Rationale                                                                                                |
+| ------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Public target proposal (approval TBD) | Public read exposure, authentication boundary, purpose, and field allowlist require D-09/D-11 decisions. |
 
 ## Testing & Documentation Scope
 
@@ -176,8 +180,8 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`.
 | Endpoint                   | `GET /api/settings/v1/public`                                                                                                                                                          |
 | Sample parameter / request | No parameters or request body                                                                                                                                                          |
 | Sample response            | Success code `SETS00000`; use the complete Success Example below. Probe code `SETT03001`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
-| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                               |
-| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                                |
+| NFT CPU / memory target    | Usulan: 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75%. Konfirmasi D-12 pending.                                                                                                 |
+| NFT TPS target             | Usulan: 20 request/s pada 50 VUser. Forecast dan approval D-12 pending.                                                                                                                |
 
 | Scope      | Required | Rationale / Handoff                                                                                                                                                                                     |
 | ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -186,12 +190,11 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`.
 
 ## Assumptions
 
-- The source allowlist and defaults are facts from the local source audit; the root envelope is a Sprint 2 target proposal.
-- The source audit confirms `businessHours` may be null but does not establish the non-null serialized type. The admin settings contract uses string/null; this public target provisionally follows that type, pending confirmation against the settings model and public-field decision D-09.
+- Earlier local route notes describe an allowlist and defaults, but these have not been reverified against code in this work; the root envelope is a Sprint 2 target proposal.
+- Earlier local route notes say `businessHours` may be null but do not establish the non-null serialized type. The admin settings target uses string/null; this public target provisionally follows that type, pending confirmation against the settings model and public-field decision D-09.
 - No acceptance-criteria index exists in the repository, so route presence does not prove the route has a Sprint 2 delivery story (D-15).
 
 ## References
 
 - [Sprint 2 BRD](../../../BRD.md) — scope and open gates.
-- [Public catalog source audit](../catalog/source-audit-2026-10-23.md) — current route behavior, codes, defaults, and cache header.
-- [Sprint 2 decisions](../../README.md#keputusan-yang-menghalangi-finalisasi) — D-09, D-11, D-12, D-15.
+- [Sprint 2 decision register](../../open-decisions.md) — D-05/D-09/D-11/D-12/D-15.

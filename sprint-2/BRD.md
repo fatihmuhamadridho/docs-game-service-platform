@@ -51,20 +51,21 @@ Item berikut hanya kandidat, belum dinyatakan sebagai scope atau pengecualian: p
 
 - Data game yang tersedia mendahului pengelolaan kategori/layanan; aturan eligibility katalog dan harga mendahului pemilihan layanan publik.
 - Fixed-price dan quote-required adalah kondisi berbeda. Nominal quote yang belum disetujui tidak boleh ditampilkan sebagai harga final atau digunakan untuk pembayaran (BR-005).
-- Pengelolaan admin memerlukan otorisasi. Model permission target kategori/layanan dan grant role menunggu keputusan D-18; source route inventory saat ini mencatat `catalog-manage`, sedangkan IFA mengusulkan key granular.
+- Pengelolaan admin memerlukan otorisasi. Model permission target kategori/layanan dan grant role menunggu keputusan D-18; dokumen route-to-handler coverage dalam repo mencatat `catalog-manage`, sedangkan IFA mengusulkan key granular. Catatan tersebut adalah bukti dokumenter lokal dan belum diverifikasi ulang terhadap kode pada pekerjaan ini.
 - Aksi administratif yang termasuk BR-022 harus mempertahankan identitas logis aktor dan target, aksi, hasil, serta waktu pada event tersimpan. Field tambahan, actor sistem, anonimisasi, redaksi, event boundary, retensi, storage, dan perilaku kegagalan menunggu kebijakan owner (D-07/D-08).
 - Route admin settings yang tercatat di repo mengembalikan/mengubah sepuluh field dengan permission `settings-manage`; fakta route tidak menyetujui schema fisik, public allowlist target, maintenance/registration semantics, concurrency, atau propagation.
 - Checkout Sprint 3 memerlukan instruksi pembayaran pelanggan terkini. Owner dan source of truth belum ditetapkan; jangan anggap instruksi tersebut otomatis bagian dari BR-020 settings (D-16).
 - Dokumen ini mencakup enam BR-ID yang tersedia untuk Sprint 2. Acceptance criteria dan pemetaan story tidak termasuk deliverable saat ini; ID portofolio lintas sprint masih menunggu register kanonis (D-17).
+- [Register keputusan terbuka Sprint 2](./solutioning/open-decisions.md) mendefinisikan D-01–D-18 yang dirujuk dokumen scope dan solutioning.
 - Owner, estimasi, tanggal, metrik keberhasilan, dan target SLA delivery masih TBD.
 
 ## 6. SLA Awal
 
-Belum ada target SLA Sprint 2 yang disetujui atau hasil benchmark yang tersedia. Target berikut memerlukan cakupan endpoint, forecast beban, sumber angka, dan persetujuan product/platform sebelum menjadi komitmen (D-12).
+Belum ada target SLA Sprint 2 yang disetujui atau hasil benchmark yang tersedia. Setiap IFA memuat usulan baseline numerik turunan Sprint 1 menurut jenis operasi; angka tersebut bukan komitmen Sprint 2. Cakupan endpoint, criticality, forecast beban, kondisi ukur, sumber angka, dan persetujuan product/platform harus dikonfirmasi sebelum baseline diadopsi (D-12).
 
-| Metrik                                   | Target                                                                 |
-| ---------------------------------------- | ---------------------------------------------------------------------- |
-| Ketersediaan layanan publik dan admin    | TBD — tetapkan criticality dan target per layanan.                     |
-| Beban dan kapasitas                      | TBD — perlu forecast trafik/concurrent users dan hasil NFT.            |
-| Latensi API publik dan admin             | TBD — tetapkan target per endpoint dan ukur baseline.                  |
-| Propagasi settings dan freshness katalog | TBD — tetapkan definisi ukur, kebijakan cache, dan target operasional. |
+| Metrik                                   | Target                                                                                                       |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------ |
+| Ketersediaan layanan publik dan admin    | TBD — IFAs mengusulkan 99.9% bulanan; tetapkan criticality dan setujui per layanan.                          |
+| Beban dan kapasitas                      | TBD — IFAs mengusulkan 50 VUser / 20 request/s dan 2 vCPU / 4 GiB; konfirmasi forecast dan hasil NFT.        |
+| Latensi API publik dan admin             | TBD — IFAs mengusulkan read p95 ≤ 500 ms / p99 ≤ 2 s dan write p95 ≤ 1 s / p99 ≤ 2 s; tetapkan per endpoint. |
+| Propagasi settings dan freshness katalog | TBD — tetapkan definisi ukur, kebijakan cache, dan target operasional.                                       |

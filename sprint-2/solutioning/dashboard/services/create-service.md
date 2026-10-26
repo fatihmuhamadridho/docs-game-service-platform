@@ -39,9 +39,9 @@ sequenceDiagram
                 API->>DB: Simpan game_service
                 alt Penyimpanan berhasil
                     DB-->>API: Service baru dan timestamp
-                    Note over API,Audit: BR-022 mewajibkan audit event, tetapi delivery dan failure policy belum diputuskan
-                    API-->>UI: 200 SRVS00000, data
-                    UI-->>Admin: Tampilkan konfirmasi dan layanan baru
+                    Note over API,Audit: Jalur sukses 200 hanya berlaku setelah kebijakan D-07/D-08 disetujui dan outcome audit memenuhi kebijakan; detail delivery tidak ditetapkan di sini
+                    API-->>UI: 200 SRVS00000, data (bersyarat pada kebijakan audit yang disetujui)
+                    UI-->>Admin: Tampilkan konfirmasi dan layanan baru setelah outcome sukses terkonfirmasi
                 else Database gagal
                     DB-->>API: Kegagalan penyimpanan
                     API-->>UI: 500 SRVT03001, data null
@@ -53,6 +53,8 @@ sequenceDiagram
 ```
 
 ## Performance / SLA Targets
+
+> Status usulan: angka baseline turunan Sprint 1; belum menjadi komitmen Sprint 2. Forecast, kondisi ukur, dan persetujuan owner masih diperlukan (D-12).
 
 | Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time              |
 | ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | -------------------------- |
@@ -246,13 +248,13 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 | Endpoint                   | `POST /api/admin/services/v1/create`                                                                                                                                                   |
 | Sample parameter / request | JSON body: `gameId=game_01ARZ3NDEKTSV4RRFFQ69G5FAV`, `categoryId=cat_01JXYZ`, `isCustomPrice=false`, `priceAmount=25000`                                                               |
 | Sample response            | Success code `SRVS00000`; use the complete Success Example below. Probe code `SRVB01002`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
-| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                               |
-| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                                |
+| NFT CPU / memory target    | Usulan: 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75%. Konfirmasi D-12 pending.                                                                                                 |
+| NFT TPS target             | Usulan: 20 request/s pada 50 VUser. Forecast dan approval D-12 pending.                                                                                                                |
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                          |
-| ---------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | Validasi target contract untuk route create admin yang sudah tercatat di inventory. Uji fixed/custom price, batas nilai/presisi, referensi aktif/nonaktif/deleted, request bersamaan, persistence, dan peak admin load. VUser, CPU/memory, target TPS TBD menunggu forecast. |
-| VA/Pentest | Yes      | Verifikasi authentication/authorization, mass assignment, IDOR pada referensi game/kategori, input validation, injection, audit attribution, dan tidak ada update silang ke entitas katalog.                                                                                 |
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                                                                              |
+| ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFT        | Yes      | Validasi target contract untuk route create admin yang sudah tercatat di inventory. Uji fixed/custom price, batas nilai/presisi, referensi aktif/nonaktif/deleted, request bersamaan, persistence, dan peak admin load. Baseline VUser/CPU/memory/TPS pada tabel SLA merupakan usulan; forecast dan approval D-12 masih pending. |
+| VA/Pentest | Yes      | Verifikasi authentication/authorization, mass assignment, IDOR pada referensi game/kategori, input validation, injection, audit attribution, dan tidak ada update silang ke entitas katalog.                                                                                                                                     |
 
 ## Assumptions
 
@@ -261,12 +263,14 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - Status aktif default `true`, eligibility parent inactive, serta currency platform tunggal memerlukan keputusan product/API owner.
 - Uniqueness nama layanan belum ditetapkan ERD; kontrak tidak menambah aturan uniqueness tanpa persetujuan.
 - BR-022 mewajibkan event, tetapi target audit store/service, delivery/atomicity, serta respons saat gagal belum diputuskan; diagram tidak mengasumsikan platform audit service tertentu.
-- Idempotency, currency representation, database engine, identity provider, role mapping, HTTP auth mapping, dan SLA TBD.
+- Idempotency, currency representation, database engine, identity provider, role mapping, HTTP auth mapping, dan persetujuan target SLA masih TBD.
 
 ## References
 
+- [Register keputusan terbuka Sprint 2](../../open-decisions.md) — definisi dan kriteria penutupan D-01–D-18.
+
 - [Sprint 2 BRD](../../../BRD.md) — BR-019, pengelolaan layanan; BR-005, pembedaan harga tetap dan quote pada katalog publik.
-- `../../erd/service-erd.md` — atribut layanan, harga, relasi game/kategori, status, dan constraints.
-- `../../erd/game-catalog-erd.md` — game catalog reference dan lifecycle.
-- `../../erd/service-category-erd.md` — category reference dan lifecycle.
-- `../service-categories/create-service-category.md` — pola create API kategori admin.
+- [Service ERD](../../../erd/service-erd.md) — atribut layanan, harga, relasi game/kategori, status, dan constraints.
+- [Sprint 1 Game ERD](../../../../sprint-1/erd/game-catalog-erd.md) — game catalog reference dan lifecycle.
+- [Service Category ERD](../../../erd/service-category-erd.md) — category reference dan lifecycle.
+- [Create Service Category IFA](../service-categories/create-service-category.md) — pola create API kategori admin.

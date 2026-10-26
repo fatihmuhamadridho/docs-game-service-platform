@@ -43,9 +43,9 @@ sequenceDiagram
                 API->>DB: Simpan perubahan kategori setelah validasi
                 alt Update berhasil
                     DB-->>API: Kategori terbarui
-                    Note over API,Audit: BR-022 mewajibkan audit event, tetapi delivery dan failure policy belum diputuskan
-                    API-->>UI: 200 SCAS00000, data
-                    UI-->>Admin: Tampilkan konfirmasi dan data terbaru
+                    Note over API,Audit: Jalur sukses 200 hanya berlaku setelah kebijakan D-07/D-08 disetujui dan outcome audit memenuhi kebijakan; detail delivery tidak ditetapkan di sini
+                    API-->>UI: 200 SCAS00000, data (bersyarat pada kebijakan audit yang disetujui)
+                    UI-->>Admin: Tampilkan konfirmasi dan data terbaru setelah outcome sukses terkonfirmasi
                 else Database gagal
                     DB-->>API: Kegagalan update
                     API-->>UI: 500 SCAT03001, data null
@@ -57,6 +57,8 @@ sequenceDiagram
 ```
 
 ## Performance / SLA Targets
+
+> Status usulan: angka baseline turunan Sprint 1; belum menjadi komitmen Sprint 2. Forecast, kondisi ukur, dan persetujuan owner masih diperlukan (D-12).
 
 | Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time              |
 | ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | -------------------------- |
@@ -253,13 +255,13 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 | Endpoint                   | `PUT /api/admin/service-categories/v1/update/{categoryId}`                                                                                                                             |
 | Sample parameter / request | Path: `categoryId=cat_01JXYZ`; body uses `name="Top Up"`, `slug="top-up"`                                                                                                              |
 | Sample response            | Success code `SCAS00000`; use the complete Success Example below. Probe code `SCAB01002`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
-| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                               |
-| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                                |
+| NFT CPU / memory target    | Usulan: 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75%. Konfirmasi D-12 pending.                                                                                                 |
+| NFT TPS target             | Usulan: 20 request/s pada 50 VUser. Forecast dan approval D-12 pending.                                                                                                                |
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                                           |
-| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | Validasi target contract untuk route update admin yang sudah tercatat di inventory. Uji perubahan tiap field, no-op, perubahan status, perubahan slug, duplicate check concurrent, referensi layanan tetap utuh, dan persistence. VUser, CPU/memory, serta target TPS TBD mengikuti forecast. |
-| VA/Pentest | Yes      | Verifikasi authentication/authorization, IDOR, mass assignment, race condition uniqueness, input validation, audit attribution, serta tidak ada perubahan ke layanan/order snapshot.                                                                                                          |
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                                                                                        |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| NFT        | Yes      | Validasi target contract untuk route update admin yang sudah tercatat di inventory. Uji perubahan tiap field, no-op, perubahan status, perubahan slug, duplicate check concurrent, referensi layanan tetap utuh, dan persistence. Baseline VUser/CPU/memory/TPS pada tabel SLA merupakan usulan; forecast dan approval D-12 masih pending. |
+| VA/Pentest | Yes      | Verifikasi authentication/authorization, IDOR, mass assignment, race condition uniqueness, input validation, audit attribution, serta tidak ada perubahan ke layanan/order snapshot.                                                                                                                                                       |
 
 ## Assumptions
 
@@ -269,11 +271,13 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - Slug dapat diubah dari modal edit; redirect/compatibility untuk URL lama perlu diputuskan bila slug digunakan storefront.
 - BR-022 mewajibkan event untuk aksi administratif ini, tetapi target audit store/service, bentuk event, delivery/atomicity, serta respons saat gagal belum diputuskan; diagram tidak mengasumsikan platform audit service tertentu.
 - Optimistic concurrency melalui `If-Match` belum ditetapkan pada kontrak target dan tidak tercatat pada route inventory; tentukan ETag/version policy sebelum menyebutnya sebagai perilaku API.
-- HTTP auth mapping, rate limit, identity provider, role mapping, database engine, serta SLA TBD.
+- HTTP auth mapping, rate limit, identity provider, role mapping, database engine, serta persetujuan target SLA masih TBD.
 
 ## References
 
+- [Register keputusan terbuka Sprint 2](../../open-decisions.md) — definisi dan kriteria penutupan D-01–D-18.
+
 - [Sprint 2 BRD](../../../BRD.md) — BR-019, pengelolaan kategori layanan.
-- `../../erd/service-category-erd.md` — atribut kategori, uniqueness, relasi layanan, dan audit proposal.
-- `./create-service-category.md` — aturan create, normalisasi, dan kode layanan kategori.
-- `./get-detail-service-category.md` — field detail kategori.
+- [Service Category ERD](../../../erd/service-category-erd.md) — atribut kategori, uniqueness, relasi layanan, dan audit proposal.
+- [create-service-category.md](./create-service-category.md) — aturan create, normalisasi, dan kode layanan kategori.
+- [get-detail-service-category.md](./get-detail-service-category.md) — field detail kategori.

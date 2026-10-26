@@ -9,6 +9,8 @@
 
 ![Sprint 2 dashboard design](../../../design/dashboard.png)
 
+> Catatan bukti: route PUT settings dirujuk dari route inventory dokumenter lokal; perilaku kode tidak diverifikasi ulang pada pekerjaan ini. Response IFA adalah kontrak target.
+
 ## Sequence Diagram
 
 ```mermaid
@@ -31,7 +33,7 @@ sequenceDiagram
             API-->>UI: 400 SETB02001, data null
         else Payload valid
             API->>DB: Simpan seluruh snapshot settings
-            Note over API,DB: Source menulis activity event; atomicity/durability/failure policy BR-022 tetap TBD
+            Note over API,DB: Route inventory document records an activity event; target delivery/failure outcome follows approved D-07/D-08 policy
             alt Database gagal
                 DB-->>API: Kegagalan repository
                 API-->>UI: 500 SETT03001, data null
@@ -40,10 +42,10 @@ sequenceDiagram
                 API->>Cache: Invalidate/publish versi konfigurasi baru (target TBD)
                 alt Propagation terkonfirmasi
                     Cache-->>API: Konfigurasi baru aktif
-                    API-->>UI: 200 SETS00000, data object settings
+                    API-->>UI: 200 SETS00000, data object settings (only when approved audit policy is satisfied)
                 else Propagation belum terkonfirmasi
                     Cache-->>API: Status belum diketahui
-                    API-->>UI: 200 SETS00000, propagationStatus proposal menunggu persetujuan
+API-->>UI: Outcome/status TBD; do not return success until persistence, audit, and propagation semantics are approved (D-05/D-07/D-08)
                 end
             end
         end
@@ -51,6 +53,8 @@ sequenceDiagram
 ```
 
 ## Performance / SLA Targets
+
+> Status usulan: angka baseline turunan Sprint 1; belum menjadi komitmen Sprint 2. Forecast, kondisi ukur, dan persetujuan owner masih diperlukan (D-12).
 
 | Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time              |
 | ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | -------------------------- |
@@ -81,14 +85,14 @@ sequenceDiagram
 ### API Versioning
 
 - **Decision:** Existing Endpoint / target enhancement.
-- **Existing source route:** `PUT /api/admin/settings/v1/general` tercatat pada source inventory Sprint 3.
+- **Route inventory documentation:** `PUT /api/admin/settings/v1/general` tercatat pada dokumen lokal; perilaku kode tidak diverifikasi ulang pada pekerjaan ini.
 - **Proposed target endpoint:** `PUT /api/admin/settings/v1/general`; method/path dipertahankan.
 - **Backward Compatibility:** PUT mewajibkan sepuluh field settings termasuk `socialLinks` dan `businessHours`, serta permission `settings-manage`. Target envelope mengikuti pola Sprint 1; HTTP mapping, concurrency, dan propagation memerlukan keputusan API owner.
 - **Reason:** Admin Dashboard perlu menyimpan perubahan konfigurasi umum platform.
 
 ## Business Rules
 
-1. Hanya administrator terautentikasi dengan permission `settings-manage` dapat memperbarui pengaturan, mengikuti route source saat ini.
+1. **Konteks route historis:** Catatan route-to-handler coverage dalam repo menyebut admin authentication dan permission `settings-manage`; verifikasi perilaku kode sebelum delivery. Authorization target memerlukan keputusan D-11.
 2. `PUT` mengganti seluruh snapshot mutable; seluruh field kontrak wajib hadir. Partial update tidak termasuk.
 3. `siteName` wajib dan tidak boleh kosong setelah trim. String disimpan sebagai teks biasa dan di-escape saat render.
 4. `siteDescription` boleh kosong/null; batas target 500 karakter perlu diselaraskan dengan keputusan produk bila berbeda dari source.
@@ -98,7 +102,7 @@ sequenceDiagram
 8. `businessHours` wajib hadir, menerima string/null maksimal 160 karakter.
 9. `maintenanceMode` dan `allowRegistration` harus boolean JSON.
 10. `defaultCurrency` saat ini hanya menerima `IDR`; `timezone` mengikuti `Asia/Jakarta`, `Asia/Makassar`, atau `Asia/Jayapura`.
-11. Source menaikkan `version`, menetapkan `updatedAt`, dan menulis activity event. Atomicity audit, delivery guarantee, dan failure policy belum disepakati; jangan mengklaim transaksi atomik sebelum D-07/D-08 disetujui.
+11. Historical route inventory notes describe a `version` increment, `updatedAt` assignment, and activity-event write; this was not reverified against code in this work. Atomicity audit, delivery guarantee, and failure policy remain undecided; do not claim an atomic transaction before D-07/D-08 are approved.
 12. Cache/config propagation adalah target yang belum diputuskan. Semantics response saat persistence berhasil namun propagation belum selesai juga memerlukan persetujuan.
 13. Source tidak membuktikan optimistic concurrency. `If-Match`, stale-write behavior, last-write-wins, serta dampak retry/no-op terhadap version dan audit masih TBD.
 14. BR-022 mewajibkan actor, action, target, outcome, dan time serta redaksi data sensitif yang tidak diperlukan. Jangan mencatat token/session secret.
@@ -168,9 +172,9 @@ None.
 7. `socialLinks` wajib array maksimal 12 objek; tiap `label` wajib string trim non-empty maksimal 40 karakter dan tiap `url` wajib HTTPS maksimal 255 karakter.
 8. `businessHours` wajib hadir sebagai string/null dengan panjang maksimal 160 karakter.
 9. `maintenanceMode` dan `allowRegistration` harus boolean JSON, bukan string atau angka.
-10. `defaultCurrency` harus `IDR`; nilai lain ditolak sesuai source contract saat ini.
+10. **Konteks route historis:** Catatan route-to-handler coverage menyebut `defaultCurrency` hanya menerima `IDR`; verifikasi perilaku kode dan putuskan aturan target melalui D-05/D-11.
 11. `timezone` harus anggota allowlist IANA: `Asia/Jakarta`, `Asia/Makassar`, atau `Asia/Jayapura`.
-12. Jika optimistic concurrency disetujui, `If-Match` dapat diwajibkan; stale version memerlukan status yang ditetapkan D-06/D-11. Source saat ini hanya membuktikan version increment.
+12. Jika optimistic concurrency disetujui, `If-Match` dapat diwajibkan; stale version memerlukan status yang ditetapkan D-06/D-11. Catatan route lokal menyebut version increment, bukan compare-and-update.
 13. Validasi seluruh object sebelum persistence. HTTP/service-code mapping untuk kegagalan database tetap menunggu D-11.
 14. Kegagalan propagation pasca-persistence tidak boleh memberi kesan bahwa perubahan belum tersimpan. Response/status retry yang sesuai masih menunggu persetujuan; `propagationStatus` belum menjadi kontrak.
 
@@ -275,7 +279,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Assumptions
 
-- Route PUT `/api/admin/settings/v1/general` sudah tercatat pada source inventory Sprint 3.
+- Route PUT `/api/admin/settings/v1/general` tercatat pada route inventory document lokal; perilaku kode tidak diverifikasi ulang pada pekerjaan ini.
 - Target mempertahankan root envelope `{code,message,data}` sesuai pola Sprint 1; HTTP/error mapping tetap memerlukan keputusan D-11.
 - `defaultCurrency` hanya `IDR`; timezone mengikuti tiga pilihan yang tercatat. Perubahan daftar nilai memerlukan koordinasi consumer.
 - Authentication/permission implementation, storage, audit atomicity, cache propagation, optimistic concurrency, default bootstrap values, SLA, dan HTTP status mapping masih TBD.
@@ -285,6 +289,6 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 - [Sprint 2 BRD](../../../BRD.md) — BR-020 field/settings scope and BR-022 audit requirement.
 - [Platform settings ERD](../../../erd/platform-settings-erd.md) — logical settings data proposal and unresolved physical mapping.
-- [Go admin dashboard source inventory](../../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage) — current admin route/permission/field/response behavior.
+- [Go admin dashboard route inventory document](../../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage) — documentary admin route/permission/field/response summary; not reverified against code in this work.
 - [GET general settings IFA](./get-general-settings.md) — companion read contract.
-- [Sprint 2 decision register](../../../../README.md#keputusan-yang-menghalangi-finalisasi) — open decisions D-05/D-06/D-07/D-08/D-09/D-11.
+- [Sprint 2 decision register](../../open-decisions.md) — D-05/D-06/D-07/D-08/D-09/D-11.

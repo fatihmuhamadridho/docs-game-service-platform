@@ -39,9 +39,9 @@ sequenceDiagram
                 API->>DB: Set deleted_at dan updated_at secara atomik
                 alt Soft delete berhasil
                     DB-->>API: Service ditandai terhapus
-                    Note over API,Audit: BR-022 mewajibkan audit event, tetapi delivery dan failure policy belum diputuskan
-                    API-->>UI: 200 SRVS00000, data.serviceId dan data.deletedAt
-                    UI-->>Admin: Tampilkan konfirmasi penghapusan
+                    Note over API,Audit: Jalur sukses 200 hanya berlaku setelah kebijakan D-07/D-08 disetujui dan outcome audit memenuhi kebijakan; detail delivery tidak ditetapkan di sini
+                    API-->>UI: 200 SRVS00000, data.serviceId dan data.deletedAt (bersyarat pada kebijakan audit yang disetujui)
+                    UI-->>Admin: Tampilkan konfirmasi penghapusan setelah outcome sukses terkonfirmasi
                 else Database gagal
                     DB-->>API: Kegagalan update
                     API-->>UI: 500 SRVT03001, data null
@@ -53,6 +53,8 @@ sequenceDiagram
 ```
 
 ## Performance / SLA Targets
+
+> Status usulan: angka baseline turunan Sprint 1; belum menjadi komitmen Sprint 2. Forecast, kondisi ukur, dan persetujuan owner masih diperlukan (D-12).
 
 | Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time              |
 | ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | -------------------------- |
@@ -208,13 +210,13 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 | Endpoint                   | `DELETE /api/admin/services/v1/delete/{serviceId}`                                                                                                                                     |
 | Sample parameter / request | Path: `serviceId=svc_01JXYZ`                                                                                                                                                           |
 | Sample response            | Success code `SRVS00000`; use the complete Success Example below. Probe code `SRVB01002`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
-| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                               |
-| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                                |
+| NFT CPU / memory target    | Usulan: 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75%. Konfirmasi D-12 pending.                                                                                                 |
+| NFT TPS target             | Usulan: 20 request/s pada 50 VUser. Forecast dan approval D-12 pending.                                                                                                                |
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                                      |
-| ---------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | Validasi target contract untuk route delete admin yang sudah tercatat di inventory. Uji layanan aktif/nonaktif, layanan tidak ditemukan, soft-deleted, retry, query katalog sesudah delete, serta operasi concurrent update/delete. VUser, CPU/memory, target TPS TBD menunggu forecast. |
-| VA/Pentest | Yes      | Verifikasi authentication/authorization, IDOR, privilege boundaries, audit attribution, no hard-delete/cascade, dan order snapshot tetap tersedia.                                                                                                                                       |
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                                                                                          |
+| ---------- | -------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFT        | Yes      | Validasi target contract untuk route delete admin yang sudah tercatat di inventory. Uji layanan aktif/nonaktif, layanan tidak ditemukan, soft-deleted, retry, query katalog sesudah delete, serta operasi concurrent update/delete. Baseline VUser/CPU/memory/TPS pada tabel SLA merupakan usulan; forecast dan approval D-12 masih pending. |
+| VA/Pentest | Yes      | Verifikasi authentication/authorization, IDOR, privilege boundaries, audit attribution, no hard-delete/cascade, dan order snapshot tetap tersedia.                                                                                                                                                                                           |
 
 ## Assumptions
 
@@ -222,12 +224,14 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - Soft delete mengikuti kolom `deleted_at` dan rekomendasi Service ERD; kebijakan restore/retensi perlu disetujui.
 - Target mengizinkan soft delete meskipun ada order historis karena order memakai snapshot; referensi aplikasi tetap dipertahankan dan tidak ada FK yang ditegakkan MongoDB. Proses fulfillment aktif perlu aturan eksplisit.
 - HTTP `200` dan response envelope mengikuti project baseline; `204` dapat dipilih oleh standar API final.
-- Audit mechanism dan delivery/failure policy, identity provider, role mapping, database engine, active fulfillment guard, dan SLA TBD.
+- Audit mechanism dan delivery/failure policy, identity provider, role mapping, database engine, active fulfillment guard, dan persetujuan target SLA masih TBD.
 
 ## References
 
+- [Register keputusan terbuka Sprint 2](../../open-decisions.md) — definisi dan kriteria penutupan D-01–D-18.
+
 - [Sprint 2 BRD](../../../BRD.md) — BR-019, pengelolaan dan lifecycle layanan.
-- `../../erd/service-erd.md` — `deleted_at`, relasi parent, soft-delete proposal, dan audit rule.
+- [Service ERD](../../../erd/service-erd.md) — `deleted_at`, relasi parent, soft-delete proposal, dan audit rule.
 - [order-erd.md](../../../../sprint-3/solutioning/erd/order-erd.md) — order item service reference, immutable snapshots, dan larangan menghapus histori.
-- `./create-service.md` — service ID, field, permission, dan response naming baseline.
-- `./update-service.md` — perilaku update dan referensi service.
+- [create-service.md](./create-service.md) — service ID, field, permission, dan response naming baseline.
+- [update-service.md](./update-service.md) — perilaku update dan referensi service.

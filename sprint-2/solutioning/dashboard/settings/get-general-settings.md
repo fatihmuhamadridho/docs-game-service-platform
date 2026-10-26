@@ -9,6 +9,8 @@
 
 ![Sprint 2 dashboard design](../../../design/dashboard.png)
 
+> Catatan bukti: route GET settings dirujuk dari route inventory dokumenter lokal; perilaku kode tidak diverifikasi ulang pada pekerjaan ini. Response IFA adalah kontrak target.
+
 ## Sequence Diagram
 
 ```mermaid
@@ -37,6 +39,8 @@ sequenceDiagram
 ```
 
 ## Performance / SLA Targets
+
+> Status usulan: angka baseline turunan Sprint 1; belum menjadi komitmen Sprint 2. Forecast, kondisi ukur, dan persetujuan owner masih diperlukan (D-12).
 
 | Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time                |
 | ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------- |
@@ -67,16 +71,16 @@ sequenceDiagram
 ### API Versioning
 
 - **Decision:** Existing Endpoint / target enhancement.
-- **Existing source route:** `GET /api/admin/settings/v1/general` tercatat pada source inventory Sprint 3.
+- **Route inventory documentation:** `GET /api/admin/settings/v1/general` tercatat pada dokumen lokal; perilaku kode tidak diverifikasi ulang pada pekerjaan ini.
 - **Proposed target endpoint:** `GET /api/admin/settings/v1/general`; method/path dipertahankan.
 - **Backward Compatibility:** Target mempertahankan field source; envelope `{code,message,data}` mengikuti pola Sprint 1. HTTP mapping masih memerlukan keputusan API owner.
 - **Reason:** Admin Dashboard membutuhkan snapshot pengaturan umum untuk mengisi halaman settings.
 
 ## Business Rules
 
-1. Hanya administrator terautentikasi dengan permission `settings-manage` dapat membaca pengaturan, mengikuti route source saat ini.
+1. **Konteks route historis:** Catatan route-to-handler coverage dalam repo menyebut admin authentication dan permission `settings-manage`; verifikasi perilaku kode sebelum delivery. Authorization target memerlukan keputusan D-11.
 2. Resource merepresentasikan satu snapshot konfigurasi umum platform. `GET` mengembalikan seluruh field settings yang dapat dikelola UI.
-3. Jika record belum ada, service mengembalikan konfigurasi default terkelola, `version` 0, dan `updatedAt` null sesuai source.
+3. Target mengusulkan default settings bila record belum ada, `version` 0, dan `updatedAt` null. Route inventory document describes these values but was not reverified against code in this work; default field values and ownership require D-05 confirmation.
 4. `maintenanceMode` dan `allowRegistration` menunjukkan nilai konfigurasi yang tersimpan; enforcement-nya berada di consumer terkait.
 5. Public response hanya boleh berisi allowlist field publik dan tidak menggunakan endpoint admin ini.
 
@@ -212,7 +216,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Assumptions
 
-- Route GET `/api/admin/settings/v1/general` sudah tercatat pada source inventory Sprint 3.
+- Route GET `/api/admin/settings/v1/general` tercatat pada route inventory document lokal; perilaku kode tidak diverifikasi ulang pada pekerjaan ini.
 - Target mempertahankan root envelope `{code,message,data}` sesuai pola Sprint 1; HTTP/error mapping memerlukan keputusan D-11.
 - Authentication/permission implementation, settings storage, default bootstrap values, SLA, dan deployment exposure masih TBD.
 - Endpoint public terpisah menyediakan allowlist field storefront dan tidak termasuk IFA ini.
@@ -221,6 +225,6 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 - [Sprint 2 BRD](../../../BRD.md) — BR-020 field/settings scope.
 - [Platform settings ERD](../../../erd/platform-settings-erd.md) — logical settings data proposal and unresolved physical mapping.
-- [Go admin dashboard source inventory](../../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage) — current admin route/permission/field/response behavior.
+- [Go admin dashboard route inventory document](../../../../sprint-3/solutioning/backend-go/dashboard-source-ifa.md#route-to-handler-coverage) — documentary admin route/permission/field/response summary; not reverified against code in this work.
 - [Public settings IFA](../../public/settings/get-public-settings.md) — public settings projection and cache behavior.
-- [Sprint 2 decision register](../../../../README.md#keputusan-yang-menghalangi-finalisasi) — open decision D-11.
+- [Sprint 2 decision register](../../open-decisions.md) — D-05/D-11.

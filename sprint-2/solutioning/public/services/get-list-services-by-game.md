@@ -5,6 +5,8 @@
 > **Service / Domain:** Service Catalog — Public Game Services  
 > **Consumer / Partner:** JokiHub storefront checkout (`/order/:gameSlug`)
 
+> Catatan bukti: Perilaku implementasi dalam dokumen ini merangkum catatan route lokal terdahulu dan belum diverifikasi ulang terhadap kode pada pekerjaan ini. Perlakukan sebagai konteks historis; kontrak Sprint 2 adalah target proposal.
+
 ## Design
 
 ![Sprint 1 homepage design](../../../design/homepage.png)
@@ -25,13 +27,13 @@ sequenceDiagram
     API->>DB: Resolve game aktif berdasarkan slug
     alt Game tidak ditemukan/tidak aktif
         DB-->>API: Tidak ada game publik
-API-->>Web: Source canonical returns 404 SVB02002; target HTTP mapping TBD
+        API-->>Web: Catatan historis: canonical HTTP 404 / SVB02002; target HTTP mapping TBD
         Web-->>User: Tampilkan game tidak tersedia
     else Game aktif
         API->>DB: Ambil service aktif dan category aktif untuk game
         alt Services tersedia
             DB-->>API: Service list dan category metadata per service
-            API-->>Web: 200 target {code,message,data[]} and root pagination
+            API-->>Web: 200 target {code,message,data[]} dan pagination sibling di root
             Web-->>User: Tampilkan pilihan layanan dan harga
         else Tidak ada service tersedia
             DB-->>API: Daftar service kosong
@@ -46,6 +48,8 @@ API-->>Web: Source canonical returns 404 SVB02002; target HTTP mapping TBD
 ```
 
 ## Performance / SLA Targets
+
+> Status usulan: angka baseline turunan Sprint 1; belum menjadi komitmen Sprint 2. Forecast, kondisi ukur, dan persetujuan owner masih diperlukan (D-12).
 
 | Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time                |
 | ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------- |
@@ -75,7 +79,7 @@ API-->>Web: Source canonical returns 404 SVB02002; target HTTP mapping TBD
 
 ### API Versioning
 
-- **Inventory status:** Canonical `GET /api/games/v1/{gameSlug}/services` tercatat pada source audit lokal; alias `GET /api/services/v1/games/{gameSlug}` juga tercatat dan memiliki validasi berbeda.
+- **Historical route notes:** Canonical `GET /api/games/v1/{gameSlug}/services` and alias `GET /api/services/v1/games/{gameSlug}` are recorded in an in-repository route inventory with different validation notes; these notes were not reverified against code in this work.
 - **Target contract:** IFA mengusulkan contract pada canonical route yang sama; target payload, slug/query policy, eligibility, ordering, dan status belum diselaraskan dengan canonical maupun alias behavior.
 - **Versioning:** Tetap `v1` pada usulan ini; perubahan wire behavior/alias memerlukan keputusan API owner.
 - **Backward Compatibility:** Consumer belum dinilai. Field tambahan hanya dapat dianggap kompatibel setelah perilaku consumer diverifikasi; response target saat ini mengubah field wire sehingga memerlukan koordinasi consumer.
@@ -83,21 +87,21 @@ API-->>Web: Source canonical returns 404 SVB02002; target HTTP mapping TBD
 
 ## Business Rules
 
-1. **Source behavior canonical:** `gameSlug` di-trim, case-folded, lalu divalidasi dengan slug regex; lookup mencakup game aktif. **Alias behavior:** path dipakai apa adanya, tanpa slug validation/query rejection. Pertahankan perbedaan ini sampai API owner menyetujui migrasi/deprecation.
-2. **Target proposal:** hanya game/service/category eligible untuk order baru yang dikembalikan. Source audit membuktikan active game/service/category filters untuk canonical, tetapi tidak menyatakan seluruh `deleted_at` predicate target. Konfirmasi target lifecycle.
-3. Service source saat ini dikelompokkan berdasarkan kategori aktif dan game aktif. Soft-delete/publishability target rules belum konsisten dengan bukti source dan ERD; keputusan perlu sebelum implementation claim.
+1. **Konteks route historis:** Catatan route lokal terdahulu menyebut canonical memangkas dan case-fold `gameSlug`, lalu memvalidasi slug; alias memakai path apa adanya tanpa slug validation/query rejection. Verifikasi perilaku kode sebelum delivery dan putuskan migrasi/deprecation dengan API owner.
+2. **Target proposal:** hanya game/service/category eligible untuk order baru yang dikembalikan. Catatan route historis menyebut active game/service/category filters untuk canonical, tetapi tidak menetapkan seluruh predicate `deleted_at` target. Konfirmasi target lifecycle melalui D-02/D-14.
+3. Catatan route historis menyebut service dikelompokkan berdasarkan kategori aktif dan game aktif. Predicate soft-delete/publishability target perlu diselaraskan dengan ERD sebelum ditetapkan.
 4. Service hanya ditampilkan bila category-nya eligible pada target. Aturan kategori nonaktif tidak mengubah historical order snapshots.
-5. Source service list saat ini disortir berdasarkan service name. Urutan target flat service list berdasarkan approved service display order belum didukung oleh schema `sort_order`; kategori juga punya current locale sort. Urutan target perlu keputusan.
-6. Satu service terhadap satu game dan kategori mengikuti single-select UI saat ini, bukan aturan bisnis terkonfirmasi.
+5. Catatan route historis menyebut daftar service diurutkan berdasarkan nama dan kategori memakai locale sort. Urutan target flat service list belum memiliki sumber `sort_order` yang disetujui dan memerlukan keputusan.
+6. Satu service terhadap satu game dan kategori mengikuti single-select pada UI yang tersedia; ini bukan aturan bisnis terkonfirmasi.
 7. **Source wire fields:** `price` dapat null dan `customPrice` menunjukkan price custom/absent. **Target fields:** `priceAmount`, `currency`, `pricingType`, `isCustomPrice`, serta `estimateText`. Untuk target, `pricingType=FIXED` hanya bila `isCustomPrice=false` dan `priceAmount` berisi nominal; `QUOTE_REQUIRED` hanya bila `isCustomPrice=true` dan `priceAmount=null`. Currency per layanan tidak dimodelkan pada ERD; proposalnya diturunkan dari platform `defaultCurrency`, tetapi sumber, presisi, representasi wire, dan konsistensinya dengan Sprint 3 order snapshot perlu keputusan D-03/D-05. Nilai source Decimal128 menjadi float64; representasi exact masih open decision.
 8. Target quote-required tidak boleh dikalkulasi/dibayar dengan harga rekaan (BR-005). UI saat ini memperlakukan custom service sebagai quote/contact, tetapi backend quote lifecycle berada di luar kontrak ini.
 9. Source `estimate` adalah display field; target `estimateText` merupakan teks estimasi, bukan SLA/garansi penyelesaian.
 10. Target menyediakan category/service identities; kategori tanpa eligible service tidak disertakan. Source current field shape berbeda sebagaimana dijelaskan di bawah.
-11. **Source status:** canonical not-found/inactive returns HTTP 404 with `SVB02002`; alias returns 404 `SRVB02001`. Target HTTP mapping remains open in D-11.
-12. Source routes have no pagination on service-by-game reads. Target proposes optional `page`/`limit` (defaults 1/20, maximum 100) to match its paged response; approve query policy under D-10 and compatibility/rollout under D-11. Data-volume evidence is still needed before treating the proposal as final.
-13. Source implementation is read-only; an order flow must validate price and eligibility at submission in the Sprint 3 order contract.
-14. Target `artworkKey` is not present in current game-by-slug source payload; its registry/mapping and field contract require decision.
-15. Source handlers do not set a catalog cache policy. Cache, invalidation, TTL, and freshness are TBD.
+11. **Konteks route historis:** Catatan lokal terdahulu menyebut canonical not-found/inactive memakai HTTP 404 `SVB02002` dan alias memakai 404 `SRVB02001`. Target HTTP mapping remains open in D-11.
+12. Catatan route historis menyebut route service-by-game tidak menggunakan pagination. Target proposes optional `page`/`limit` (defaults 1/20, maximum 100); approve query policy under D-10 and compatibility/rollout under D-11.
+13. Catatan route menggambarkan interface read-only; order flow harus memvalidasi harga dan eligibility saat submission sesuai kontrak Sprint 3.
+14. Catatan payload lokal terdahulu tidak mencantumkan `artworkKey`; registry/mapping dan target field contract memerlukan keputusan.
+15. Catatan route yang tersedia tidak menetapkan catalog cache policy. Cache, invalidation, TTL, dan freshness tetap TBD.
 
 ## Request Headers
 
@@ -128,7 +132,7 @@ None. GET request has no body.
 1. `gameSlug` wajib, tidak kosong, maksimal 100 karakter, dan mengikuti format slug `^[a-z0-9]+(?:-[a-z0-9]+)*$` setelah normalisasi. Nilai malformed mengembalikan `SVB02001`.
 2. Slug harus resolve ke game aktif/publik. Game tidak ditemukan atau tidak tersedia mengembalikan `SVB02002`.
 3. Target `page`, bila dikirim, harus integer >= 1; default `1`. Target `limit` harus integer 1–100; default `20`. Nilai invalid atau query parameter lain mengembalikan `SVB02001` pada target proposal.
-4. **Source behavior:** canonical source saat ini menolak semua query, sedangkan alias menerima/mengabaikan query sesuai audit. Dukungan target `page`/`limit` dan unknown-query rejection memerlukan keputusan D-10/D-11.
+4. **Konteks route historis:** Catatan lokal terdahulu menyebut canonical menolak semua query, sedangkan alias menerima/mengabaikan query. Verifikasi terhadap implementasi sebelum delivery; dukungan target `page`/`limit` dan unknown-query rejection memerlukan keputusan D-10/D-11.
 5. Query harus membatasi service dan category ke record aktif/non-deleted/publik sebelum grouping.
 6. Untuk fixed-price service, `priceAmount` harus tersedia dan non-negative. Untuk quote service, `priceAmount` harus null. Data catalog yang melanggar invariant tidak boleh dipresentasikan sebagai harga valid; catat data integrity error dan keluarkan/return safe service error sesuai kebijakan.
 7. Hasil kosong untuk game aktif adalah sukses dengan `data: []` dan `pagination.total: 0`.
@@ -264,8 +268,8 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 | Endpoint                   | `GET /api/games/v1/{gameSlug}/services`                                                                                                                                              |
 | Sample parameter / request | Path: `gameSlug=roblox`; target query `page=1&limit=20`; canonical source currently rejects query                                                                                    |
 | Sample response            | Success code `SVS00000`; use the complete Success Example below. Probe code `SVB02002`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
-| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                             |
-| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                              |
+| NFT CPU / memory target    | Usulan: 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75%. Konfirmasi D-12 pending.                                                                                               |
+| NFT TPS target             | Usulan: 20 request/s pada 50 VUser. Forecast dan approval D-12 pending.                                                                                                              |
 
 | Scope      | Required | Rationale / Handoff                                                                                                                                                                                   |
 | ---------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -274,7 +278,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 
 ## Assumptions
 
-- Canonical and alias routes and source response envelope/status codes already exist. Proposed richer target response fields, normalization standardization, alias behavior, and HTTP mapping require API owner review.
+- Catatan route lokal terdahulu mencatat canonical dan alias beserta envelope/status respons; detail belum diverifikasi ulang terhadap kode pada pekerjaan ini. Proposed richer target response fields, normalization standardization, alias behavior, and HTTP mapping require API owner review.
 - Route `/order/:gameSlug` currently uses static demo data. This contract replaces that data source; `/order/roblox` resolves slug from public `GAME_CATALOG`.
 - [Service ERD](../../../erd/service-erd.md), [Game ERD](../../../../sprint-1/erd/game-catalog-erd.md), and [Service Category ERD](../../../erd/service-category-erd.md) define proposed catalog source fields and active-state rules.
 - Service `description`, service/category ordering, currency storage, game artwork, public/published status, and category slug usage need confirmation; some response fields are derived/proposed for checkout UI.
@@ -285,6 +289,7 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 ## References
 
 - [Sprint 2 BRD](../../../BRD.md) — BR-004, daftar layanan untuk game; BR-005, pembedaan harga tetap dan quote.
+- [Sprint 2 decision register](../../open-decisions.md) — D-02/D-03/D-10/D-11/D-12/D-14/D-15.
 - [game-catalog-erd.md](../../../../sprint-1/erd/game-catalog-erd.md) — public game slug and active state.
 - [service-erd.md](../../../erd/service-erd.md) — service-game, price, estimate, and active fields.
 - [service-category-erd.md](../../../erd/service-category-erd.md) — service category association and active behavior.

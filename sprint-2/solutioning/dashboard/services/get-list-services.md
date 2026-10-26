@@ -45,6 +45,8 @@ sequenceDiagram
 
 ## Performance / SLA Targets
 
+> Status usulan: angka baseline turunan Sprint 1; belum menjadi komitmen Sprint 2. Forecast, kondisi ukur, dan persetujuan owner masih diperlukan (D-12).
+
 | Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time                |
 | ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | ---------------------------- |
 | 99.9% monthly availability; valid-request server error ≤ 0.1% | 50 VUser / 20 request/s NFT target | Initial 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75% at target load | Read p95 ≤ 500 ms; p99 ≤ 2 s |
@@ -243,13 +245,13 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 | Endpoint                   | `GET /api/admin/services/v1/list`                                                                                                                                                      |
 | Sample parameter / request | Query: `q=robux&categoryId=cat_01JXYZ&isActive=true&page=1&limit=20`                                                                                                                   |
 | Sample response            | Success code `SRVS00000`; use the complete Success Example below. Probe code `SRVB01002`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
-| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                               |
-| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                                |
+| NFT CPU / memory target    | Usulan: 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75%. Konfirmasi D-12 pending.                                                                                                 |
+| NFT TPS target             | Usulan: 20 request/s pada 50 VUser. Forecast dan approval D-12 pending.                                                                                                                |
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                   |
-| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | Validasi target contract untuk route list admin yang sudah tercatat di inventory. Uji search, filter kategori/status, pagination minimum/maksimum, hasil kosong, custom/fixed price, serta join tanpa duplikasi. VUser, CPU/memory, target TPS TBD menunggu forecast. |
-| VA/Pentest | Yes      | Verifikasi authentication/authorization, privilege boundaries, injection, parameter validation, IDOR pada category filter, dan pengecualian service soft-deleted.                                                                                                     |
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                                                                       |
+| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFT        | Yes      | Validasi target contract untuk route list admin yang sudah tercatat di inventory. Uji search, filter kategori/status, pagination minimum/maksimum, hasil kosong, custom/fixed price, serta join tanpa duplikasi. Baseline VUser/CPU/memory/TPS pada tabel SLA merupakan usulan; forecast dan approval D-12 masih pending. |
+| VA/Pentest | Yes      | Verifikasi authentication/authorization, privilege boundaries, injection, parameter validation, IDOR pada category filter, dan pengecualian service soft-deleted.                                                                                                                                                         |
 
 ## Assumptions
 
@@ -259,15 +261,17 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - Daftar menyertakan aktif/nonaktif dan mengecualikan soft-deleted service. Kategori/game nonaktif tetap terbaca dalam admin list.
 - Nama game/category di response berasal dari relasi katalog terkini; penanganan parent record yang hilang perlu diselaraskan dengan data-integrity policy.
 - `isCustomPrice` mengikuti proposal ERD, sementara UI model menandai custom dengan `price === null`. Currency tidak disimpan per service pada proposal ERD; IFA publik mengusulkan turunannya dari `defaultCurrency` platform, yang masih menunggu keputusan D-03/D-05.
-- Identity provider, role mapping, SLA, rate limit, database engine, sort policy, serta category soft-delete visibility TBD.
+- Identity provider, role mapping, persetujuan target SLA, rate limit, database engine, sort policy, serta category soft-delete visibility TBD.
 
 ## References
 
+- [Register keputusan terbuka Sprint 2](../../open-decisions.md) — definisi dan kriteria penutupan D-01–D-18.
+
 - [Sprint 2 BRD](../../../BRD.md) — BR-019, pengelolaan layanan; BR-005, pembedaan harga tetap dan quote pada katalog publik.
-- `../../erd/service-erd.md` — field `game_service`, parent relationships, status, price constraints, soft-delete proposal.
-- `../../erd/game-catalog-erd.md` — game catalog source.
-- `../../erd/service-category-erd.md` — category source.
-- `./create-service.md` — contract create service dan price model proposal.
-- `./update-service.md` — contract update service.
-- `./delete-service.md` — soft-delete behavior.
-- `../games/get-list-games.md` — pagination dan service code convention pembanding.
+- [Service ERD](../../../erd/service-erd.md) — field `game_service`, parent relationships, status, price constraints, soft-delete proposal.
+- [Sprint 1 Game ERD](../../../../sprint-1/erd/game-catalog-erd.md) — game catalog source.
+- [Service Category ERD](../../../erd/service-category-erd.md) — category source.
+- [create-service.md](./create-service.md) — contract create service dan price model proposal.
+- [update-service.md](./update-service.md) — contract update service.
+- [delete-service.md](./delete-service.md) — soft-delete behavior.
+- [Sprint 1 Get List Games IFA](../../../../sprint-1/solutioning/dashboard/games/get-list-games.md) — pagination dan service code convention pembanding.

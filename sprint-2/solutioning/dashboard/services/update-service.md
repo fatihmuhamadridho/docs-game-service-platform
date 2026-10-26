@@ -43,9 +43,9 @@ sequenceDiagram
                 API->>DB: Simpan perubahan game_service setelah validasi referensi
                 alt Update berhasil
                     DB-->>API: Service terbaru
-                    Note over API,Audit: BR-022 mewajibkan audit event, tetapi delivery dan failure policy belum diputuskan
-                    API-->>UI: 200 SRVS00000, data
-                    UI-->>Admin: Tampilkan konfirmasi dan data terbaru
+                    Note over API,Audit: Jalur sukses 200 hanya berlaku setelah kebijakan D-07/D-08 disetujui dan outcome audit memenuhi kebijakan; detail delivery tidak ditetapkan di sini
+                    API-->>UI: 200 SRVS00000, data (bersyarat pada kebijakan audit yang disetujui)
+                    UI-->>Admin: Tampilkan konfirmasi dan data terbaru setelah outcome sukses terkonfirmasi
                 else Database gagal
                     DB-->>API: Kegagalan update
                     API-->>UI: 500 SRVT03001, data null
@@ -57,6 +57,8 @@ sequenceDiagram
 ```
 
 ## Performance / SLA Targets
+
+> Status usulan: angka baseline turunan Sprint 1; belum menjadi komitmen Sprint 2. Forecast, kondisi ukur, dan persetujuan owner masih diperlukan (D-12).
 
 | Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time              |
 | ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | -------------------------- |
@@ -255,13 +257,13 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 | Endpoint                   | `PUT /api/admin/services/v1/update/{serviceId}`                                                                                                                                        |
 | Sample parameter / request | Path: `serviceId=svc_01JXYZ`; body uses `isCustomPrice=false`, `priceAmount=30000`                                                                                                     |
 | Sample response            | Success code `SRVS00000`; use the complete Success Example below. Probe code `SRVB01002`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
-| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                               |
-| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                                |
+| NFT CPU / memory target    | Usulan: 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75%. Konfirmasi D-12 pending.                                                                                                 |
+| NFT TPS target             | Usulan: 20 request/s pada 50 VUser. Forecast dan approval D-12 pending.                                                                                                                |
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                           |
-| ---------- | -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | Validasi target contract untuk route update admin yang sudah tercatat di inventory. Uji update setiap field, fixed/custom price, parent aktif/nonaktif/deleted, perubahan relasi, no-op, concurrency, serta persistence. VUser, CPU/memory, target TPS TBD menunggu forecast. |
-| VA/Pentest | Yes      | Uji authentication/authorization, IDOR, mass assignment, validasi referensi, race condition, audit attribution, dan pastikan snapshot order lama tidak berubah.                                                                                                               |
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                                                                               |
+| ---------- | -------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFT        | Yes      | Validasi target contract untuk route update admin yang sudah tercatat di inventory. Uji update setiap field, fixed/custom price, parent aktif/nonaktif/deleted, perubahan relasi, no-op, concurrency, serta persistence. Baseline VUser/CPU/memory/TPS pada tabel SLA merupakan usulan; forecast dan approval D-12 masih pending. |
+| VA/Pentest | Yes      | Uji authentication/authorization, IDOR, mass assignment, validasi referensi, race condition, audit attribution, dan pastikan snapshot order lama tidak berubah.                                                                                                                                                                   |
 
 ## Assumptions
 
@@ -270,13 +272,15 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 - ERD belum menetapkan name uniqueness, currency schema, atau aturan update ke parent inactive; keputusan product/API owner diperlukan.
 - Flag `isCustomPrice` merupakan field eksplisit pada proposed persistence model; UI saat ini merepresentasikannya sebagai `price === null`.
 - BR-022 mewajibkan event, tetapi target audit store/service, delivery/atomicity, serta respons saat gagal belum diputuskan; diagram tidak mengasumsikan platform audit service tertentu.
-- Optimistic concurrency/ETag, identity provider, role mapping, auth HTTP mapping, database engine, dan SLA TBD.
+- Optimistic concurrency/ETag, identity provider, role mapping, auth HTTP mapping, database engine, dan persetujuan target SLA masih TBD.
 
 ## References
 
+- [Register keputusan terbuka Sprint 2](../../open-decisions.md) — definisi dan kriteria penutupan D-01–D-18.
+
 - [Sprint 2 BRD](../../../BRD.md) — BR-019, pengelolaan layanan; BR-005, pembedaan harga tetap dan quote pada katalog publik.
-- `../../erd/service-erd.md` — field layanan, harga, relasi, lifecycle, dan order snapshot rule.
-- `../../erd/game-catalog-erd.md` — status dan lifecycle game.
-- `../../erd/service-category-erd.md` — status dan lifecycle kategori.
-- `./create-service.md` — kontrak create dan validasi service baseline.
+- [Service ERD](../../../erd/service-erd.md) — field layanan, harga, relasi, lifecycle, dan order snapshot rule.
+- [Sprint 1 Game ERD](../../../../sprint-1/erd/game-catalog-erd.md) — status dan lifecycle game.
+- [Service Category ERD](../../../erd/service-category-erd.md) — status dan lifecycle kategori.
+- [create-service.md](./create-service.md) — kontrak create dan validasi service baseline.
 - [order-erd.md](../../../../sprint-3/solutioning/erd/order-erd.md) — snapshot transaksi/order yang tidak boleh berubah saat katalog diperbarui.

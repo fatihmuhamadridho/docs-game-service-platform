@@ -43,9 +43,9 @@ sequenceDiagram
                 API->>DB: Soft delete bersyarat pada kategori masih non-deleted
                 alt Soft delete berhasil
                     DB-->>API: Kategori ditandai terhapus
-                    Note over API,Audit: BR-022 mewajibkan audit event, tetapi delivery dan failure policy belum diputuskan
-                    API-->>UI: 200 SCAS00000, data berisi categoryId dan deletedAt
-                    UI-->>Admin: Tampilkan konfirmasi penghapusan
+                    Note over API,Audit: Jalur sukses 200 hanya berlaku setelah kebijakan D-07/D-08 disetujui dan outcome audit memenuhi kebijakan; detail delivery tidak ditetapkan di sini
+                    API-->>UI: 200 SCAS00000, data berisi categoryId dan deletedAt (bersyarat pada kebijakan audit yang disetujui)
+                    UI-->>Admin: Tampilkan konfirmasi penghapusan setelah outcome sukses terkonfirmasi
                 else Database gagal
                     DB-->>API: Kegagalan penghapusan
                     API-->>UI: 500 SCAT03001, data null
@@ -57,6 +57,8 @@ sequenceDiagram
 ```
 
 ## Performance / SLA Targets
+
+> Status usulan: angka baseline turunan Sprint 1; belum menjadi komitmen Sprint 2. Forecast, kondisi ukur, dan persetujuan owner masih diperlukan (D-12).
 
 | Success Rate                                                  | VUser                              | CPU / Memory                                                                | Response Time              |
 | ------------------------------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------- | -------------------------- |
@@ -99,7 +101,7 @@ sequenceDiagram
 2. `categoryId` mengidentifikasi kategori secara immutable. Nama/slug tidak digunakan sebagai target delete.
 3. Operasi adalah soft delete: set `deleted_at` dan `updated_at` ke waktu UTC server. Record fisik dan referensi historis dipertahankan.
 4. Kategori aktif maupun nonaktif dapat dihapus bila tidak memiliki layanan yang mereferensikannya.
-5. Jika satu atau lebih `game_service` masih menunjuk kategori, target mengusulkan penolakan delete dengan `SCAB02003`. Source inventory saat ini mencatat pemeriksaan semua layanan tertaut, termasuk yang soft-deleted, dan response `409` dengan `linkedServiceCount`; keputusan mempertahankan predicate source tersebut untuk target masih terbuka.
+5. Jika satu atau lebih `game_service` masih menunjuk kategori, target mengusulkan penolakan delete dengan `SCAB02003`. Catatan route historis menyebut pemeriksaan semua layanan tertaut, termasuk soft-deleted, dan response `409` dengan `linkedServiceCount`; verifikasi perilaku implementasi dan putuskan apakah predicate itu dipertahankan.
 6. Referensi disimpan sebagai identifier aplikasi dan MongoDB tidak menegakkan foreign key. Strategi untuk mencegah service baru ditautkan di antara pemeriksaan referensi dan soft delete (misalnya koordinasi write atau validasi ulang) masih harus diputuskan; jangan mengklaim operasi ini atomik sebelum mekanismenya ditetapkan. Jangan cascade delete, reassign, atau deactivate layanan secara diam-diam.
 7. Order historis, snapshot kategori/layanan, transaksi, dan entitas lain tidak dihapus maupun diubah.
 8. Kategori yang tidak ditemukan atau sudah soft-deleted menghasilkan `SCAB02002`; operasi tidak mengungkap apakah kategori pernah ada.
@@ -217,27 +219,29 @@ Format: `[Service Prefix][Status Type][Category][Specific Error Code]`
 | Endpoint                   | `DELETE /api/admin/service-categories/v1/delete/{categoryId}`                                                                                                                          |
 | Sample parameter / request | Path: `categoryId=cat_01JXYZ`                                                                                                                                                          |
 | Sample response            | Success code `SCAS00000`; use the complete Success Example below. Probe code `SCAB01002`; use its corresponding error example below. HTTP mapping remains subject to D-11 where noted. |
-| NFT CPU / memory target    | TBD; capacity evidence and approval required under D-12.                                                                                                                               |
-| NFT TPS target             | TBD; traffic forecast and approval required under D-12.                                                                                                                                |
+| NFT CPU / memory target    | Usulan: 2 vCPU / 4 GiB per instance; CPU ≤ 70%, memory ≤ 75%. Konfirmasi D-12 pending.                                                                                                 |
+| NFT TPS target             | Usulan: 20 request/s pada 50 VUser. Forecast dan approval D-12 pending.                                                                                                                |
 
-| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                                               |
-| ---------- | -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| NFT        | Yes      | Validasi target contract untuk route delete admin yang sudah tercatat di inventory. Uji kategori tanpa layanan, kategori dengan layanan aktif/nonaktif, kategori telah dihapus, race antara assignment service dan delete, dan retry. VUser, CPU/memory, serta target TPS TBD mengikuti forecast. |
-| VA/Pentest | Yes      | Verifikasi authentication/authorization, IDOR, privilege boundaries, referential integrity, race condition, audit attribution, serta tidak ada cascade/permanent data loss.                                                                                                                       |
+| Scope      | Required | Rationale / Handoff                                                                                                                                                                                                                                                                                                                            |
+| ---------- | -------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| NFT        | Yes      | Validasi target contract untuk route delete admin yang sudah tercatat di inventory. Uji kategori tanpa layanan, kategori dengan layanan aktif/nonaktif, kategori telah dihapus, race antara assignment service dan delete, dan retry. Baseline VUser/CPU/memory/TPS pada tabel SLA merupakan usulan; forecast dan approval D-12 masih pending. |
+| VA/Pentest | Yes      | Verifikasi authentication/authorization, IDOR, privilege boundaries, referential integrity, race condition, audit attribution, serta tidak ada cascade/permanent data loss.                                                                                                                                                                    |
 
 ## Assumptions
 
 - Endpoint dan soft-delete semantics merupakan proposal; ERD menyebut soft delete tetapi kebijakan final masih TBD.
 - Delete ditolak selama kategori memiliki service reference, mengikuti aturan ERD bahwa hard delete diblokir saat referensi ada dan soft delete memerlukan no-linked-service atau workflow reassignment yang disetujui.
-- Source inventory saat ini mencatat pemeriksaan semua layanan tertaut, termasuk yang soft-deleted. Kontrak target belum memutuskan apakah predicate tersebut dipertahankan; dokumentasikan sebagai keputusan target setelah Product/API owner mengonfirmasi.
+- Catatan route lokal terdahulu menyebut pemeriksaan semua layanan tertaut, termasuk soft-deleted. Verifikasi terhadap implementasi; kontrak target belum memutuskan apakah predicate tersebut dipertahankan sampai Product/API owner mengonfirmasi.
 - Operation memakai HTTP `200` dan envelope standar proyek; `204` dapat dipilih bila API standard mensyaratkannya.
-- Audit platform, identity provider, role mapping, database engine, unique-name/slug reuse policy, serta SLA TBD.
+- Audit platform, identity provider, role mapping, database engine, unique-name/slug reuse policy, serta persetujuan target SLA masih TBD.
 - Tidak ada permanent delete, reassignment, atau auto-deactivation dalam scope ini.
 
 ## References
 
+- [Register keputusan terbuka Sprint 2](../../open-decisions.md) — definisi dan kriteria penutupan D-01–D-18.
+
 - [Sprint 2 BRD](../../../BRD.md) — BR-019, pengelolaan dan lifecycle kategori layanan.
-- `../../erd/service-category-erd.md` — relasi kategori-layanan, soft-delete proposal, dan larangan orphan/cascade delete.
-- `./create-service-category.md` — kontrak create kategori dan identifier.
-- `./get-detail-service-category.md` — detail kategori dan relasi layanan.
-- `./update-service-category.md` — aturan update kategori dan dampak terhadap layanan.
+- [Service Category ERD](../../../erd/service-category-erd.md) — relasi kategori-layanan, soft-delete proposal, dan larangan orphan/cascade delete.
+- [create-service-category.md](./create-service-category.md) — kontrak create kategori dan identifier.
+- [get-detail-service-category.md](./get-detail-service-category.md) — detail kategori dan relasi layanan.
+- [update-service-category.md](./update-service-category.md) — aturan update kategori dan dampak terhadap layanan.
